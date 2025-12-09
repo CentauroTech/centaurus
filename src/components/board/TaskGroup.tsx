@@ -75,6 +75,9 @@ export function TaskGroup({
                 <th className="py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Task
                 </th>
+                <th className="py-2 px-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider w-16">
+                  
+                </th>
                 <th className="py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-44">
                   Owner
                 </th>

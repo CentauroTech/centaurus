@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { TaskGroup as TaskGroupType, Task, Status, Priority } from '@/types/board';
+import { TaskGroup as TaskGroupType, Task, COLUMNS } from '@/types/board';
 import { TaskRow } from './TaskRow';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 interface TaskGroupProps {
   group: TaskGroupType;
@@ -68,42 +69,38 @@ export function TaskGroup({
       {/* Tasks Table */}
       {!isCollapsed && (
         <div className="bg-card rounded-lg border border-border shadow-board overflow-hidden animate-fade-in">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-muted/50 border-b border-border">
-                <th className="w-8" />
-                <th className="py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Task
-                </th>
-                <th className="py-2 px-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider w-16">
-                  
-                </th>
-                <th className="py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-44">
-                  Owner
-                </th>
-                <th className="py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-36">
-                  Status
-                </th>
-                <th className="py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-24">
-                  Priority
-                </th>
-                <th className="py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-32">
-                  Due Date
-                </th>
-                <th className="w-12" />
-              </tr>
-            </thead>
-            <tbody>
-              {group.tasks.map((task) => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  onUpdate={(updates) => onUpdateTask(task.id, updates)}
-                  onDelete={() => onDeleteTask(task.id)}
-                />
-              ))}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-max min-w-full">
+              <thead>
+                <tr className="bg-muted/50 border-b border-border">
+                  <th className="w-8 sticky left-0 bg-muted/50 z-10" />
+                  <th className="py-2 px-2 w-10 sticky left-8 bg-muted/50 z-10 border-r border-border" />
+                  {COLUMNS.map((column) => (
+                    <th 
+                      key={column.id}
+                      className={cn(
+                        "py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap",
+                        column.width
+                      )}
+                    >
+                      {column.label}
+                    </th>
+                  ))}
+                  <th className="w-12" />
+                </tr>
+              </thead>
+              <tbody>
+                {group.tasks.map((task) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    onUpdate={(updates) => onUpdateTask(task.id, updates)}
+                    onDelete={() => onDeleteTask(task.id)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {/* Add Task Row */}
           <button

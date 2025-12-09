@@ -1,5 +1,6 @@
 export type Status = 'done' | 'working' | 'stuck' | 'waiting' | 'planning' | 'default';
 export type Priority = 'high' | 'medium' | 'low';
+export type Phase = 'pre_production' | 'production' | 'post_production' | 'delivery' | 'complete';
 
 export interface User {
   id: string;
@@ -49,9 +50,50 @@ export interface Task {
   id: string;
   name: string;
   status: Status;
-  priority: Priority;
-  owner?: User;
-  dueDate?: Date;
+  dateAssigned?: Date;
+  branch?: string;
+  projectManager?: User;
+  clientName?: string;
+  entregaMiamiStart?: Date;
+  entregaMiamiEnd?: Date;
+  entregaMixRetakes?: Date;
+  entregaCliente?: Date;
+  entregaSesiones?: Date;
+  cantidadEpisodios?: number;
+  lockedRuntime?: string;
+  finalRuntime?: string;
+  servicios?: string;
+  entregaFinalDubAudio?: Date;
+  entregaFinalScript?: Date;
+  pruebaDeVoz?: boolean;
+  aorNeeded?: boolean;
+  formato?: string;
+  lenguajeOriginal?: string;
+  rates?: number;
+  showGuide?: string;
+  tituloAprobadoEspanol?: string;
+  workOrderNumber?: string;
+  fase?: Phase;
+  lastUpdated?: Date;
+  dontUseStart?: Date;
+  dontUseEnd?: Date;
+  aorComplete?: boolean;
+  director?: User;
+  studio?: string;
+  tecnico?: User;
+  qc1?: User;
+  qcRetakes?: Date;
+  mixerBogota?: User;
+  mixerMiami?: User;
+  qcMix?: User;
+  traductor?: User;
+  adaptador?: User;
+  dateDelivered?: Date;
+  hq?: string;
+  people?: User[];
+  phaseDueDate?: Date;
+  linkToColHQ?: string;
+  rateInfo?: string;
   createdAt: Date;
   comments?: Comment[];
   files?: TaskFile[];
@@ -88,8 +130,67 @@ export const STATUS_CONFIG: Record<Status, { label: string; className: string }>
   default: { label: 'Not started', className: 'bg-status-default text-white' },
 };
 
-export const PRIORITY_CONFIG: Record<Priority, { label: string; className: string }> = {
-  high: { label: 'High', className: 'bg-priority-high text-white' },
-  medium: { label: 'Medium', className: 'bg-priority-medium text-white' },
-  low: { label: 'Low', className: 'bg-priority-low text-white' },
+export const PHASE_CONFIG: Record<Phase, { label: string; className: string }> = {
+  pre_production: { label: 'Pre-Production', className: 'bg-purple-500 text-white' },
+  production: { label: 'Production', className: 'bg-blue-500 text-white' },
+  post_production: { label: 'Post-Production', className: 'bg-orange-500 text-white' },
+  delivery: { label: 'Delivery', className: 'bg-yellow-500 text-foreground' },
+  complete: { label: 'Complete', className: 'bg-status-done text-white' },
 };
+
+export interface ColumnConfig {
+  id: string;
+  label: string;
+  type: 'text' | 'date' | 'person' | 'status' | 'phase' | 'number' | 'boolean' | 'link' | 'people';
+  width: string;
+  field: keyof Task;
+}
+
+export const COLUMNS: ColumnConfig[] = [
+  { id: 'name', label: 'Name', type: 'text', width: 'w-64', field: 'name' },
+  { id: 'status', label: 'Status', type: 'status', width: 'w-32', field: 'status' },
+  { id: 'dateAssigned', label: 'Fecha Asignada', type: 'date', width: 'w-28', field: 'dateAssigned' },
+  { id: 'branch', label: 'Sede/Branch', type: 'text', width: 'w-28', field: 'branch' },
+  { id: 'projectManager', label: 'Project Manager', type: 'person', width: 'w-36', field: 'projectManager' },
+  { id: 'clientName', label: 'Nombre Cliente', type: 'text', width: 'w-36', field: 'clientName' },
+  { id: 'entregaMiamiStart', label: 'Entrega Miami - Start', type: 'date', width: 'w-32', field: 'entregaMiamiStart' },
+  { id: 'entregaMiamiEnd', label: 'Entrega Miami - End', type: 'date', width: 'w-32', field: 'entregaMiamiEnd' },
+  { id: 'entregaMixRetakes', label: 'Entrega Mix Retakes', type: 'date', width: 'w-32', field: 'entregaMixRetakes' },
+  { id: 'entregaCliente', label: 'Entrega Cliente', type: 'date', width: 'w-28', field: 'entregaCliente' },
+  { id: 'entregaSesiones', label: 'Entrega Sesiones', type: 'date', width: 'w-28', field: 'entregaSesiones' },
+  { id: 'cantidadEpisodios', label: 'Cantidad Episodios', type: 'number', width: 'w-24', field: 'cantidadEpisodios' },
+  { id: 'lockedRuntime', label: 'Locked Runtime', type: 'text', width: 'w-28', field: 'lockedRuntime' },
+  { id: 'finalRuntime', label: 'Final Runtime', type: 'text', width: 'w-28', field: 'finalRuntime' },
+  { id: 'servicios', label: 'Servicios', type: 'text', width: 'w-36', field: 'servicios' },
+  { id: 'entregaFinalDubAudio', label: 'Entrega Final - Dub Audio', type: 'date', width: 'w-36', field: 'entregaFinalDubAudio' },
+  { id: 'entregaFinalScript', label: 'Entrega Final - Script', type: 'date', width: 'w-36', field: 'entregaFinalScript' },
+  { id: 'pruebaDeVoz', label: 'Prueba de Voz?', type: 'boolean', width: 'w-24', field: 'pruebaDeVoz' },
+  { id: 'aorNeeded', label: 'AOR Needed', type: 'boolean', width: 'w-24', field: 'aorNeeded' },
+  { id: 'formato', label: 'Formato', type: 'text', width: 'w-28', field: 'formato' },
+  { id: 'lenguajeOriginal', label: 'Lenguaje Original', type: 'text', width: 'w-32', field: 'lenguajeOriginal' },
+  { id: 'rates', label: 'Rates', type: 'number', width: 'w-24', field: 'rates' },
+  { id: 'showGuide', label: 'ShowGuide', type: 'link', width: 'w-28', field: 'showGuide' },
+  { id: 'tituloAprobadoEspanol', label: 'Titulo Aprobado Español', type: 'text', width: 'w-44', field: 'tituloAprobadoEspanol' },
+  { id: 'workOrderNumber', label: 'Work Order #', type: 'text', width: 'w-28', field: 'workOrderNumber' },
+  { id: 'fase', label: 'Fase', type: 'phase', width: 'w-32', field: 'fase' },
+  { id: 'lastUpdated', label: 'Last Updated', type: 'date', width: 'w-28', field: 'lastUpdated' },
+  { id: 'dontUseStart', label: "Don't Use - Start", type: 'date', width: 'w-28', field: 'dontUseStart' },
+  { id: 'dontUseEnd', label: "Don't Use - End", type: 'date', width: 'w-28', field: 'dontUseEnd' },
+  { id: 'aorComplete', label: 'AOR Complete', type: 'boolean', width: 'w-24', field: 'aorComplete' },
+  { id: 'director', label: 'Director', type: 'person', width: 'w-36', field: 'director' },
+  { id: 'studio', label: 'Studio', type: 'text', width: 'w-28', field: 'studio' },
+  { id: 'tecnico', label: 'Técnico', type: 'person', width: 'w-36', field: 'tecnico' },
+  { id: 'qc1', label: 'QC 1', type: 'person', width: 'w-36', field: 'qc1' },
+  { id: 'qcRetakes', label: 'QC Retakes', type: 'date', width: 'w-28', field: 'qcRetakes' },
+  { id: 'mixerBogota', label: 'Mixer Bogotá', type: 'person', width: 'w-36', field: 'mixerBogota' },
+  { id: 'mixerMiami', label: 'Mixer Miami', type: 'person', width: 'w-36', field: 'mixerMiami' },
+  { id: 'qcMix', label: 'QC Mix', type: 'person', width: 'w-36', field: 'qcMix' },
+  { id: 'traductor', label: 'Traductor', type: 'person', width: 'w-36', field: 'traductor' },
+  { id: 'adaptador', label: 'Adaptador', type: 'person', width: 'w-36', field: 'adaptador' },
+  { id: 'dateDelivered', label: 'Date Delivered', type: 'date', width: 'w-28', field: 'dateDelivered' },
+  { id: 'hq', label: 'HQ', type: 'text', width: 'w-24', field: 'hq' },
+  { id: 'people', label: 'People', type: 'people', width: 'w-40', field: 'people' },
+  { id: 'phaseDueDate', label: 'Phase Due Date', type: 'date', width: 'w-28', field: 'phaseDueDate' },
+  { id: 'linkToColHQ', label: 'Link to Col-HQ', type: 'link', width: 'w-28', field: 'linkToColHQ' },
+  { id: 'rateInfo', label: 'Rate Info', type: 'text', width: 'w-32', field: 'rateInfo' },
+];

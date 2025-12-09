@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, Filter, Users, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Board, TaskGroup as TaskGroupType, Task, Status, Priority } from '@/types/board';
+import { Board, TaskGroup as TaskGroupType, Task } from '@/types/board';
 import { TaskGroup } from './TaskGroup';
 
 interface BoardViewProps {
@@ -16,7 +16,7 @@ export function BoardView({ board, onBoardUpdate }: BoardViewProps) {
         return {
           ...group,
           tasks: group.tasks.map((task) =>
-            task.id === taskId ? { ...task, ...updates } : task
+            task.id === taskId ? { ...task, ...updates, lastUpdated: new Date() } : task
           ),
         };
       }
@@ -43,7 +43,6 @@ export function BoardView({ board, onBoardUpdate }: BoardViewProps) {
       id: `task-${Date.now()}`,
       name: '',
       status: 'default',
-      priority: 'medium',
       createdAt: new Date(),
     };
 

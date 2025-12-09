@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import { GripVertical, Trash2, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Task, User } from '@/types/board';
+import { Task, User, COLUMNS, Phase } from '@/types/board';
 import { StatusBadge } from './StatusBadge';
-import { PriorityBadge } from './PriorityBadge';
 import { OwnerCell } from './OwnerCell';
 import { DateCell } from './DateCell';
 import { TaskDetailsPanel } from './TaskDetailsPanel';
+import { TextCell } from './cells/TextCell';
+import { NumberCell } from './cells/NumberCell';
+import { BooleanCell } from './cells/BooleanCell';
+import { LinkCell } from './cells/LinkCell';
+import { PeopleCell } from './cells/PeopleCell';
+import { PhaseCell } from './cells/PhaseCell';
 import { mockUsers } from '@/data/mockData';
 
 interface TaskRowProps {
@@ -17,20 +22,81 @@ interface TaskRowProps {
 
 export function TaskRow({ task, onUpdate, onDelete }: TaskRowProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const [taskName, setTaskName] = useState(task.name);
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
 
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTaskName(e.target.value);
-  };
+  const commentCount = task.comments?.length || 0;
 
-  const handleNameBlur = () => {
-    if (taskName !== task.name) {
-      onUpdate({ name: taskName });
+  const renderCell = (column: typeof COLUMNS[number]) => {
+    const value = task[column.field];
+    
+    switch (column.type) {
+      case 'text':
+        return (
+          <TextCell
+            value={value as string}
+            onChange={(val) => onUpdate({ [column.field]: val })}
+          />
+        );
+      case 'number':
+        return (
+          <NumberCell
+            value={value as number}
+            onChange={(val) => onUpdate({ [column.field]: val })}
+          />
+        );
+      case 'date':
+        return (
+          <DateCell
+            date={value as Date}
+            onDateChange={(val) => onUpdate({ [column.field]: val })}
+          />
+        );
+      case 'person':
+        return (
+          <OwnerCell
+            owner={value as User}
+            onOwnerChange={(val) => onUpdate({ [column.field]: val })}
+          />
+        );
+      case 'people':
+        return (
+          <PeopleCell
+            people={value as User[]}
+            onChange={(val) => onUpdate({ [column.field]: val })}
+          />
+        );
+      case 'status':
+        return (
+          <StatusBadge
+            status={task.status}
+            onStatusChange={(val) => onUpdate({ status: val })}
+          />
+        );
+      case 'phase':
+        return (
+          <PhaseCell
+            phase={value as Phase}
+            onPhaseChange={(val) => onUpdate({ [column.field]: val })}
+          />
+        );
+      case 'boolean':
+        return (
+          <BooleanCell
+            value={value as boolean}
+            onChange={(val) => onUpdate({ [column.field]: val })}
+          />
+        );
+      case 'link':
+        return (
+          <LinkCell
+            value={value as string}
+            onChange={(val) => onUpdate({ [column.field]: val })}
+          />
+        );
+      default:
+        return <span className="text-sm text-muted-foreground">-</span>;
     }
   };
-
-  const commentCount = task.comments?.length || 0;
 
   return (
     <>
@@ -43,26 +109,14 @@ export function TaskRow({ task, onUpdate, onDelete }: TaskRowProps) {
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Drag Handle */}
-        <td className="w-8 px-2">
+        <td className="w-8 px-2 sticky left-0 bg-card z-10">
           <div className="opacity-0 group-hover:opacity-100 transition-smooth cursor-grab">
             <GripVertical className="w-4 h-4 text-muted-foreground" />
           </div>
         </td>
 
-        {/* Task Name */}
-        <td className="py-2 px-3">
-          <input
-            type="text"
-            value={taskName}
-            onChange={handleNameChange}
-            onBlur={handleNameBlur}
-            className="w-full bg-transparent border-0 outline-none text-sm font-medium text-foreground focus:ring-0"
-            placeholder="Task name"
-          />
-        </td>
-
-        {/* Updates Button */}
-        <td className="py-2 px-2 w-16">
+        {/* Updates Button - Sticky */}
+        <td className="py-2 px-2 w-10 sticky left-8 bg-card z-10 border-r border-border">
           <button
             onClick={() => setIsDetailsPanelOpen(true)}
             className={cn(
@@ -78,37 +132,15 @@ export function TaskRow({ task, onUpdate, onDelete }: TaskRowProps) {
           </button>
         </td>
 
-        {/* Owner */}
-        <td className="py-2 px-3 w-44">
-          <OwnerCell
-            owner={task.owner}
-            onOwnerChange={(owner) => onUpdate({ owner })}
-          />
-        </td>
-
-        {/* Status */}
-        <td className="py-2 px-3 w-36">
-          <StatusBadge
-            status={task.status}
-            onStatusChange={(status) => onUpdate({ status })}
-          />
-        </td>
-
-        {/* Priority */}
-        <td className="py-2 px-3 w-24">
-          <PriorityBadge
-            priority={task.priority}
-            onPriorityChange={(priority) => onUpdate({ priority })}
-          />
-        </td>
-
-        {/* Due Date */}
-        <td className="py-2 px-3 w-32">
-          <DateCell
-            date={task.dueDate}
-            onDateChange={(dueDate) => onUpdate({ dueDate })}
-          />
-        </td>
+        {/* Dynamic Columns */}
+        {COLUMNS.map((column) => (
+          <td 
+            key={column.id} 
+            className={cn("py-2 px-3", column.width)}
+          >
+            {renderCell(column)}
+          </td>
+        ))}
 
         {/* Actions */}
         <td className="py-2 px-3 w-12">

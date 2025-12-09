@@ -9,6 +9,42 @@ export interface User {
   color: string;
 }
 
+export interface Comment {
+  id: string;
+  userId: string;
+  user: User;
+  content: string;
+  createdAt: Date;
+  attachments?: TaskFile[];
+  mentions?: string[];
+  reactions?: { emoji: string; userIds: string[] }[];
+}
+
+export interface TaskFile {
+  id: string;
+  name: string;
+  url: string;
+  type: 'image' | 'document' | 'video' | 'other';
+  size: number;
+  uploadedBy: User;
+  uploadedAt: Date;
+}
+
+export interface ActivityItem {
+  id: string;
+  type: 'created' | 'status_change' | 'priority_change' | 'owner_change' | 'due_date_change' | 'name_change' | 'comment' | 'file_upload';
+  userId: string;
+  user: User;
+  timestamp: Date;
+  details: {
+    field?: string;
+    oldValue?: string;
+    newValue?: string;
+    fileName?: string;
+    commentPreview?: string;
+  };
+}
+
 export interface Task {
   id: string;
   name: string;
@@ -17,6 +53,9 @@ export interface Task {
   owner?: User;
   dueDate?: Date;
   createdAt: Date;
+  comments?: Comment[];
+  files?: TaskFile[];
+  activity?: ActivityItem[];
 }
 
 export interface TaskGroup {

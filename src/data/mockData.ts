@@ -232,6 +232,7 @@ export const mockWorkspaces: Workspace[] = [
     id: 'ws-2',
     name: 'Miami',
     boards: [
+      { id: 'board-mia-hq', name: 'Mia-HQ', groups: [] },
       { id: 'board-mia-1', name: 'Mia-Kickoff', groups: [] },
       { id: 'board-mia-2', name: 'Mia-Client Retakes', groups: [] },
       { id: 'board-mia-3', name: 'Mia-Assets', groups: [] },

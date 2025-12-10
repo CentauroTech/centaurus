@@ -209,7 +209,7 @@ export const mockTaskGroups: TaskGroup[] = [
 export const mockWorkspaces: Workspace[] = [
   {
     id: 'ws-1',
-    name: 'Main Workspace',
+    name: 'Colombia',
     boards: [
       {
         id: 'board-1',
@@ -219,26 +219,56 @@ export const mockWorkspaces: Workspace[] = [
       },
       {
         id: 'board-2',
-        name: 'Client Projects',
-        icon: '📋',
+        name: 'QC Dashboard',
+        icon: '✅',
         groups: [],
       },
       {
         id: 'board-3',
-        name: 'QC Dashboard',
-        icon: '✅',
+        name: 'Talent Management',
+        icon: '🎤',
         groups: [],
       },
     ],
   },
   {
     id: 'ws-2',
-    name: 'Archive',
+    name: 'Miami',
     boards: [
       {
         id: 'board-4',
-        name: 'Completed 2024',
-        icon: '📁',
+        name: 'Active Projects',
+        icon: '📋',
+        groups: [],
+      },
+      {
+        id: 'board-5',
+        name: 'Client Deliveries',
+        icon: '📦',
+        groups: [],
+      },
+      {
+        id: 'board-6',
+        name: 'Studio Schedule',
+        icon: '🗓️',
+        groups: [],
+      },
+    ],
+  },
+  {
+    id: 'ws-3',
+    name: 'Estudios Externos',
+    boards: [
+      {
+        id: 'board-7',
+        name: 'External Projects',
+        icon: '🌐',
+        groups: [],
+      },
+      {
+        id: 'board-8',
+        name: 'Partner Studios',
+        icon: '🤝',
         groups: [],
       },
     ],

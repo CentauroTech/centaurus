@@ -69,38 +69,36 @@ export function TaskGroup({
       {/* Tasks Table */}
       {!isCollapsed && (
         <div className="bg-card rounded-lg border border-border shadow-board overflow-hidden animate-fade-in">
-          <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-max min-w-full">
-              <thead>
-                <tr className="bg-muted/50 border-b border-border">
-                  <th className="w-8 sticky left-0 bg-muted/50 z-10" />
-                  <th className="py-2 px-2 w-10 sticky left-8 bg-muted/50 z-10 border-r border-border" />
-                  {COLUMNS.map((column) => (
-                    <th 
-                      key={column.id}
-                      className={cn(
-                        "py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap",
-                        column.width
-                      )}
-                    >
-                      {column.label}
-                    </th>
-                  ))}
-                  <th className="w-12" />
-                </tr>
-              </thead>
-              <tbody>
-                {group.tasks.map((task) => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    onUpdate={(updates) => onUpdateTask(task.id, updates)}
-                    onDelete={() => onDeleteTask(task.id)}
-                  />
+          <table className="w-full">
+            <thead>
+              <tr className="bg-muted/50 border-b border-border">
+                <th className="w-8 sticky left-0 bg-muted/50 z-10" />
+                <th className="py-2 px-2 w-10 sticky left-8 bg-muted/50 z-10 border-r border-border" />
+                {COLUMNS.map((column) => (
+                  <th 
+                    key={column.id}
+                    className={cn(
+                      "py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap",
+                      column.width
+                    )}
+                  >
+                    {column.label}
+                  </th>
                 ))}
-              </tbody>
-            </table>
-          </div>
+                <th className="w-12" />
+              </tr>
+            </thead>
+            <tbody>
+              {group.tasks.map((task) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  onUpdate={(updates) => onUpdateTask(task.id, updates)}
+                  onDelete={() => onDeleteTask(task.id)}
+                />
+              ))}
+            </tbody>
+          </table>
 
           {/* Add Task Row */}
           <button

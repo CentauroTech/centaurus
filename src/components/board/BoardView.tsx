@@ -85,9 +85,9 @@ export function BoardView({ board, onBoardUpdate }: BoardViewProps) {
   };
 
   return (
-    <div className="flex-1 overflow-auto custom-scrollbar p-6">
+    <div className="flex-1 flex flex-col p-6 overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="gap-2">
             <Filter className="w-4 h-4" />
@@ -109,36 +109,39 @@ export function BoardView({ board, onBoardUpdate }: BoardViewProps) {
         </Button>
       </div>
 
-      {/* Task Groups */}
-      <div className="space-y-6">
-        {board.groups.map((group) => (
-          <TaskGroup
-            key={group.id}
-            group={group}
-            onUpdateTask={(taskId, updates) => updateTask(group.id, taskId, updates)}
-            onDeleteTask={(taskId) => deleteTask(group.id, taskId)}
-            onAddTask={() => addTask(group.id)}
-            onUpdateGroup={(updates) => updateGroup(group.id, updates)}
-          />
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {board.groups.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-            <Plus className="w-8 h-8 text-primary" />
-          </div>
-          <h3 className="font-display font-semibold text-lg mb-2">No groups yet</h3>
-          <p className="text-muted-foreground mb-4">
-            Create your first group to start organizing tasks
-          </p>
-          <Button onClick={addGroup} className="gap-2">
-            <Plus className="w-4 h-4" />
-            Add Group
-          </Button>
+      {/* Scrollable Board Area */}
+      <div className="flex-1 overflow-auto custom-scrollbar">
+        {/* Task Groups */}
+        <div className="space-y-6 min-w-max">
+          {board.groups.map((group) => (
+            <TaskGroup
+              key={group.id}
+              group={group}
+              onUpdateTask={(taskId, updates) => updateTask(group.id, taskId, updates)}
+              onDeleteTask={(taskId) => deleteTask(group.id, taskId)}
+              onAddTask={() => addTask(group.id)}
+              onUpdateGroup={(updates) => updateGroup(group.id, updates)}
+            />
+          ))}
         </div>
-      )}
+
+        {/* Empty State */}
+        {board.groups.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+              <Plus className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="font-display font-semibold text-lg mb-2">No groups yet</h3>
+            <p className="text-muted-foreground mb-4">
+              Create your first group to start organizing tasks
+            </p>
+            <Button onClick={addGroup} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Add Group
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

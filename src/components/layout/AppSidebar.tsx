@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Home, Search, Plus, Settings, HelpCircle, LayoutGrid } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Workspace, Board } from '@/types/board';
+import { WorkspaceWithBoards } from '@/hooks/useWorkspaces';
 
 interface AppSidebarProps {
-  workspaces: Workspace[];
+  workspaces: WorkspaceWithBoards[];
   selectedBoardId: string | null;
   onSelectBoard: (boardId: string) => void;
 }
 
 export function AppSidebar({ workspaces, selectedBoardId, onSelectBoard }: AppSidebarProps) {
-  const [expandedWorkspaces, setExpandedWorkspaces] = useState<string[]>(['ws-1']);
+  const [expandedWorkspaces, setExpandedWorkspaces] = useState<string[]>(() => 
+    workspaces.length > 0 ? [workspaces[0].id] : []
+  );
 
   const toggleWorkspace = (workspaceId: string) => {
     setExpandedWorkspaces((prev) =>
@@ -108,7 +110,7 @@ function WorkspaceItem({
   selectedBoardId,
   onSelectBoard,
 }: {
-  workspace: Workspace;
+  workspace: WorkspaceWithBoards;
   isExpanded: boolean;
   onToggle: () => void;
   selectedBoardId: string | null;
@@ -138,11 +140,14 @@ function WorkspaceItem({
                 "w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-smooth",
                 selectedBoardId === board.id
                   ? "bg-sidebar-active text-white"
-                  : "text-white/70 hover:bg-sidebar-hover hover:text-white"
+                  : "text-white/70 hover:bg-sidebar-hover hover:text-white",
+                board.is_hq && "font-semibold"
               )}
             >
-              <span>{board.icon}</span>
               <span className="truncate">{board.name}</span>
+              {board.is_hq && (
+                <span className="ml-auto text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">HQ</span>
+              )}
             </button>
           ))}
         </div>

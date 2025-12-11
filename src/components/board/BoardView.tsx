@@ -1,68 +1,58 @@
-import { useState } from 'react';
 import { Plus, Filter, Users, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Board, TaskGroup as TaskGroupType, Task } from '@/types/board';
 import { TaskGroup } from './TaskGroup';
+import { 
+  useAddTaskGroup, 
+  useUpdateTaskGroup, 
+  useAddTask, 
+  useUpdateTask, 
+  useDeleteTask 
+} from '@/hooks/useWorkspaces';
 
-interface BoardViewProps {
-  board: Board;
-  onBoardUpdate: (board: Board) => void;
+interface BoardGroup {
+  id: string;
+  board_id: string;
+  name: string;
+  color: string;
+  is_collapsed: boolean;
+  sort_order: number;
+  tasks: any[];
 }
 
-export function BoardView({ board, onBoardUpdate }: BoardViewProps) {
-  const updateTask = (groupId: string, taskId: string, updates: Partial<Task>) => {
-    const updatedGroups = board.groups.map((group) => {
-      if (group.id === groupId) {
-        return {
-          ...group,
-          tasks: group.tasks.map((task) =>
-            task.id === taskId ? { ...task, ...updates, lastUpdated: new Date() } : task
-          ),
-        };
-      }
-      return group;
-    });
-    onBoardUpdate({ ...board, groups: updatedGroups });
+interface BoardData {
+  id: string;
+  workspace_id: string;
+  name: string;
+  is_hq: boolean;
+  groups: BoardGroup[];
+}
+
+interface BoardViewProps {
+  board: BoardData;
+  boardId: string;
+}
+
+export function BoardView({ board, boardId }: BoardViewProps) {
+  const addTaskGroupMutation = useAddTaskGroup(boardId);
+  const updateTaskGroupMutation = useUpdateTaskGroup(boardId);
+  const addTaskMutation = useAddTask(boardId);
+  const updateTaskMutation = useUpdateTask(boardId);
+  const deleteTaskMutation = useDeleteTask(boardId);
+
+  const updateTask = (taskId: string, updates: Record<string, any>) => {
+    updateTaskMutation.mutate({ taskId, updates });
   };
 
-  const deleteTask = (groupId: string, taskId: string) => {
-    const updatedGroups = board.groups.map((group) => {
-      if (group.id === groupId) {
-        return {
-          ...group,
-          tasks: group.tasks.filter((task) => task.id !== taskId),
-        };
-      }
-      return group;
-    });
-    onBoardUpdate({ ...board, groups: updatedGroups });
+  const deleteTask = (taskId: string) => {
+    deleteTaskMutation.mutate(taskId);
   };
 
   const addTask = (groupId: string) => {
-    const newTask: Task = {
-      id: `task-${Date.now()}`,
-      name: '',
-      status: 'default',
-      createdAt: new Date(),
-    };
-
-    const updatedGroups = board.groups.map((group) => {
-      if (group.id === groupId) {
-        return {
-          ...group,
-          tasks: [...group.tasks, newTask],
-        };
-      }
-      return group;
-    });
-    onBoardUpdate({ ...board, groups: updatedGroups });
+    addTaskMutation.mutate({ group_id: groupId });
   };
 
-  const updateGroup = (groupId: string, updates: Partial<TaskGroupType>) => {
-    const updatedGroups = board.groups.map((group) =>
-      group.id === groupId ? { ...group, ...updates } : group
-    );
-    onBoardUpdate({ ...board, groups: updatedGroups });
+  const updateGroup = (groupId: string, updates: Partial<{ name: string; color: string; is_collapsed: boolean }>) => {
+    updateTaskGroupMutation.mutate({ groupId, updates });
   };
 
   const addGroup = () => {
@@ -74,14 +64,10 @@ export function BoardView({ board, onBoardUpdate }: BoardViewProps) {
       'hsl(0, 72%, 51%)',
     ];
     
-    const newGroup: TaskGroupType = {
-      id: `group-${Date.now()}`,
+    addTaskGroupMutation.mutate({
       name: 'New Group',
       color: colors[board.groups.length % colors.length],
-      tasks: [],
-    };
-
-    onBoardUpdate({ ...board, groups: [...board.groups, newGroup] });
+    });
   };
 
   return (
@@ -103,7 +89,7 @@ export function BoardView({ board, onBoardUpdate }: BoardViewProps) {
           </Button>
         </div>
 
-        <Button onClick={addGroup} size="sm" className="gap-2">
+        <Button onClick={addGroup} size="sm" className="gap-2" disabled={addTaskGroupMutation.isPending}>
           <Plus className="w-4 h-4" />
           New Group
         </Button>
@@ -116,11 +102,95 @@ export function BoardView({ board, onBoardUpdate }: BoardViewProps) {
           {board.groups.map((group) => (
             <TaskGroup
               key={group.id}
-              group={group}
-              onUpdateTask={(taskId, updates) => updateTask(group.id, taskId, updates)}
-              onDeleteTask={(taskId) => deleteTask(group.id, taskId)}
+              group={{
+                id: group.id,
+                name: group.name,
+                color: group.color,
+                isCollapsed: group.is_collapsed,
+                tasks: group.tasks.map((t) => ({
+                  id: t.id,
+                  name: t.name,
+                  status: t.status,
+                  dateAssigned: t.date_assigned ? new Date(t.date_assigned) : undefined,
+                  branch: t.branch,
+                  projectManager: undefined, // TODO: fetch team member
+                  clientName: t.client_name,
+                  entregaMiamiStart: t.entrega_miami_start ? new Date(t.entrega_miami_start) : undefined,
+                  entregaMiamiEnd: t.entrega_miami_end ? new Date(t.entrega_miami_end) : undefined,
+                  entregaMixRetakes: t.entrega_mix_retakes ? new Date(t.entrega_mix_retakes) : undefined,
+                  entregaCliente: t.entrega_cliente ? new Date(t.entrega_cliente) : undefined,
+                  entregaSesiones: t.entrega_sesiones ? new Date(t.entrega_sesiones) : undefined,
+                  cantidadEpisodios: t.cantidad_episodios,
+                  lockedRuntime: t.locked_runtime,
+                  finalRuntime: t.final_runtime,
+                  servicios: t.servicios,
+                  entregaFinalDubAudio: t.entrega_final_dub_audio ? new Date(t.entrega_final_dub_audio) : undefined,
+                  entregaFinalScript: t.entrega_final_script ? new Date(t.entrega_final_script) : undefined,
+                  pruebaDeVoz: t.prueba_de_voz,
+                  aorNeeded: t.aor_needed,
+                  formato: t.formato,
+                  lenguajeOriginal: t.lenguaje_original,
+                  rates: t.rates,
+                  showGuide: t.show_guide,
+                  tituloAprobadoEspanol: t.titulo_aprobado_espanol,
+                  workOrderNumber: t.work_order_number,
+                  fase: t.fase,
+                  lastUpdated: t.last_updated ? new Date(t.last_updated) : undefined,
+                  dontUseStart: t.dont_use_start ? new Date(t.dont_use_start) : undefined,
+                  dontUseEnd: t.dont_use_end ? new Date(t.dont_use_end) : undefined,
+                  aorComplete: t.aor_complete,
+                  studio: t.studio,
+                  dateDelivered: t.date_delivered ? new Date(t.date_delivered) : undefined,
+                  hq: t.hq,
+                  phaseDueDate: t.phase_due_date ? new Date(t.phase_due_date) : undefined,
+                  linkToColHQ: t.link_to_col_hq,
+                  rateInfo: t.rate_info,
+                  createdAt: new Date(t.created_at),
+                })),
+              }}
+              onUpdateTask={(taskId, updates) => {
+                // Convert camelCase to snake_case for database
+                const dbUpdates: Record<string, any> = {};
+                if (updates.name !== undefined) dbUpdates.name = updates.name;
+                if (updates.status !== undefined) dbUpdates.status = updates.status;
+                if (updates.dateAssigned !== undefined) dbUpdates.date_assigned = updates.dateAssigned;
+                if (updates.branch !== undefined) dbUpdates.branch = updates.branch;
+                if (updates.clientName !== undefined) dbUpdates.client_name = updates.clientName;
+                if (updates.entregaMiamiStart !== undefined) dbUpdates.entrega_miami_start = updates.entregaMiamiStart;
+                if (updates.entregaMiamiEnd !== undefined) dbUpdates.entrega_miami_end = updates.entregaMiamiEnd;
+                if (updates.entregaMixRetakes !== undefined) dbUpdates.entrega_mix_retakes = updates.entregaMixRetakes;
+                if (updates.entregaCliente !== undefined) dbUpdates.entrega_cliente = updates.entregaCliente;
+                if (updates.entregaSesiones !== undefined) dbUpdates.entrega_sesiones = updates.entregaSesiones;
+                if (updates.cantidadEpisodios !== undefined) dbUpdates.cantidad_episodios = updates.cantidadEpisodios;
+                if (updates.lockedRuntime !== undefined) dbUpdates.locked_runtime = updates.lockedRuntime;
+                if (updates.finalRuntime !== undefined) dbUpdates.final_runtime = updates.finalRuntime;
+                if (updates.servicios !== undefined) dbUpdates.servicios = updates.servicios;
+                if (updates.pruebaDeVoz !== undefined) dbUpdates.prueba_de_voz = updates.pruebaDeVoz;
+                if (updates.aorNeeded !== undefined) dbUpdates.aor_needed = updates.aorNeeded;
+                if (updates.formato !== undefined) dbUpdates.formato = updates.formato;
+                if (updates.lenguajeOriginal !== undefined) dbUpdates.lenguaje_original = updates.lenguajeOriginal;
+                if (updates.rates !== undefined) dbUpdates.rates = updates.rates;
+                if (updates.showGuide !== undefined) dbUpdates.show_guide = updates.showGuide;
+                if (updates.tituloAprobadoEspanol !== undefined) dbUpdates.titulo_aprobado_espanol = updates.tituloAprobadoEspanol;
+                if (updates.workOrderNumber !== undefined) dbUpdates.work_order_number = updates.workOrderNumber;
+                if (updates.fase !== undefined) dbUpdates.fase = updates.fase;
+                if (updates.aorComplete !== undefined) dbUpdates.aor_complete = updates.aorComplete;
+                if (updates.studio !== undefined) dbUpdates.studio = updates.studio;
+                if (updates.hq !== undefined) dbUpdates.hq = updates.hq;
+                if (updates.linkToColHQ !== undefined) dbUpdates.link_to_col_hq = updates.linkToColHQ;
+                if (updates.rateInfo !== undefined) dbUpdates.rate_info = updates.rateInfo;
+                
+                updateTask(taskId, dbUpdates);
+              }}
+              onDeleteTask={deleteTask}
               onAddTask={() => addTask(group.id)}
-              onUpdateGroup={(updates) => updateGroup(group.id, updates)}
+              onUpdateGroup={(updates) => {
+                const dbUpdates: Partial<{ name: string; color: string; is_collapsed: boolean }> = {};
+                if (updates.name !== undefined) dbUpdates.name = updates.name;
+                if (updates.color !== undefined) dbUpdates.color = updates.color;
+                if (updates.isCollapsed !== undefined) dbUpdates.is_collapsed = updates.isCollapsed;
+                updateGroup(group.id, dbUpdates);
+              }}
             />
           ))}
         </div>

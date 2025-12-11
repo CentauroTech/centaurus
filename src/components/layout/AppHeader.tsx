@@ -1,19 +1,17 @@
-import { Bell, Search, Plus, ChevronDown } from 'lucide-react';
+import { Bell, Search, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 interface AppHeaderProps {
   boardName: string;
-  boardIcon?: string;
 }
 
-export function AppHeader({ boardName, boardIcon }: AppHeaderProps) {
+export function AppHeader({ boardName }: AppHeaderProps) {
   return (
     <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4">
       {/* Left: Board Title */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          {boardIcon && <span className="text-xl">{boardIcon}</span>}
           <h1 className="font-display font-semibold text-lg text-foreground">
             {boardName}
           </h1>

@@ -3,7 +3,6 @@ import { ChevronDown, ChevronRight, Plus, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TaskGroup as TaskGroupType, Task, COLUMNS } from '@/types/board';
 import { TaskRow } from './TaskRow';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 interface TaskGroupProps {
   group: TaskGroupType;
@@ -73,7 +72,6 @@ export function TaskGroup({
             <thead>
               <tr className="bg-muted/50 border-b border-border">
                 <th className="w-8 sticky left-0 bg-muted/50 z-10" />
-                <th className="py-2 px-2 w-10 sticky left-8 bg-muted/50 z-10 border-r border-border" />
                 {COLUMNS.map((column) => (
                   <th 
                     key={column.id}

@@ -29,6 +29,31 @@ export function TaskRow({ task, onUpdate, onDelete }: TaskRowProps) {
   const renderCell = (column: typeof COLUMNS[number]) => {
     const value = task[column.field];
     
+    // Special handling for Name column - add the updates button after
+    if (column.field === 'name') {
+      return (
+        <div className="flex items-center gap-2">
+          <TextCell
+            value={value as string}
+            onChange={(val) => onUpdate({ [column.field]: val })}
+          />
+          <button
+            onClick={() => setIsDetailsPanelOpen(true)}
+            className={cn(
+              "flex-shrink-0 flex items-center justify-center gap-1 p-1.5 rounded hover:bg-accent transition-smooth",
+              commentCount > 0 ? "text-primary" : "text-muted-foreground opacity-0 group-hover:opacity-100"
+            )}
+            title="Open updates"
+          >
+            <MessageSquare className="w-4 h-4" />
+            {commentCount > 0 && (
+              <span className="text-xs font-medium">{commentCount}</span>
+            )}
+          </button>
+        </div>
+      );
+    }
+    
     switch (column.type) {
       case 'text':
         return (
@@ -113,23 +138,6 @@ export function TaskRow({ task, onUpdate, onDelete }: TaskRowProps) {
           <div className="opacity-0 group-hover:opacity-100 transition-smooth cursor-grab">
             <GripVertical className="w-4 h-4 text-muted-foreground" />
           </div>
-        </td>
-
-        {/* Updates Button - Sticky */}
-        <td className="py-2 px-2 w-10 sticky left-8 bg-card z-10 border-r border-border">
-          <button
-            onClick={() => setIsDetailsPanelOpen(true)}
-            className={cn(
-              "flex items-center justify-center gap-1 p-1.5 rounded hover:bg-accent transition-smooth",
-              commentCount > 0 ? "text-primary" : "text-muted-foreground"
-            )}
-            title="Open updates"
-          >
-            <MessageSquare className="w-4 h-4" />
-            {commentCount > 0 && (
-              <span className="text-xs font-medium">{commentCount}</span>
-            )}
-          </button>
         </td>
 
         {/* Dynamic Columns */}

@@ -41,7 +41,7 @@ export function TaskRow({ task, onUpdate, onDelete }: TaskRowProps) {
             onClick={() => setIsDetailsPanelOpen(true)}
             className={cn(
               "flex-shrink-0 flex items-center justify-center gap-1 p-1.5 rounded hover:bg-accent transition-smooth",
-              commentCount > 0 ? "text-primary" : "text-muted-foreground opacity-0 group-hover:opacity-100"
+              commentCount > 0 ? "text-primary" : "text-muted-foreground"
             )}
             title="Open updates"
           >

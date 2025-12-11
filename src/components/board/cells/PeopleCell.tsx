@@ -57,7 +57,7 @@ export function PeopleCell({ people = [], onChange }: PeopleCellProps) {
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-2" align="start">
+      <PopoverContent className="w-56 p-2 z-[100]" align="start">
         <div className="space-y-1">
           {mockUsers.map((user) => {
             const isSelected = people.some(p => p.id === user.id);

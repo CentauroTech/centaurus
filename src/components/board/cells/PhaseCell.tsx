@@ -26,7 +26,7 @@ export function PhaseCell({ phase, onPhaseChange }: PhaseCellProps) {
           {config?.label || 'Select phase'}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-44 p-1" align="start">
+      <PopoverContent className="w-44 p-1 z-[100]" align="start">
         <div className="space-y-0.5">
           {(Object.keys(PHASE_CONFIG) as Phase[]).map((p) => (
             <button

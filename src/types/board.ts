@@ -141,18 +141,26 @@ export const PHASE_CONFIG: Record<Phase, { label: string; className: string }> =
 export interface ColumnConfig {
   id: string;
   label: string;
-  type: 'text' | 'date' | 'person' | 'status' | 'phase' | 'number' | 'boolean' | 'link' | 'people';
+  type: 'text' | 'date' | 'person' | 'status' | 'phase' | 'number' | 'boolean' | 'link' | 'people' | 'combobox' | 'dropdown' | 'file' | 'auto';
   width: string;
   field: keyof Task;
+  options?: string[];
 }
+
+// Dropdown options for various fields
+export const BRANCH_OPTIONS = ['Miami', 'Colombia', 'Mexico', 'Argentina', 'Spain'];
+export const CLIENT_OPTIONS = ['Netflix', 'Amazon', 'Disney+', 'HBO Max', 'Apple TV+', 'Paramount+'];
+export const SERVICIOS_OPTIONS = ['Dubbing', 'Subtitling', 'Voice Over', 'Audio Description', 'Localization'];
+export const FORMATO_OPTIONS = ['Feature Film', 'Series', 'Documentary', 'Short Film', 'Animation'];
+export const LENGUAJE_OPTIONS = ['English', 'Spanish', 'Portuguese', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Mandarin'];
 
 export const COLUMNS: ColumnConfig[] = [
   { id: 'name', label: 'Name', type: 'text', width: 'w-64', field: 'name' },
   { id: 'status', label: 'Status', type: 'status', width: 'w-32', field: 'status' },
   { id: 'dateAssigned', label: 'Fecha Asignada', type: 'date', width: 'w-28', field: 'dateAssigned' },
-  { id: 'branch', label: 'Sede/Branch', type: 'text', width: 'w-28', field: 'branch' },
+  { id: 'branch', label: 'Sede/Branch', type: 'dropdown', width: 'w-28', field: 'branch', options: BRANCH_OPTIONS },
   { id: 'projectManager', label: 'Project Manager', type: 'person', width: 'w-36', field: 'projectManager' },
-  { id: 'clientName', label: 'Nombre Cliente', type: 'text', width: 'w-36', field: 'clientName' },
+  { id: 'clientName', label: 'Nombre Cliente', type: 'combobox', width: 'w-36', field: 'clientName', options: CLIENT_OPTIONS },
   { id: 'entregaMiamiStart', label: 'Entrega Miami - Start', type: 'date', width: 'w-32', field: 'entregaMiamiStart' },
   { id: 'entregaMiamiEnd', label: 'Entrega Miami - End', type: 'date', width: 'w-32', field: 'entregaMiamiEnd' },
   { id: 'entregaMixRetakes', label: 'Entrega Mix Retakes', type: 'date', width: 'w-32', field: 'entregaMixRetakes' },
@@ -161,21 +169,19 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'cantidadEpisodios', label: 'Cantidad Episodios', type: 'number', width: 'w-24', field: 'cantidadEpisodios' },
   { id: 'lockedRuntime', label: 'Locked Runtime', type: 'text', width: 'w-28', field: 'lockedRuntime' },
   { id: 'finalRuntime', label: 'Final Runtime', type: 'text', width: 'w-28', field: 'finalRuntime' },
-  { id: 'servicios', label: 'Servicios', type: 'text', width: 'w-36', field: 'servicios' },
+  { id: 'servicios', label: 'Servicios', type: 'combobox', width: 'w-36', field: 'servicios', options: SERVICIOS_OPTIONS },
   { id: 'entregaFinalDubAudio', label: 'Entrega Final - Dub Audio', type: 'date', width: 'w-36', field: 'entregaFinalDubAudio' },
   { id: 'entregaFinalScript', label: 'Entrega Final - Script', type: 'date', width: 'w-36', field: 'entregaFinalScript' },
   { id: 'pruebaDeVoz', label: 'Prueba de Voz?', type: 'boolean', width: 'w-24', field: 'pruebaDeVoz' },
   { id: 'aorNeeded', label: 'AOR Needed', type: 'boolean', width: 'w-24', field: 'aorNeeded' },
-  { id: 'formato', label: 'Formato', type: 'text', width: 'w-28', field: 'formato' },
-  { id: 'lenguajeOriginal', label: 'Lenguaje Original', type: 'text', width: 'w-32', field: 'lenguajeOriginal' },
+  { id: 'formato', label: 'Formato', type: 'combobox', width: 'w-32', field: 'formato', options: FORMATO_OPTIONS },
+  { id: 'lenguajeOriginal', label: 'Lenguaje Original', type: 'combobox', width: 'w-32', field: 'lenguajeOriginal', options: LENGUAJE_OPTIONS },
   { id: 'rates', label: 'Rates', type: 'number', width: 'w-24', field: 'rates' },
-  { id: 'showGuide', label: 'ShowGuide', type: 'link', width: 'w-28', field: 'showGuide' },
-  { id: 'tituloAprobadoEspanol', label: 'Titulo Aprobado Español', type: 'text', width: 'w-44', field: 'tituloAprobadoEspanol' },
-  { id: 'workOrderNumber', label: 'Work Order #', type: 'text', width: 'w-28', field: 'workOrderNumber' },
+  { id: 'showGuide', label: 'ShowGuide', type: 'file', width: 'w-32', field: 'showGuide' },
+  { id: 'tituloAprobadoEspanol', label: 'Titulo Aprobado Español', type: 'combobox', width: 'w-44', field: 'tituloAprobadoEspanol', options: [] },
+  { id: 'workOrderNumber', label: 'Work Order #', type: 'auto', width: 'w-28', field: 'workOrderNumber' },
   { id: 'fase', label: 'Fase', type: 'phase', width: 'w-32', field: 'fase' },
   { id: 'lastUpdated', label: 'Last Updated', type: 'date', width: 'w-28', field: 'lastUpdated' },
-  { id: 'dontUseStart', label: "Don't Use - Start", type: 'date', width: 'w-28', field: 'dontUseStart' },
-  { id: 'dontUseEnd', label: "Don't Use - End", type: 'date', width: 'w-28', field: 'dontUseEnd' },
   { id: 'aorComplete', label: 'AOR Complete', type: 'boolean', width: 'w-24', field: 'aorComplete' },
   { id: 'director', label: 'Director', type: 'person', width: 'w-36', field: 'director' },
   { id: 'studio', label: 'Studio', type: 'text', width: 'w-28', field: 'studio' },

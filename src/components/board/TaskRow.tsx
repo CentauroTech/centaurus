@@ -12,6 +12,9 @@ import { BooleanCell } from './cells/BooleanCell';
 import { LinkCell } from './cells/LinkCell';
 import { PeopleCell } from './cells/PeopleCell';
 import { PhaseCell } from './cells/PhaseCell';
+import { ComboboxCell } from './cells/ComboboxCell';
+import { DropdownCell } from './cells/DropdownCell';
+import { FileUploadCell } from './cells/FileUploadCell';
 import { mockUsers } from '@/data/mockData';
 
 interface TaskRowProps {
@@ -117,6 +120,39 @@ export function TaskRow({ task, onUpdate, onDelete }: TaskRowProps) {
             value={value as string}
             onChange={(val) => onUpdate({ [column.field]: val })}
           />
+        );
+      case 'combobox':
+        return (
+          <ComboboxCell
+            value={value as string}
+            onChange={(val) => onUpdate({ [column.field]: val })}
+            options={column.options || []}
+            placeholder="Select..."
+          />
+        );
+      case 'dropdown':
+        return (
+          <DropdownCell
+            value={value as string}
+            onChange={(val) => onUpdate({ [column.field]: val })}
+            options={column.options || []}
+            placeholder="Select..."
+          />
+        );
+      case 'file':
+        return (
+          <FileUploadCell
+            value={value as string}
+            onChange={(val) => onUpdate({ [column.field]: val })}
+            placeholder="Upload"
+          />
+        );
+      case 'auto':
+        // Auto-generated field - display as read-only
+        return (
+          <span className="text-sm text-muted-foreground font-mono">
+            {value as string || '-'}
+          </span>
         );
       default:
         return <span className="text-sm text-muted-foreground">-</span>;

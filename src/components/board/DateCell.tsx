@@ -1,7 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { format, isToday, isTomorrow, isPast, isValid, parseISO } from 'date-fns';
-import { Calendar } from 'lucide-react';
+import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 interface DateCellProps {
   date?: Date | string;
@@ -9,7 +11,7 @@ interface DateCellProps {
 }
 
 export function DateCell({ date, onDateChange }: DateCellProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [open, setOpen] = useState(false);
 
   // Handle both Date objects and string dates
   const dateObj = typeof date === 'string' ? parseISO(date) : date;
@@ -23,42 +25,33 @@ export function DateCell({ date, onDateChange }: DateCellProps) {
 
   const isOverdue = isValidDate && isPast(dateObj) && !isToday(dateObj);
 
-  const handleClick = () => {
-    inputRef.current?.showPicker();
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (value) {
-      // Create date at noon to avoid timezone issues
-      const [year, month, day] = value.split('-').map(Number);
-      const newDate = new Date(year, month - 1, day, 12, 0, 0);
-      onDateChange(newDate);
-    } else {
-      onDateChange(undefined);
-    }
+  const handleSelect = (selectedDate: Date | undefined) => {
+    onDateChange(selectedDate);
+    setOpen(false);
   };
 
   return (
-    <div className="relative">
-      <input
-        ref={inputRef}
-        type="date"
-        value={isValidDate ? format(dateObj, 'yyyy-MM-dd') : ''}
-        onChange={handleChange}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-      />
-      <button
-        onClick={handleClick}
-        className={cn(
-          "flex items-center gap-2 px-2 py-1 rounded text-sm transition-smooth hover:bg-muted w-full",
-          isValidDate ? "text-foreground" : "text-muted-foreground",
-          isOverdue && "text-destructive"
-        )}
-      >
-        <Calendar className="w-4 h-4 flex-shrink-0" />
-        <span className="truncate">{isValidDate ? formatDateDisplay(dateObj) : 'No date'}</span>
-      </button>
-    </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          className={cn(
+            "flex items-center gap-2 px-2 py-1 rounded text-sm transition-smooth hover:bg-muted w-full",
+            isValidDate ? "text-foreground" : "text-muted-foreground",
+            isOverdue && "text-destructive"
+          )}
+        >
+          <CalendarIcon className="w-4 h-4 flex-shrink-0" />
+          <span className="truncate">{isValidDate ? formatDateDisplay(dateObj) : 'No date'}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0 z-[100]" align="start">
+        <Calendar
+          mode="single"
+          selected={isValidDate ? dateObj : undefined}
+          onSelect={handleSelect}
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
   );
 }

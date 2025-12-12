@@ -141,7 +141,7 @@ export const PHASE_CONFIG: Record<Phase, { label: string; className: string }> =
 export interface ColumnConfig {
   id: string;
   label: string;
-  type: 'text' | 'date' | 'person' | 'status' | 'phase' | 'number' | 'boolean' | 'link' | 'people' | 'combobox' | 'dropdown' | 'file' | 'auto';
+  type: 'text' | 'date' | 'person' | 'status' | 'phase' | 'number' | 'boolean' | 'link' | 'people' | 'combobox' | 'dropdown' | 'file' | 'auto' | 'last-updated';
   width: string;
   field: keyof Task;
   options?: string[];
@@ -181,7 +181,7 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'tituloAprobadoEspanol', label: 'Titulo Aprobado Español', type: 'combobox', width: 'w-44', field: 'tituloAprobadoEspanol', options: [] },
   { id: 'workOrderNumber', label: 'Work Order #', type: 'auto', width: 'w-28', field: 'workOrderNumber' },
   { id: 'fase', label: 'Fase', type: 'phase', width: 'w-32', field: 'fase' },
-  { id: 'lastUpdated', label: 'Last Updated', type: 'date', width: 'w-28', field: 'lastUpdated' },
+  { id: 'lastUpdated', label: 'Last Updated', type: 'last-updated', width: 'w-32', field: 'lastUpdated' },
   { id: 'aorComplete', label: 'AOR Complete', type: 'boolean', width: 'w-24', field: 'aorComplete' },
   { id: 'director', label: 'Director', type: 'person', width: 'w-36', field: 'director' },
   { id: 'studio', label: 'Studio', type: 'text', width: 'w-28', field: 'studio' },

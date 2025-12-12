@@ -63,6 +63,21 @@ export function useBoard(boardId: string | null) {
       if (boardError) throw boardError;
       if (!board) return null;
 
+      // Fetch team members to map person fields
+      const { data: teamMembers, error: teamError } = await supabase
+        .from('team_members')
+        .select('*');
+      
+      if (teamError) throw teamError;
+
+      const teamMemberMap = new Map(teamMembers?.map(m => [m.id, {
+        id: m.id,
+        name: m.name,
+        initials: m.initials,
+        color: m.color,
+        email: m.email,
+      }]) || []);
+
       const { data: groups, error: groupsError } = await supabase
         .from('task_groups')
         .select('*')
@@ -87,6 +102,7 @@ export function useBoard(boardId: string | null) {
 
       return {
         ...board,
+        teamMemberMap,
         groups: groups.map((g) => ({
           ...g,
           tasks: tasks.filter((t) => t.group_id === g.id),
@@ -158,9 +174,19 @@ export function useAddTask(boardId: string) {
 
   return useMutation({
     mutationFn: async (task: { group_id: string; name?: string }) => {
+      // Generate a work order number: WO-YYYYMMDD-XXXX
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+      const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const workOrderNumber = `WO-${dateStr}-${randomPart}`;
+
       const { data, error } = await supabase
         .from('tasks')
-        .insert({ group_id: task.group_id, name: task.name || '' })
+        .insert({ 
+          group_id: task.group_id, 
+          name: task.name || '',
+          work_order_number: workOrderNumber,
+        })
         .select()
         .single();
 

@@ -15,6 +15,7 @@ import { PhaseCell } from './cells/PhaseCell';
 import { ComboboxCell } from './cells/ComboboxCell';
 import { DropdownCell } from './cells/DropdownCell';
 import { FileUploadCell } from './cells/FileUploadCell';
+import { LastUpdatedCell } from './cells/LastUpdatedCell';
 import { mockUsers } from '@/data/mockData';
 
 interface TaskRowProps {
@@ -153,6 +154,10 @@ export function TaskRow({ task, onUpdate, onDelete }: TaskRowProps) {
           <span className="text-sm text-muted-foreground font-mono">
             {value as string || '-'}
           </span>
+        );
+      case 'last-updated':
+        return (
+          <LastUpdatedCell date={value as Date} />
         );
       default:
         return <span className="text-sm text-muted-foreground">-</span>;

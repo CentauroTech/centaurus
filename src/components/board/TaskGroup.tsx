@@ -10,6 +10,7 @@ interface TaskGroupProps {
   onDeleteTask: (taskId: string) => void;
   onAddTask: () => void;
   onUpdateGroup: (updates: Partial<TaskGroupType>) => void;
+  boardId?: string;
 }
 
 export function TaskGroup({ 
@@ -17,7 +18,8 @@ export function TaskGroup({
   onUpdateTask, 
   onDeleteTask, 
   onAddTask,
-  onUpdateGroup 
+  onUpdateGroup,
+  boardId
 }: TaskGroupProps) {
   const [isCollapsed, setIsCollapsed] = useState(group.isCollapsed ?? false);
   const [groupName, setGroupName] = useState(group.name);
@@ -93,6 +95,7 @@ export function TaskGroup({
                   task={task}
                   onUpdate={(updates) => onUpdateTask(task.id, updates)}
                   onDelete={() => onDeleteTask(task.id)}
+                  boardId={boardId}
                 />
               ))}
             </tbody>

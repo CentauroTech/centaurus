@@ -8,24 +8,48 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Task, Comment, TaskFile, ActivityItem, User } from '@/types/board';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
+import { useComments, useAddComment } from '@/hooks/useComments';
+import { useTeamMembers } from '@/hooks/useWorkspaces';
+import { toast } from 'sonner';
 
 interface TaskDetailsPanelProps {
   task: Task;
   isOpen: boolean;
   onClose: () => void;
   users: User[];
+  boardId?: string;
 }
 
-export function TaskDetailsPanel({ task, isOpen, onClose, users }: TaskDetailsPanelProps) {
+export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: TaskDetailsPanelProps) {
   const [newComment, setNewComment] = useState('');
   const [showMentions, setShowMentions] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  
+  const { data: comments, isLoading: commentsLoading } = useComments(task.id);
+  const { data: teamMembers } = useTeamMembers();
+  const addCommentMutation = useAddComment(task.id, boardId || '');
 
-  const handleSendComment = () => {
+  const handleSendComment = async () => {
     if (!newComment.trim()) return;
-    // In a real app, this would call an API
-    console.log('Sending comment:', newComment);
-    setNewComment('');
+    
+    // Use the first team member as the current user (in a real app, this would be the logged-in user)
+    const currentUserId = teamMembers?.[0]?.id;
+    
+    if (!currentUserId) {
+      toast.error('No user available to post comment');
+      return;
+    }
+
+    try {
+      await addCommentMutation.mutateAsync({
+        content: newComment.trim(),
+        userId: currentUserId,
+      });
+      setNewComment('');
+      toast.success('Comment added');
+    } catch (error) {
+      toast.error('Failed to add comment');
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -81,9 +105,13 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users }: TaskDetailsPa
           <TabsContent value="updates" className="flex-1 flex flex-col m-0 overflow-hidden">
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
-                {task.comments && task.comments.length > 0 ? (
-                  task.comments.map((comment) => (
-                    <CommentItem key={comment.id} comment={comment} />
+                {commentsLoading ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p className="text-sm">Loading comments...</p>
+                  </div>
+                ) : comments && comments.length > 0 ? (
+                  comments.map((comment) => (
+                    <DatabaseCommentItem key={comment.id} comment={comment} />
                   ))
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
@@ -194,6 +222,31 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users }: TaskDetailsPa
         </Tabs>
       </SheetContent>
     </Sheet>
+  );
+}
+
+function DatabaseCommentItem({ comment }: { comment: { id: string; content: string; created_at: string; user: { id: string; name: string; initials: string; color: string } | null } }) {
+  const user = comment.user || { name: 'Unknown', initials: '?', color: 'hsl(0, 0%, 50%)' };
+  
+  return (
+    <div className="flex gap-3">
+      <Avatar className="h-8 w-8 shrink-0">
+        <AvatarFallback style={{ backgroundColor: user.color }} className="text-xs text-white">
+          {user.initials}
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="font-medium text-sm">{user.name}</span>
+          <span className="text-xs text-muted-foreground">
+            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+          </span>
+        </div>
+        <div className="text-sm text-foreground/90 whitespace-pre-wrap break-words">
+          {comment.content}
+        </div>
+      </div>
+    </div>
   );
 }
 

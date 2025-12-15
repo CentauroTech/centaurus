@@ -226,6 +226,7 @@ export function BoardView({ board, boardId }: BoardViewProps) {
                   if (updates.isCollapsed !== undefined) dbUpdates.is_collapsed = updates.isCollapsed;
                   updateGroup(group.id, dbUpdates);
                 }}
+                boardId={boardId}
               />
             );
           })}

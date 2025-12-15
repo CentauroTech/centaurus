@@ -119,6 +119,7 @@ export function BoardView({ board, boardId }: BoardViewProps) {
                     id: t.id,
                     name: t.name,
                     status: t.status,
+                    currentPhase: t.currentPhase, // Dynamic phase from board name (HQ view)
                     dateAssigned: t.date_assigned ? new Date(t.date_assigned) : undefined,
                     branch: t.branch,
                     projectManager: getTeamMember(t.project_manager_id),

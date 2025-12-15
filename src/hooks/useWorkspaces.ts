@@ -45,6 +45,7 @@ export function useWorkspaces() {
         boards: boards.filter((b) => b.workspace_id === ws.id),
       }));
     },
+    staleTime: 60000, // Cache for 1 minute
   });
 }
 
@@ -239,6 +240,7 @@ export function useBoard(boardId: string | null) {
       };
     },
     enabled: !!boardId,
+    staleTime: 10000, // Cache for 10 seconds
   });
 }
 
@@ -254,6 +256,7 @@ export function useTeamMembers() {
       if (error) throw error;
       return data;
     },
+    staleTime: 120000, // Cache for 2 minutes - team members rarely change
   });
 }
 

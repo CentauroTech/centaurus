@@ -25,7 +25,8 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: Task
   const [showMentions, setShowMentions] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
-  const { data: comments, isLoading: commentsLoading } = useComments(task.id);
+  // Only fetch comments when panel is open
+  const { data: comments, isLoading: commentsLoading } = useComments(task.id, isOpen);
   const { data: teamMembers } = useTeamMembers();
   const addCommentMutation = useAddComment(task.id, boardId || '');
 

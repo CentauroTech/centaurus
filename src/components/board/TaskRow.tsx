@@ -22,9 +22,10 @@ interface TaskRowProps {
   task: Task;
   onUpdate: (updates: Partial<Task>) => void;
   onDelete: () => void;
+  boardId?: string;
 }
 
-export function TaskRow({ task, onUpdate, onDelete }: TaskRowProps) {
+export function TaskRow({ task, onUpdate, onDelete, boardId }: TaskRowProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
 
@@ -214,6 +215,7 @@ export function TaskRow({ task, onUpdate, onDelete }: TaskRowProps) {
         isOpen={isDetailsPanelOpen}
         onClose={() => setIsDetailsPanelOpen(false)}
         users={mockUsers}
+        boardId={boardId}
       />
     </>
   );

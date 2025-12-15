@@ -78,6 +78,57 @@ export function useBoard(boardId: string | null) {
         email: m.email,
       }]) || []);
 
+      // For HQ boards, aggregate tasks from ALL boards in the workspace
+      if (board.is_hq) {
+        // Get all boards in this workspace (except the HQ board itself)
+        const { data: workspaceBoards, error: wbError } = await supabase
+          .from('boards')
+          .select('id, name')
+          .eq('workspace_id', board.workspace_id)
+          .neq('is_hq', true);
+
+        if (wbError) throw wbError;
+
+        const allBoardIds = workspaceBoards?.map(b => b.id) || [];
+        
+        // Get all groups from all boards in the workspace
+        const { data: allGroups, error: allGroupsError } = await supabase
+          .from('task_groups')
+          .select('*, boards!inner(name)')
+          .in('board_id', allBoardIds)
+          .order('sort_order');
+
+        if (allGroupsError) throw allGroupsError;
+
+        const allGroupIds = allGroups?.map(g => g.id) || [];
+        
+        let allTasks: any[] = [];
+        if (allGroupIds.length > 0) {
+          const { data: tasksData, error: tasksError } = await supabase
+            .from('tasks')
+            .select('*')
+            .in('group_id', allGroupIds)
+            .order('sort_order');
+
+          if (tasksError) throw tasksError;
+          allTasks = tasksData || [];
+        }
+
+        // Create a map of board names for display
+        const boardNameMap = new Map(workspaceBoards?.map(b => [b.id, b.name]) || []);
+
+        return {
+          ...board,
+          teamMemberMap,
+          groups: allGroups?.map((g: any) => ({
+            ...g,
+            name: `${g.boards?.name || 'Unknown'} - ${g.name}`,
+            tasks: allTasks.filter((t) => t.group_id === g.id),
+          })) || [],
+        };
+      }
+
+      // Regular board - fetch only its own groups and tasks
       const { data: groups, error: groupsError } = await supabase
         .from('task_groups')
         .select('*')

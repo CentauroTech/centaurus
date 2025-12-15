@@ -16,7 +16,7 @@ export interface CommentWithUser {
   } | null;
 }
 
-export function useComments(taskId: string) {
+export function useComments(taskId: string, enabled: boolean = true) {
   return useQuery({
     queryKey: ['comments', taskId],
     queryFn: async (): Promise<CommentWithUser[]> => {
@@ -37,7 +37,8 @@ export function useComments(taskId: string) {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!taskId,
+    enabled: !!taskId && enabled,
+    staleTime: 30000, // Cache for 30 seconds
   });
 }
 

@@ -108,6 +108,13 @@ export function TaskRow({ task, onUpdate, onDelete }: TaskRowProps) {
             onPhaseChange={(val) => onUpdate({ [column.field]: val })}
           />
         );
+      case 'current-phase':
+        // Read-only phase badge showing current board/phase
+        return (
+          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-primary/10 text-primary">
+            {value as string || '-'}
+          </span>
+        );
       case 'boolean':
         return (
           <BooleanCell

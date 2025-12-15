@@ -74,6 +74,7 @@ export interface Task {
   tituloAprobadoEspanol?: string;
   workOrderNumber?: string;
   fase?: Phase;
+  currentPhase?: string; // Dynamic phase derived from current board (for HQ view)
   lastUpdated?: Date;
   dontUseStart?: Date;
   dontUseEnd?: Date;
@@ -141,7 +142,7 @@ export const PHASE_CONFIG: Record<Phase, { label: string; className: string }> =
 export interface ColumnConfig {
   id: string;
   label: string;
-  type: 'text' | 'date' | 'person' | 'status' | 'phase' | 'number' | 'boolean' | 'link' | 'people' | 'combobox' | 'dropdown' | 'file' | 'auto' | 'last-updated';
+  type: 'text' | 'date' | 'person' | 'status' | 'phase' | 'current-phase' | 'number' | 'boolean' | 'link' | 'people' | 'combobox' | 'dropdown' | 'file' | 'auto' | 'last-updated';
   width: string;
   field: keyof Task;
   options?: string[];
@@ -156,6 +157,7 @@ export const LENGUAJE_OPTIONS = ['English', 'Spanish', 'Portuguese', 'French', '
 
 export const COLUMNS: ColumnConfig[] = [
   { id: 'name', label: 'Name', type: 'text', width: 'w-64', field: 'name' },
+  { id: 'currentPhase', label: 'Phase', type: 'current-phase', width: 'w-28', field: 'currentPhase' },
   { id: 'status', label: 'Status', type: 'status', width: 'w-32', field: 'status' },
   { id: 'dateAssigned', label: 'Fecha Asignada', type: 'date', width: 'w-28', field: 'dateAssigned' },
   { id: 'branch', label: 'Sede/Branch', type: 'dropdown', width: 'w-28', field: 'branch', options: BRANCH_OPTIONS },

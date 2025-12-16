@@ -119,6 +119,7 @@ export function BoardView({ board, boardId }: BoardViewProps) {
                     id: t.id,
                     name: t.name,
                     status: t.status,
+                    isPrivate: t.is_private,
                     currentPhase: t.currentPhase, // Dynamic phase from board name (HQ view)
                     dateAssigned: t.date_assigned ? new Date(t.date_assigned) : undefined,
                     branch: t.branch,
@@ -168,6 +169,7 @@ export function BoardView({ board, boardId }: BoardViewProps) {
                   // Convert camelCase to snake_case for database
                   const dbUpdates: Record<string, any> = {};
                   if (updates.name !== undefined) dbUpdates.name = updates.name;
+                  if (updates.isPrivate !== undefined) dbUpdates.is_private = updates.isPrivate;
                   if (updates.status !== undefined) {
                     dbUpdates.status = updates.status;
                     // Auto-set date_delivered when status is 'done'

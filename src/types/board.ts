@@ -50,6 +50,7 @@ export interface Task {
   id: string;
   name: string;
   status: Status;
+  isPrivate?: boolean;
   dateAssigned?: Date;
   branch?: string;
   projectManager?: User;
@@ -142,7 +143,7 @@ export const PHASE_CONFIG: Record<Phase, { label: string; className: string }> =
 export interface ColumnConfig {
   id: string;
   label: string;
-  type: 'text' | 'date' | 'person' | 'status' | 'phase' | 'current-phase' | 'number' | 'boolean' | 'link' | 'people' | 'combobox' | 'dropdown' | 'file' | 'auto' | 'last-updated';
+  type: 'text' | 'date' | 'person' | 'status' | 'phase' | 'current-phase' | 'number' | 'boolean' | 'link' | 'people' | 'combobox' | 'dropdown' | 'file' | 'auto' | 'last-updated' | 'privacy';
   width: string;
   field: keyof Task;
   options?: string[];
@@ -156,6 +157,7 @@ export const FORMATO_OPTIONS = ['Feature Film', 'Series', 'Documentary', 'Short 
 export const LENGUAJE_OPTIONS = ['English', 'Spanish', 'Portuguese', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Mandarin'];
 
 export const COLUMNS: ColumnConfig[] = [
+  { id: 'isPrivate', label: '', type: 'privacy', width: 'w-10', field: 'isPrivate' },
   { id: 'name', label: 'Name', type: 'text', width: 'w-64', field: 'name' },
   { id: 'currentPhase', label: 'Phase', type: 'current-phase', width: 'w-28', field: 'currentPhase' },
   { id: 'status', label: 'Status', type: 'status', width: 'w-32', field: 'status' },

@@ -324,6 +324,7 @@ export type Database = {
           group_id: string
           hq: string | null
           id: string
+          is_private: boolean
           last_updated: string | null
           lenguaje_original: string | null
           link_to_col_hq: string | null
@@ -375,6 +376,7 @@ export type Database = {
           group_id: string
           hq?: string | null
           id?: string
+          is_private?: boolean
           last_updated?: string | null
           lenguaje_original?: string | null
           link_to_col_hq?: string | null
@@ -426,6 +428,7 @@ export type Database = {
           group_id?: string
           hq?: string | null
           id?: string
+          is_private?: boolean
           last_updated?: string | null
           lenguaje_original?: string | null
           link_to_col_hq?: string | null
@@ -469,6 +472,7 @@ export type Database = {
           id: string
           initials: string
           name: string
+          role: string
         }
         Insert: {
           color?: string
@@ -477,6 +481,7 @@ export type Database = {
           id?: string
           initials: string
           name: string
+          role?: string
         }
         Update: {
           color?: string
@@ -485,6 +490,7 @@ export type Database = {
           id?: string
           initials?: string
           name?: string
+          role?: string
         }
         Relationships: []
       }

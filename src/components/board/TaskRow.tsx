@@ -16,6 +16,7 @@ import { ComboboxCell } from './cells/ComboboxCell';
 import { DropdownCell } from './cells/DropdownCell';
 import { FileUploadCell } from './cells/FileUploadCell';
 import { LastUpdatedCell } from './cells/LastUpdatedCell';
+import { PrivacyCell } from './cells/PrivacyCell';
 import { mockUsers } from '@/data/mockData';
 
 interface TaskRowProps {
@@ -60,6 +61,13 @@ export function TaskRow({ task, onUpdate, onDelete, boardId }: TaskRowProps) {
     }
     
     switch (column.type) {
+      case 'privacy':
+        return (
+          <PrivacyCell
+            isPrivate={task.isPrivate}
+            onChange={(val) => onUpdate({ isPrivate: val })}
+          />
+        );
       case 'text':
         return (
           <TextCell

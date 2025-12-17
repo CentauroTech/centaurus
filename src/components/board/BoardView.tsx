@@ -120,6 +120,7 @@ export function BoardView({ board, boardId }: BoardViewProps) {
                     name: t.name,
                     status: t.status,
                     isPrivate: t.is_private,
+                    commentCount: t.comment_count || 0,
                     currentPhase: t.currentPhase, // Dynamic phase from board name (HQ view)
                     dateAssigned: t.date_assigned ? new Date(t.date_assigned) : undefined,
                     branch: t.branch,

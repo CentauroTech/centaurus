@@ -51,6 +51,7 @@ export interface Task {
   name: string;
   status: Status;
   isPrivate?: boolean;
+  commentCount?: number;
   dateAssigned?: Date;
   branch?: string;
   projectManager?: User;

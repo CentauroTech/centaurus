@@ -113,12 +113,15 @@ export function useBoard(boardId: string | null) {
         if (allGroupIds.length > 0) {
           const { data: tasksData, error: tasksError } = await supabase
             .from('tasks')
-            .select('*')
+            .select('*, comments(count)')
             .in('group_id', allGroupIds)
             .order('sort_order');
 
           if (tasksError) throw tasksError;
-          allTasks = tasksData || [];
+          allTasks = (tasksData || []).map(t => ({
+            ...t,
+            comment_count: t.comments?.[0]?.count || 0,
+          }));
         }
 
         // Extract phase from board name (e.g., "Col-Kickoff" -> "Kickoff", "Mia-Recording" -> "Recording")
@@ -222,12 +225,15 @@ export function useBoard(boardId: string | null) {
       if (groupIds.length > 0) {
         const { data: tasksData, error: tasksError } = await supabase
           .from('tasks')
-          .select('*')
+          .select('*, comments(count)')
           .in('group_id', groupIds)
           .order('sort_order');
 
         if (tasksError) throw tasksError;
-        tasks = tasksData || [];
+        tasks = (tasksData || []).map(t => ({
+          ...t,
+          comment_count: t.comments?.[0]?.count || 0,
+        }));
       }
 
       return {

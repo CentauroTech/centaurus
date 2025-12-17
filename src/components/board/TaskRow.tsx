@@ -30,7 +30,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId }: TaskRowProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
 
-  const commentCount = task.comments?.length || 0;
+  const commentCount = task.commentCount || 0;
 
   const renderCell = (column: typeof COLUMNS[number]) => {
     const value = task[column.field];

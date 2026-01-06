@@ -166,21 +166,106 @@ export function useMoveToNextPhase(boardId: string) {
         targetGroupId = newGroup.id;
       }
 
-      // 6. Move the task to the new group and reset status
+      // 6. Get current task data for activity logging
+      const { data: currentTask, error: taskError } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('id', taskId)
+        .single();
+
+      if (taskError) throw taskError;
+
+      const nextPhaseName = extractPhaseFromBoardName(nextBoard.name);
+      const currentDate = new Date().toISOString().split('T')[0];
+      const now = new Date().toISOString();
+
+      // 7. Move the task to the new group, update phase, and reset status
+      const updateData: Record<string, unknown> = {
+        group_id: targetGroupId,
+        status: 'default',
+        fase: nextPhaseName,
+        last_updated: now,
+      };
+
+      // Set date_assigned when moving to Assets
+      if (nextPhase === 'assets') {
+        updateData.date_assigned = currentDate;
+      }
+
       const { error: updateError } = await supabase
         .from('tasks')
-        .update({
-          group_id: targetGroupId,
-          status: 'default',
-          last_updated: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', taskId);
 
       if (updateError) throw updateError;
 
+      // 8. Assign Natalia Aparicio when moving to Assets
+      if (nextPhase === 'assets') {
+        // Find Natalia Aparicio in team_members
+        const { data: natalia } = await supabase
+          .from('team_members')
+          .select('id')
+          .ilike('name', '%Natalia Aparicio%')
+          .limit(1)
+          .single();
+
+        if (natalia) {
+          // Check if already assigned
+          const { data: existing } = await supabase
+            .from('task_people')
+            .select('id')
+            .eq('task_id', taskId)
+            .eq('team_member_id', natalia.id)
+            .maybeSingle();
+
+          if (!existing) {
+            await supabase.from('task_people').insert({
+              task_id: taskId,
+              team_member_id: natalia.id,
+            });
+
+            // Log the person assignment
+            await supabase.from('activity_log').insert({
+              task_id: taskId,
+              type: 'field_change',
+              field: 'people',
+              old_value: null,
+              new_value: 'Natalia Aparicio',
+            });
+          }
+        }
+
+        // Log date_assigned change
+        await supabase.from('activity_log').insert({
+          task_id: taskId,
+          type: 'field_change',
+          field: 'date_assigned',
+          old_value: currentTask.date_assigned,
+          new_value: currentDate,
+        });
+      }
+
+      // 9. Log the phase change in activity_log
+      await supabase.from('activity_log').insert({
+        task_id: taskId,
+        type: 'phase_change',
+        field: 'fase',
+        old_value: currentTask.fase || currentPhase,
+        new_value: nextPhaseName,
+      });
+
+      // Log the group/board change
+      await supabase.from('activity_log').insert({
+        task_id: taskId,
+        type: 'field_change',
+        field: 'board',
+        old_value: currentBoard.name,
+        new_value: nextBoard.name,
+      });
+
       return { 
         moved: true, 
-        nextPhase: extractPhaseFromBoardName(nextBoard.name),
+        nextPhase: nextPhaseName,
         nextBoardName: nextBoard.name,
       };
     },

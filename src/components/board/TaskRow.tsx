@@ -24,9 +24,10 @@ interface TaskRowProps {
   onUpdate: (updates: Partial<Task>) => void;
   onDelete: () => void;
   boardId?: string;
+  boardName?: string;
 }
 
-export function TaskRow({ task, onUpdate, onDelete, boardId }: TaskRowProps) {
+export function TaskRow({ task, onUpdate, onDelete, boardId, boardName }: TaskRowProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
 
@@ -104,10 +105,13 @@ export function TaskRow({ task, onUpdate, onDelete, boardId }: TaskRowProps) {
           />
         );
       case 'status':
+        // Check if we're in Kickoff phase
+        const isKickoffPhase = boardName?.toLowerCase().includes('kickoff') || false;
         return (
           <StatusBadge
             status={task.status}
             onStatusChange={(val) => onUpdate({ status: val })}
+            isKickoffPhase={isKickoffPhase}
           />
         );
       case 'phase':

@@ -1,4 +1,4 @@
-export type Status = 'done' | 'working' | 'stuck' | 'waiting' | 'planning' | 'default';
+export type Status = 'done' | 'launch' | 'working' | 'stuck' | 'waiting' | 'planning' | 'default';
 export type Priority = 'high' | 'medium' | 'low';
 export type Phase = 'pre_production' | 'production' | 'post_production' | 'delivery' | 'complete';
 
@@ -126,6 +126,7 @@ export interface Workspace {
 
 export const STATUS_CONFIG: Record<Status, { label: string; className: string }> = {
   done: { label: 'Done', className: 'bg-status-done text-white' },
+  launch: { label: 'Launch', className: 'bg-status-done text-white' },
   working: { label: 'Working on it', className: 'bg-status-working text-foreground' },
   stuck: { label: 'Stuck', className: 'bg-status-stuck text-white' },
   waiting: { label: 'Waiting', className: 'bg-status-waiting text-white' },

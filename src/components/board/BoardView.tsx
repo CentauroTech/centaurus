@@ -8,6 +8,7 @@ import {
   useUpdateTask, 
   useDeleteTask 
 } from '@/hooks/useWorkspaces';
+import { useMoveToNextPhase } from '@/hooks/usePhaseProgression';
 
 interface BoardGroup {
   id: string;
@@ -39,9 +40,24 @@ export function BoardView({ board, boardId }: BoardViewProps) {
   const addTaskMutation = useAddTask(boardId);
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
+  const moveToNextPhaseMutation = useMoveToNextPhase(boardId);
 
-  const updateTask = (taskId: string, updates: Record<string, any>) => {
-    updateTaskMutation.mutate({ taskId, updates });
+  const updateTask = (taskId: string, updates: Record<string, any>, groupId?: string, pruebaDeVoz?: boolean) => {
+    // If status is changing to 'done', trigger phase progression
+    if (updates.status === 'done' && groupId) {
+      updateTaskMutation.mutate({ taskId, updates }, {
+        onSuccess: () => {
+          // Move to next phase after status update
+          moveToNextPhaseMutation.mutate({
+            taskId,
+            currentGroupId: groupId,
+            pruebaDeVoz: pruebaDeVoz ?? false,
+          });
+        },
+      });
+    } else {
+      updateTaskMutation.mutate({ taskId, updates });
+    }
   };
 
   const deleteTask = (taskId: string) => {
@@ -167,6 +183,9 @@ export function BoardView({ board, boardId }: BoardViewProps) {
                   })),
                 }}
                 onUpdateTask={(taskId, updates) => {
+                  // Find the raw task data
+                  const rawTask = group.tasks.find(t => t.id === taskId);
+                  
                   // Convert camelCase to snake_case for database
                   const dbUpdates: Record<string, any> = {};
                   if (updates.name !== undefined) dbUpdates.name = updates.name;
@@ -218,7 +237,8 @@ export function BoardView({ board, boardId }: BoardViewProps) {
                   if (updates.traductor !== undefined) dbUpdates.traductor_id = updates.traductor?.id || null;
                   if (updates.adaptador !== undefined) dbUpdates.adaptador_id = updates.adaptador?.id || null;
                   
-                  updateTask(taskId, dbUpdates);
+                  // Pass group.id and pruebaDeVoz for phase progression
+                  updateTask(taskId, dbUpdates, group.id, rawTask?.prueba_de_voz);
                 }}
                 onDeleteTask={deleteTask}
                 onAddTask={() => addTask(group.id)}
@@ -230,6 +250,7 @@ export function BoardView({ board, boardId }: BoardViewProps) {
                   updateGroup(group.id, dbUpdates);
                 }}
                 boardId={boardId}
+                boardName={board.name}
               />
             );
           })}

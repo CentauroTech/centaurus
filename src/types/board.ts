@@ -85,7 +85,7 @@ export interface Task {
   studio?: string;
   tecnico?: User;
   qc1?: User;
-  qcRetakes?: Date;
+  qcRetakes?: User;
   mixerBogota?: User;
   mixerMiami?: User;
   qcMix?: User;
@@ -97,6 +97,8 @@ export interface Task {
   phaseDueDate?: Date;
   linkToColHQ?: string;
   rateInfo?: string;
+  premixRetakeList?: string;
+  mixRetakeList?: string;
   createdAt: Date;
   comments?: Comment[];
   files?: TaskFile[];
@@ -160,49 +162,28 @@ export const LENGUAJE_OPTIONS = ['English', 'Spanish', 'Portuguese', 'French', '
 
 export const COLUMNS: ColumnConfig[] = [
   { id: 'isPrivate', label: '', type: 'privacy', width: 'w-10', field: 'isPrivate' },
-  { id: 'name', label: 'Name', type: 'text', width: 'w-64', field: 'name' },
-  { id: 'currentPhase', label: 'Phase', type: 'current-phase', width: 'w-28', field: 'currentPhase' },
-  { id: 'status', label: 'Status', type: 'status', width: 'w-32', field: 'status' },
-  { id: 'dateAssigned', label: 'Fecha Asignada', type: 'date', width: 'w-28', field: 'dateAssigned' },
-  { id: 'branch', label: 'Sede/Branch', type: 'dropdown', width: 'w-28', field: 'branch', options: BRANCH_OPTIONS },
+  { id: 'name', label: 'Project Name', type: 'text', width: 'w-64', field: 'name' },
   { id: 'projectManager', label: 'Project Manager', type: 'person', width: 'w-36', field: 'projectManager' },
-  { id: 'clientName', label: 'Nombre Cliente', type: 'combobox', width: 'w-36', field: 'clientName', options: CLIENT_OPTIONS },
-  { id: 'entregaMiamiStart', label: 'Entrega Miami - Start', type: 'date', width: 'w-32', field: 'entregaMiamiStart' },
-  { id: 'entregaMiamiEnd', label: 'Entrega Miami - End', type: 'date', width: 'w-32', field: 'entregaMiamiEnd' },
-  { id: 'entregaMixRetakes', label: 'Entrega Mix Retakes', type: 'date', width: 'w-32', field: 'entregaMixRetakes' },
-  { id: 'entregaCliente', label: 'Entrega Cliente', type: 'date', width: 'w-28', field: 'entregaCliente' },
-  { id: 'entregaSesiones', label: 'Entrega Sesiones', type: 'date', width: 'w-28', field: 'entregaSesiones' },
-  { id: 'cantidadEpisodios', label: 'Cantidad Episodios', type: 'number', width: 'w-24', field: 'cantidadEpisodios' },
-  { id: 'lockedRuntime', label: 'Locked Runtime', type: 'text', width: 'w-28', field: 'lockedRuntime' },
-  { id: 'finalRuntime', label: 'Final Runtime', type: 'text', width: 'w-28', field: 'finalRuntime' },
-  { id: 'servicios', label: 'Servicios', type: 'combobox', width: 'w-36', field: 'servicios', options: SERVICIOS_OPTIONS },
-  { id: 'entregaFinalDubAudio', label: 'Entrega Final - Dub Audio', type: 'date', width: 'w-36', field: 'entregaFinalDubAudio' },
-  { id: 'entregaFinalScript', label: 'Entrega Final - Script', type: 'date', width: 'w-36', field: 'entregaFinalScript' },
-  { id: 'pruebaDeVoz', label: 'Prueba de Voz?', type: 'boolean', width: 'w-24', field: 'pruebaDeVoz' },
-  { id: 'aorNeeded', label: 'AOR Needed', type: 'boolean', width: 'w-24', field: 'aorNeeded' },
-  { id: 'formato', label: 'Formato', type: 'combobox', width: 'w-32', field: 'formato', options: FORMATO_OPTIONS },
-  { id: 'lenguajeOriginal', label: 'Lenguaje Original', type: 'combobox', width: 'w-32', field: 'lenguajeOriginal', options: LENGUAJE_OPTIONS },
-  { id: 'rates', label: 'Rates', type: 'number', width: 'w-24', field: 'rates' },
-  { id: 'showGuide', label: 'ShowGuide', type: 'file', width: 'w-32', field: 'showGuide' },
-  { id: 'tituloAprobadoEspanol', label: 'Titulo Aprobado Español', type: 'combobox', width: 'w-44', field: 'tituloAprobadoEspanol', options: [] },
-  { id: 'workOrderNumber', label: 'Work Order #', type: 'auto', width: 'w-28', field: 'workOrderNumber' },
-  { id: 'fase', label: 'Fase', type: 'phase', width: 'w-32', field: 'fase' },
-  { id: 'lastUpdated', label: 'Last Updated', type: 'last-updated', width: 'w-32', field: 'lastUpdated' },
-  { id: 'aorComplete', label: 'AOR Complete', type: 'boolean', width: 'w-24', field: 'aorComplete' },
-  { id: 'director', label: 'Director', type: 'person', width: 'w-36', field: 'director' },
-  { id: 'studio', label: 'Studio', type: 'text', width: 'w-28', field: 'studio' },
-  { id: 'tecnico', label: 'Técnico', type: 'person', width: 'w-36', field: 'tecnico' },
-  { id: 'qc1', label: 'QC 1', type: 'person', width: 'w-36', field: 'qc1' },
-  { id: 'qcRetakes', label: 'QC Retakes', type: 'date', width: 'w-28', field: 'qcRetakes' },
-  { id: 'mixerBogota', label: 'Mixer Bogotá', type: 'person', width: 'w-36', field: 'mixerBogota' },
-  { id: 'mixerMiami', label: 'Mixer Miami', type: 'person', width: 'w-36', field: 'mixerMiami' },
-  { id: 'qcMix', label: 'QC Mix', type: 'person', width: 'w-36', field: 'qcMix' },
-  { id: 'traductor', label: 'Traductor', type: 'person', width: 'w-36', field: 'traductor' },
-  { id: 'adaptador', label: 'Adaptador', type: 'person', width: 'w-36', field: 'adaptador' },
-  { id: 'dateDelivered', label: 'Date Delivered', type: 'date', width: 'w-28', field: 'dateDelivered' },
-  { id: 'hq', label: 'HQ', type: 'text', width: 'w-24', field: 'hq' },
+  { id: 'clientName', label: 'Client Name', type: 'combobox', width: 'w-36', field: 'clientName', options: CLIENT_OPTIONS },
+  { id: 'cantidadEpisodios', label: 'Total Show Episodes', type: 'number', width: 'w-28', field: 'cantidadEpisodios' },
+  { id: 'entregaCliente', label: 'Client Due Date', type: 'date', width: 'w-28', field: 'entregaCliente' },
+  { id: 'lockedRuntime', label: 'Runtime', type: 'text', width: 'w-28', field: 'lockedRuntime' },
   { id: 'people', label: 'People', type: 'people', width: 'w-40', field: 'people' },
+  { id: 'currentPhase', label: 'Phase', type: 'current-phase', width: 'w-28', field: 'currentPhase' },
   { id: 'phaseDueDate', label: 'Phase Due Date', type: 'date', width: 'w-28', field: 'phaseDueDate' },
-  { id: 'linkToColHQ', label: 'Link to Col-HQ', type: 'link', width: 'w-28', field: 'linkToColHQ' },
-  { id: 'rateInfo', label: 'Rate Info', type: 'text', width: 'w-32', field: 'rateInfo' },
+  { id: 'status', label: 'Status', type: 'status', width: 'w-32', field: 'status' },
+  { id: 'lastUpdated', label: 'Last Updated', type: 'last-updated', width: 'w-32', field: 'lastUpdated' },
+  { id: 'premixRetakeList', label: 'Premix Retake List', type: 'file', width: 'w-32', field: 'premixRetakeList' },
+  { id: 'mixRetakeList', label: 'Mix Retake List', type: 'file', width: 'w-32', field: 'mixRetakeList' },
+  { id: 'aorNeeded', label: 'AOR Needed', type: 'boolean', width: 'w-24', field: 'aorNeeded' },
+  { id: 'traductor', label: 'Translator', type: 'person', width: 'w-36', field: 'traductor' },
+  { id: 'adaptador', label: 'Adapter', type: 'person', width: 'w-36', field: 'adaptador' },
+  { id: 'premix', label: 'Premix', type: 'person', width: 'w-36', field: 'mixerBogota' },
+  { id: 'qcPremix', label: 'QC Premix', type: 'person', width: 'w-36', field: 'qc1' },
+  { id: 'qcRetakes', label: 'QC Retakes', type: 'person', width: 'w-36', field: 'qcRetakes' },
+  { id: 'mixer', label: 'Mixer', type: 'person', width: 'w-36', field: 'mixerMiami' },
+  { id: 'qcMix', label: 'QC Mix', type: 'person', width: 'w-36', field: 'qcMix' },
+  { id: 'servicios', label: 'Services', type: 'combobox', width: 'w-36', field: 'servicios', options: SERVICIOS_OPTIONS },
+  { id: 'formato', label: 'Format', type: 'combobox', width: 'w-32', field: 'formato', options: FORMATO_OPTIONS },
+  { id: 'branch', label: 'Branch', type: 'dropdown', width: 'w-28', field: 'branch', options: BRANCH_OPTIONS },
 ];

@@ -123,6 +123,14 @@ export function BoardView({ board, boardId }: BoardViewProps) {
               return board.teamMemberMap.get(id);
             };
 
+            // Extract phase from board name (e.g., "Mia-Kickoff" -> "Kickoff")
+            const extractPhaseFromBoardName = (boardName: string): string => {
+              const parts = boardName.split('-');
+              return parts.length > 1 ? parts.slice(1).join('-') : boardName;
+            };
+
+            const boardPhase = extractPhaseFromBoardName(board.name);
+
             return (
               <TaskGroup
                 key={group.id}
@@ -137,7 +145,7 @@ export function BoardView({ board, boardId }: BoardViewProps) {
                     status: t.status,
                     isPrivate: t.is_private,
                     commentCount: t.comment_count || 0,
-                    currentPhase: t.currentPhase, // Dynamic phase from board name (HQ view)
+                    currentPhase: t.currentPhase || boardPhase, // Use board phase for regular boards
                     dateAssigned: t.date_assigned ? new Date(t.date_assigned) : undefined,
                     branch: t.branch,
                     projectManager: getTeamMember(t.project_manager_id),

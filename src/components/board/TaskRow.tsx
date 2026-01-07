@@ -122,10 +122,28 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName }: TaskRo
           />
         );
       case 'current-phase':
-        // Read-only phase badge showing current board/phase
+        // Read-only phase badge showing current board/phase with phase-specific colors
+        const phaseValue = value as string || '';
+        const phaseColors: Record<string, string> = {
+          'Kickoff': 'bg-black text-white',
+          'Assets': 'bg-orange-500 text-white',
+          'Translation': 'bg-violet-500 text-white',
+          'Adapting': 'bg-purple-500 text-white',
+          'VoiceTests': 'bg-pink-500 text-white',
+          'Recording': 'bg-emerald-500 text-white',
+          'Premix': 'bg-cyan-500 text-white',
+          'QC Premix': 'bg-yellow-500 text-foreground',
+          'Retakes': 'bg-red-500 text-white',
+          'QC Retakes': 'bg-amber-500 text-foreground',
+          'Mix': 'bg-blue-500 text-white',
+          'QC Mix': 'bg-sky-500 text-white',
+          'MixRetakes': 'bg-rose-500 text-white',
+          'Deliveries': 'bg-green-500 text-white',
+        };
+        const phaseClass = phaseColors[phaseValue] || 'bg-primary/10 text-primary';
         return (
-          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-primary/10 text-primary">
-            {value as string || '-'}
+          <span className={cn("inline-flex items-center px-2 py-1 rounded text-xs font-medium", phaseClass)}>
+            {phaseValue || '-'}
           </span>
         );
       case 'boolean':

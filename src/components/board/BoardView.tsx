@@ -231,6 +231,7 @@ export function BoardView({ board, boardId }: BoardViewProps) {
                   if (updates.director !== undefined) dbUpdates.director_id = updates.director?.id || null;
                   if (updates.tecnico !== undefined) dbUpdates.tecnico_id = updates.tecnico?.id || null;
                   if (updates.qc1 !== undefined) dbUpdates.qc_1_id = updates.qc1?.id || null;
+                  if (updates.qcRetakes !== undefined) dbUpdates.qc_retakes_id = updates.qcRetakes?.id || null;
                   if (updates.mixerBogota !== undefined) dbUpdates.mixer_bogota_id = updates.mixerBogota?.id || null;
                   if (updates.mixerMiami !== undefined) dbUpdates.mixer_miami_id = updates.mixerMiami?.id || null;
                   if (updates.qcMix !== undefined) dbUpdates.qc_mix_id = updates.qcMix?.id || null;

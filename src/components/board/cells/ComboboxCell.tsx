@@ -84,7 +84,7 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
       </div>
 
       {isOpen && (
-        <div className="absolute z-[100] mt-1 left-0 bg-card rounded-lg shadow-dropdown border border-border py-1 min-w-[160px] max-h-48 overflow-y-auto animate-fade-in">
+        <div className="absolute z-[9999] mt-1 left-0 bg-card rounded-lg shadow-dropdown border border-border py-1 min-w-[160px] max-h-48 overflow-y-auto animate-fade-in">
           {filteredOptions.length > 0 ? (
             filteredOptions.map((option) => (
               <button

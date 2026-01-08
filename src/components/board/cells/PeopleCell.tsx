@@ -66,7 +66,7 @@ export function PeopleCell({ people = [], onChange }: PeopleCellProps) {
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-2 z-[100]" align="start">
+      <PopoverContent className="w-56 p-2 z-[9999]" align="start">
         <div className="space-y-1">
           {users.length === 0 ? (
             <div className="px-2 py-1.5 text-sm text-muted-foreground">

@@ -63,7 +63,7 @@ export function StatusBadge({ status, onStatusChange, isKickoffPhase = false }: 
       </button>
 
       {isOpen && (
-        <div className="absolute z-[100] mt-1 left-0 bg-card rounded-lg shadow-dropdown border border-border py-1 min-w-[140px] animate-fade-in">
+        <div className="absolute z-[9999] mt-1 left-0 bg-card rounded-lg shadow-dropdown border border-border py-1 min-w-[140px] animate-fade-in">
           {availableStatuses.map((statusKey) => {
             const displayConfig = getDisplayConfig(statusKey);
             if (!displayConfig) return null;

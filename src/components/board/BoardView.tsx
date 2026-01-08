@@ -206,6 +206,7 @@ export function BoardView({ board, boardId }: BoardViewProps) {
                     }
                   }
                   if (updates.dateAssigned !== undefined) dbUpdates.date_assigned = updates.dateAssigned;
+                  if (updates.dateDelivered !== undefined) dbUpdates.date_delivered = updates.dateDelivered;
                   if (updates.branch !== undefined) dbUpdates.branch = updates.branch;
                   if (updates.clientName !== undefined) dbUpdates.client_name = updates.clientName;
                   if (updates.entregaMiamiStart !== undefined) dbUpdates.entrega_miami_start = updates.entregaMiamiStart;

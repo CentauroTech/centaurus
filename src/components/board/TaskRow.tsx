@@ -17,6 +17,8 @@ import { DropdownCell } from './cells/DropdownCell';
 import { FileUploadCell } from './cells/FileUploadCell';
 import { LastUpdatedCell } from './cells/LastUpdatedCell';
 import { PrivacyCell } from './cells/PrivacyCell';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 import { mockUsers } from '@/data/mockData';
 
 interface TaskRowProps {
@@ -25,13 +27,16 @@ interface TaskRowProps {
   onDelete: () => void;
   boardId?: string;
   boardName?: string;
+  onSendToPhase?: (phase: string) => void;
 }
 
-export function TaskRow({ task, onUpdate, onDelete, boardId, boardName }: TaskRowProps) {
+export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendToPhase }: TaskRowProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
+  const { toggleTaskSelection, isSelected } = useTaskSelection();
 
   const commentCount = task.commentCount || 0;
+  const isTaskSelected = isSelected(task.id);
 
   const renderCell = (column: typeof COLUMNS[number]) => {
     const value = task[column.field];
@@ -112,6 +117,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName }: TaskRo
             status={task.status}
             onStatusChange={(val) => onUpdate({ status: val })}
             isKickoffPhase={isKickoffPhase}
+            onSendToPhase={onSendToPhase}
           />
         );
       case 'phase':
@@ -207,13 +213,23 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName }: TaskRo
       <tr
         className={cn(
           "group border-b border-border transition-smooth",
-          isHovered && "bg-muted/30"
+          isHovered && "bg-muted/30",
+          isTaskSelected && "bg-primary/10"
         )}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Drag Handle */}
+        {/* Checkbox */}
         <td className="w-8 px-2 sticky left-0 bg-card z-10">
+          <Checkbox
+            checked={isTaskSelected}
+            onCheckedChange={() => toggleTaskSelection(task.id)}
+            className="opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100 transition-smooth"
+          />
+        </td>
+
+        {/* Drag Handle */}
+        <td className="w-8 px-2 sticky left-8 bg-card z-10">
           <div className="opacity-0 group-hover:opacity-100 transition-smooth cursor-grab">
             <GripVertical className="w-4 h-4 text-muted-foreground" />
           </div>

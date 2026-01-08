@@ -1,6 +1,8 @@
 import { Plus, Filter, Users, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TaskGroup } from './TaskGroup';
+import { BulkActionsToolbar } from './BulkActionsToolbar';
+import { TaskSelectionProvider } from '@/contexts/TaskSelectionContext';
 import { 
   useAddTaskGroup, 
   useUpdateTaskGroup, 
@@ -9,6 +11,13 @@ import {
   useDeleteTask 
 } from '@/hooks/useWorkspaces';
 import { useMoveToNextPhase } from '@/hooks/usePhaseProgression';
+import { 
+  useBulkDuplicate, 
+  useBulkDelete, 
+  useBulkMoveToPhase, 
+  useMoveTaskToPhase,
+  AVAILABLE_PHASES 
+} from '@/hooks/useBulkTaskActions';
 
 interface BoardGroup {
   id: string;
@@ -34,13 +43,17 @@ interface BoardViewProps {
   boardId: string;
 }
 
-export function BoardView({ board, boardId }: BoardViewProps) {
+function BoardViewContent({ board, boardId }: BoardViewProps) {
   const addTaskGroupMutation = useAddTaskGroup(boardId);
   const updateTaskGroupMutation = useUpdateTaskGroup(boardId);
   const addTaskMutation = useAddTask(boardId);
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
   const moveToNextPhaseMutation = useMoveToNextPhase(boardId);
+  const moveTaskToPhaseMutation = useMoveTaskToPhase(boardId);
+  const bulkDuplicateMutation = useBulkDuplicate(boardId);
+  const bulkDeleteMutation = useBulkDelete(boardId);
+  const bulkMoveMutation = useBulkMoveToPhase(boardId);
 
   const updateTask = (taskId: string, updates: Record<string, any>, groupId?: string, pruebaDeVoz?: boolean) => {
     // If status is changing to 'done', trigger phase progression
@@ -85,6 +98,22 @@ export function BoardView({ board, boardId }: BoardViewProps) {
       name: 'New Group',
       color: colors[board.groups.length % colors.length],
     });
+  };
+
+  const handleBulkDuplicate = (taskIds: string[]) => {
+    bulkDuplicateMutation.mutate(taskIds);
+  };
+
+  const handleBulkDelete = (taskIds: string[]) => {
+    bulkDeleteMutation.mutate(taskIds);
+  };
+
+  const handleBulkMove = (taskIds: string[], phase: string) => {
+    bulkMoveMutation.mutate({ taskIds, targetPhase: phase });
+  };
+
+  const handleSendTaskToPhase = (taskId: string, phase: string) => {
+    moveTaskToPhaseMutation.mutate({ taskId, targetPhase: phase });
   };
 
   return (
@@ -259,6 +288,7 @@ export function BoardView({ board, boardId }: BoardViewProps) {
                   if (updates.isCollapsed !== undefined) dbUpdates.is_collapsed = updates.isCollapsed;
                   updateGroup(group.id, dbUpdates);
                 }}
+                onSendToPhase={handleSendTaskToPhase}
                 boardId={boardId}
                 boardName={board.name}
               />
@@ -283,6 +313,22 @@ export function BoardView({ board, boardId }: BoardViewProps) {
           </div>
         )}
       </div>
+
+      {/* Bulk Actions Toolbar */}
+      <BulkActionsToolbar
+        onDuplicate={handleBulkDuplicate}
+        onDelete={handleBulkDelete}
+        onMoveToPhase={handleBulkMove}
+        availablePhases={AVAILABLE_PHASES}
+      />
     </div>
+  );
+}
+
+export function BoardView({ board, boardId }: BoardViewProps) {
+  return (
+    <TaskSelectionProvider>
+      <BoardViewContent board={board} boardId={boardId} />
+    </TaskSelectionProvider>
   );
 }

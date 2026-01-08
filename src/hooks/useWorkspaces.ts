@@ -140,67 +140,17 @@ export function useBoard(boardId: string | null) {
           };
         });
 
-        // Group tasks by phase
-        const phaseGroups = new Map<string, any[]>();
-        tasksWithPhase.forEach(t => {
-          const phase = t.currentPhase;
-          if (!phaseGroups.has(phase)) {
-            phaseGroups.set(phase, []);
-          }
-          phaseGroups.get(phase)!.push(t);
-        });
-
-        // Define phase order based on workflow
-        const phaseOrder = [
-          'Kickoff', 'Materiales', 'Assets', 'Client Retakes',
-          'Traducción + Ad', 'Translation', 'Adaptación', 'Adapting',
-          'Desglose', 'Casting', 'VoiceTests', 'Programación',
-          'Grabación', 'Recording', 'Premix', 'QC Premix', 'QC 1',
-          'Retakes', 'Mix Bogotá', 'Mix', 'Qc Mix', 'Mix Retakes', 'MixRetakes',
-          'Deliveries', 'Entregados'
-        ];
-
-        // Sort phases and create virtual groups
-        const sortedPhases = Array.from(phaseGroups.keys()).sort((a, b) => {
-          const indexA = phaseOrder.indexOf(a);
-          const indexB = phaseOrder.indexOf(b);
-          if (indexA === -1 && indexB === -1) return a.localeCompare(b);
-          if (indexA === -1) return 1;
-          if (indexB === -1) return -1;
-          return indexA - indexB;
-        });
-
-        // Create a color for each phase
-        const phaseColors: Record<string, string> = {
-          'Kickoff': 'hsl(209, 100%, 46%)',
-          'Materiales': 'hsl(25, 95%, 53%)',
-          'Assets': 'hsl(25, 95%, 53%)',
-          'Translation': 'hsl(270, 50%, 60%)',
-          'Traducción + Ad': 'hsl(270, 50%, 60%)',
-          'Adapting': 'hsl(280, 50%, 55%)',
-          'Adaptación': 'hsl(280, 50%, 55%)',
-          'Recording': 'hsl(154, 64%, 45%)',
-          'Grabación': 'hsl(154, 64%, 45%)',
-          'Premix': 'hsl(180, 60%, 45%)',
-          'Mix': 'hsl(200, 70%, 50%)',
-          'Mix Bogotá': 'hsl(200, 70%, 50%)',
-          'QC 1': 'hsl(45, 90%, 50%)',
-          'Qc Mix': 'hsl(45, 90%, 50%)',
-          'Retakes': 'hsl(0, 72%, 51%)',
-          'Deliveries': 'hsl(120, 60%, 45%)',
-          'Entregados': 'hsl(120, 60%, 45%)',
-        };
-
-        const virtualGroups = sortedPhases.map((phase, index) => ({
-          id: `hq-phase-${phase}`,
+        // Group all tasks into one "Projects in Production" group
+        const virtualGroups = [{
+          id: `hq-all-projects`,
           board_id: board.id,
-          name: phase,
-          color: phaseColors[phase] || 'hsl(209, 100%, 46%)',
+          name: 'Projects in Production',
+          color: 'hsl(209, 100%, 46%)',
           is_collapsed: false,
-          sort_order: index,
-          tasks: phaseGroups.get(phase) || [],
+          sort_order: 0,
+          tasks: tasksWithPhase,
           isVirtual: true, // Mark as virtual group (read-only in HQ)
-        }));
+        }];
 
         return {
           ...board,

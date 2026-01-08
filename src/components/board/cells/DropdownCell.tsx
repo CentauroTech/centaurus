@@ -42,7 +42,7 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
       </button>
 
       {isOpen && (
-        <div className="absolute z-[100] mt-1 left-0 bg-card rounded-lg shadow-dropdown border border-border py-1 min-w-[120px] max-h-48 overflow-y-auto animate-fade-in">
+        <div className="absolute z-[9999] mt-1 left-0 bg-card rounded-lg shadow-dropdown border border-border py-1 min-w-[120px] max-h-48 overflow-y-auto animate-fade-in">
           {options.map((option) => (
             <button
               key={option}

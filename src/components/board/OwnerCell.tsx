@@ -67,7 +67,7 @@ export function OwnerCell({ owner, onOwnerChange }: OwnerCellProps) {
       )}
 
       {isOpen && (
-        <div className="absolute z-[100] mt-1 left-0 bg-card rounded-lg shadow-dropdown border border-border py-1 min-w-[180px] animate-fade-in">
+        <div className="absolute z-[9999] mt-1 left-0 bg-card rounded-lg shadow-dropdown border border-border py-1 min-w-[180px] animate-fade-in">
           {users.length === 0 ? (
             <div className="px-3 py-2 text-sm text-muted-foreground">
               No team members found

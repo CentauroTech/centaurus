@@ -171,6 +171,8 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'people', label: 'People', type: 'people', width: 'w-40', field: 'people' },
   { id: 'currentPhase', label: 'Phase', type: 'current-phase', width: 'w-28', field: 'currentPhase' },
   { id: 'phaseDueDate', label: 'Phase Due Date', type: 'date', width: 'w-28', field: 'phaseDueDate' },
+  { id: 'dateAssigned', label: 'Date Assigned', type: 'date', width: 'w-32', field: 'dateAssigned' },
+  { id: 'dateDelivered', label: 'Date Delivered', type: 'date', width: 'w-32', field: 'dateDelivered' },
   { id: 'status', label: 'Status', type: 'status', width: 'w-32', field: 'status' },
   { id: 'lastUpdated', label: 'Last Updated', type: 'last-updated', width: 'w-32', field: 'lastUpdated' },
   { id: 'premixRetakeList', label: 'Premix Retake List', type: 'file', width: 'w-32', field: 'premixRetakeList' },

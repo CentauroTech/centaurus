@@ -3,6 +3,8 @@ import { ChevronDown, ChevronRight, Plus, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TaskGroup as TaskGroupType, Task, COLUMNS } from '@/types/board';
 import { TaskRow } from './TaskRow';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 
 interface TaskGroupProps {
   group: TaskGroupType;
@@ -10,6 +12,7 @@ interface TaskGroupProps {
   onDeleteTask: (taskId: string) => void;
   onAddTask: () => void;
   onUpdateGroup: (updates: Partial<TaskGroupType>) => void;
+  onSendToPhase?: (taskId: string, phase: string) => void;
   boardId?: string;
   boardName?: string;
 }
@@ -20,15 +23,29 @@ export function TaskGroup({
   onDeleteTask, 
   onAddTask,
   onUpdateGroup,
+  onSendToPhase,
   boardId,
   boardName,
 }: TaskGroupProps) {
   const [isCollapsed, setIsCollapsed] = useState(group.isCollapsed ?? false);
   const [groupName, setGroupName] = useState(group.name);
+  const { selectedTaskIds, selectAll, clearSelection } = useTaskSelection();
 
   const handleNameBlur = () => {
     if (groupName !== group.name) {
       onUpdateGroup({ name: groupName });
+    }
+  };
+
+  const groupTaskIds = group.tasks.map(t => t.id);
+  const allSelected = groupTaskIds.length > 0 && groupTaskIds.every(id => selectedTaskIds.has(id));
+  const someSelected = groupTaskIds.some(id => selectedTaskIds.has(id)) && !allSelected;
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      clearSelection();
+    } else {
+      selectAll(groupTaskIds);
     }
   };
 
@@ -75,7 +92,18 @@ export function TaskGroup({
           <table className="w-full">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="w-8 sticky left-0 bg-muted/50 z-10" />
+                {/* Select All Checkbox */}
+                <th className="w-8 px-2 sticky left-0 bg-muted/50 z-10">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={handleSelectAll}
+                    className={cn(
+                      "transition-smooth",
+                      someSelected && "data-[state=unchecked]:bg-primary/30"
+                    )}
+                  />
+                </th>
+                <th className="w-8 sticky left-8 bg-muted/50 z-10" />
                 {COLUMNS.map((column) => (
                   <th 
                     key={column.id}
@@ -99,6 +127,7 @@ export function TaskGroup({
                   onDelete={() => onDeleteTask(task.id)}
                   boardId={boardId}
                   boardName={boardName}
+                  onSendToPhase={onSendToPhase ? (phase) => onSendToPhase(task.id, phase) : undefined}
                 />
               ))}
             </tbody>

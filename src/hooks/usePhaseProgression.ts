@@ -179,18 +179,30 @@ export function useMoveToNextPhase(boardId: string) {
       const currentDate = new Date().toISOString().split('T')[0];
       const now = new Date().toISOString();
 
+      // 6.5 Set date_delivered on current task BEFORE moving (stamps delivery from current board)
+      await supabase
+        .from('tasks')
+        .update({ date_delivered: currentDate })
+        .eq('id', taskId);
+
+      // Log date_delivered for the current board
+      await supabase.from('activity_log').insert({
+        task_id: taskId,
+        type: 'field_change',
+        field: 'date_delivered',
+        old_value: currentTask.date_delivered,
+        new_value: currentDate,
+      });
+
       // 7. Move the task to the new group, update phase, and reset status
       const updateData: Record<string, unknown> = {
         group_id: targetGroupId,
         status: 'default',
         fase: nextPhaseName,
         last_updated: now,
+        date_assigned: currentDate, // Set date_assigned for the new board
+        date_delivered: null, // Reset date_delivered for the new board
       };
-
-      // Set date_assigned when moving to Assets
-      if (nextPhase === 'assets') {
-        updateData.date_assigned = currentDate;
-      }
 
       const { error: updateError } = await supabase
         .from('tasks')
@@ -234,18 +246,18 @@ export function useMoveToNextPhase(boardId: string) {
             });
           }
         }
-
-        // Log date_assigned change
-        await supabase.from('activity_log').insert({
-          task_id: taskId,
-          type: 'field_change',
-          field: 'date_assigned',
-          old_value: currentTask.date_assigned,
-          new_value: currentDate,
-        });
       }
 
-      // 9. Log the phase change in activity_log
+      // 9. Log the date_assigned change for new board
+      await supabase.from('activity_log').insert({
+        task_id: taskId,
+        type: 'field_change',
+        field: 'date_assigned',
+        old_value: currentTask.date_assigned,
+        new_value: currentDate,
+      });
+
+      // 10. Log the phase change in activity_log
       await supabase.from('activity_log').insert({
         task_id: taskId,
         type: 'phase_change',

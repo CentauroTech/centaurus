@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useComments, useAddComment } from '@/hooks/useComments';
 import { useTeamMembers } from '@/hooks/useWorkspaces';
+import { useActivityLog, ActivityLogEntry } from '@/hooks/useActivityLog';
 import { toast } from 'sonner';
 
 interface TaskDetailsPanelProps {
@@ -25,8 +26,9 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: Task
   const [showMentions, setShowMentions] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
-  // Only fetch comments when panel is open
+  // Only fetch comments and activity when panel is open
   const { data: comments, isLoading: commentsLoading } = useComments(task.id, isOpen);
+  const { data: activityLogs, isLoading: activityLoading } = useActivityLog(task.id, isOpen);
   const { data: teamMembers } = useTeamMembers();
   const addCommentMutation = useAddComment(task.id, boardId || '');
 
@@ -205,10 +207,14 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: Task
           {/* Activity Tab */}
           <TabsContent value="activity" className="flex-1 m-0 overflow-hidden">
             <ScrollArea className="h-full p-4">
-              {task.activity && task.activity.length > 0 ? (
+              {activityLoading ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p className="text-sm">Loading activity...</p>
+                </div>
+              ) : activityLogs && activityLogs.length > 0 ? (
                 <div className="space-y-4">
-                  {task.activity.map((item) => (
-                    <ActivityLogItem key={item.id} item={item} />
+                  {activityLogs.map((item) => (
+                    <DatabaseActivityItem key={item.id} item={item} />
                   ))}
                 </div>
               ) : (
@@ -326,6 +332,104 @@ function FileItem({ file }: { file: TaskFile }) {
       {getFileIcon()}
       <span className="mt-2 text-xs font-medium text-center truncate w-full">{file.name}</span>
       <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
+    </div>
+  );
+}
+
+function DatabaseActivityItem({ item }: { item: ActivityLogEntry }) {
+  const getActivityMessage = () => {
+    const field = item.field || '';
+    const oldVal = item.old_value;
+    const newVal = item.new_value;
+
+    switch (item.type) {
+      case 'phase_change':
+        return (
+          <>
+            moved to phase{' '}
+            <span className="font-medium">{newVal}</span>
+            {oldVal && (
+              <>
+                {' '}from <span className="font-medium">{oldVal}</span>
+              </>
+            )}
+          </>
+        );
+      case 'field_change':
+        if (field === 'board') {
+          return (
+            <>
+              moved from{' '}
+              <span className="font-medium">{oldVal}</span> to{' '}
+              <span className="font-medium">{newVal}</span>
+            </>
+          );
+        }
+        if (field === 'date_assigned') {
+          return (
+            <>
+              date assigned set to{' '}
+              <span className="font-medium">{newVal}</span>
+            </>
+          );
+        }
+        if (field === 'date_delivered') {
+          return (
+            <>
+              date delivered set to{' '}
+              <span className="font-medium">{newVal}</span>
+            </>
+          );
+        }
+        if (field === 'people') {
+          return (
+            <>
+              assigned <span className="font-medium">{newVal}</span>
+            </>
+          );
+        }
+        return (
+          <>
+            changed <span className="font-medium">{field}</span>
+            {oldVal && (
+              <>
+                {' '}from <span className="font-medium">{oldVal}</span>
+              </>
+            )}
+            {newVal && (
+              <>
+                {' '}to <span className="font-medium">{newVal}</span>
+              </>
+            )}
+          </>
+        );
+      default:
+        return (
+          <>
+            {field && <span className="font-medium">{field}</span>} updated
+          </>
+        );
+    }
+  };
+
+  const user = item.user || { name: 'System', initials: 'S', color: 'hsl(0, 0%, 50%)' };
+
+  return (
+    <div className="flex gap-3 text-sm">
+      <Avatar className="h-6 w-6 shrink-0 mt-0.5">
+        <AvatarFallback style={{ backgroundColor: user.color }} className="text-xs text-white">
+          {user.initials}
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0">
+        <p className="text-foreground/90">
+          <span className="font-medium">{user.name}</span>{' '}
+          {getActivityMessage()}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {format(new Date(item.created_at), 'MMM d, yyyy • h:mm a')}
+        </p>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,25 @@
-export type Status = 'done' | 'launch' | 'working' | 'stuck' | 'waiting' | 'planning' | 'default';
+export type Status = 
+  | 'delivered' 
+  | 'ready_for_translation' 
+  | 'ready_for_retakes' 
+  | 'pending_client_approval'
+  | 'in_progress' 
+  | 'ready_for_adapting' 
+  | 'ready_for_qc_retakes'
+  | 'delayed' 
+  | 'ready_for_casting' 
+  | 'ready_for_mix'
+  | 'no_retakes' 
+  | 'ready_for_recording' 
+  | 'ready_for_qc_mix'
+  | 'on_hold' 
+  | 'ready_for_premix' 
+  | 'ready_for_qc_mix_retakes'
+  | 'ready_for_assets' 
+  | 'ready_for_qc_premix' 
+  | 'ready_for_final_delivery'
+  | 'launch'
+  | 'default';
 export type Priority = 'high' | 'medium' | 'low';
 export type Phase = 'pre_production' | 'production' | 'post_production' | 'delivery' | 'complete';
 
@@ -127,13 +148,27 @@ export interface Workspace {
 }
 
 export const STATUS_CONFIG: Record<Status, { label: string; className: string }> = {
-  done: { label: 'Done', className: 'bg-status-done text-white' },
-  launch: { label: 'Launch', className: 'bg-status-done text-white' },
-  working: { label: 'Working on it', className: 'bg-status-working text-foreground' },
-  stuck: { label: 'Stuck', className: 'bg-status-stuck text-white' },
-  waiting: { label: 'Waiting', className: 'bg-status-waiting text-white' },
-  planning: { label: 'Planning', className: 'bg-status-planning text-white' },
-  default: { label: 'Not started', className: 'bg-status-default text-white' },
+  delivered: { label: 'Delivered', className: 'bg-[hsl(154,64%,45%)] text-white' },
+  ready_for_translation: { label: 'Ready for Translation', className: 'bg-[hsl(330,70%,55%)] text-white' },
+  ready_for_retakes: { label: 'Ready for Retakes', className: 'bg-[hsl(340,75%,60%)] text-white' },
+  pending_client_approval: { label: 'Pending Client Appr.', className: 'bg-[hsl(225,15%,60%)] text-white' },
+  in_progress: { label: 'In Progress', className: 'bg-[hsl(45,93%,58%)] text-foreground' },
+  ready_for_adapting: { label: 'Ready for Adapting', className: 'bg-[hsl(280,60%,55%)] text-white' },
+  ready_for_qc_retakes: { label: 'Ready for QC Retak.', className: 'bg-[hsl(280,50%,50%)] text-white' },
+  delayed: { label: 'Delayed', className: 'bg-[hsl(0,72%,51%)] text-white' },
+  ready_for_casting: { label: 'Ready for Casting', className: 'bg-[hsl(25,95%,53%)] text-white' },
+  ready_for_mix: { label: 'Ready for Mix', className: 'bg-[hsl(200,80%,50%)] text-white' },
+  no_retakes: { label: 'No Retakes', className: 'bg-[hsl(154,50%,55%)] text-white' },
+  ready_for_recording: { label: 'Ready for Recording', className: 'bg-[hsl(15,85%,50%)] text-white' },
+  ready_for_qc_mix: { label: 'Ready for QC Mix', className: 'bg-[hsl(270,50%,50%)] text-white' },
+  on_hold: { label: 'On Hold', className: 'bg-[hsl(225,15%,75%)] text-white' },
+  ready_for_premix: { label: 'Ready for Premix', className: 'bg-[hsl(340,65%,55%)] text-white' },
+  ready_for_qc_mix_retakes: { label: 'Ready for QC Mix R.', className: 'bg-[hsl(280,55%,55%)] text-white' },
+  ready_for_assets: { label: 'Ready for Assets', className: 'bg-[hsl(0,65%,55%)] text-white' },
+  ready_for_qc_premix: { label: 'Ready for QC Premix', className: 'bg-[hsl(330,65%,50%)] text-white' },
+  ready_for_final_delivery: { label: 'Ready for Final Deliv.', className: 'bg-[hsl(300,50%,50%)] text-white' },
+  launch: { label: 'Launch', className: 'bg-[hsl(154,64%,45%)] text-white' },
+  default: { label: 'Not started', className: 'bg-[hsl(225,15%,75%)] text-white' },
 };
 
 export const PHASE_CONFIG: Record<Phase, { label: string; className: string }> = {

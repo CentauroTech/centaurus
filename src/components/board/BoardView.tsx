@@ -230,7 +230,7 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                   if (updates.status !== undefined) {
                     dbUpdates.status = updates.status;
                     // Auto-set date_delivered when status is 'done'
-                    if (updates.status === 'delivered') {
+                    if (updates.status === 'done') {
                       dbUpdates.date_delivered = new Date().toISOString().split('T')[0];
                     }
                   }

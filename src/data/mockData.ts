@@ -81,7 +81,7 @@ export const mockTaskGroups: TaskGroup[] = [
       {
         id: 'task-1',
         name: 'El Señor de los Anillos - Dub',
-        status: 'in_progress',
+        status: 'working',
         dateAssigned: new Date('2024-12-01'),
         branch: 'Miami',
         projectManager: mockUsers[0],
@@ -112,7 +112,7 @@ export const mockTaskGroups: TaskGroup[] = [
       {
         id: 'task-2',
         name: 'Casa de Papel - Season 6',
-        status: 'delivered',
+        status: 'done',
         dateAssigned: new Date('2024-11-15'),
         branch: 'Bogotá',
         projectManager: mockUsers[1],
@@ -137,7 +137,7 @@ export const mockTaskGroups: TaskGroup[] = [
       {
         id: 'task-3',
         name: 'Stranger Things - Promo',
-        status: 'on_hold',
+        status: 'waiting',
         dateAssigned: new Date('2024-12-05'),
         branch: 'Miami',
         projectManager: mockUsers[2],
@@ -159,7 +159,7 @@ export const mockTaskGroups: TaskGroup[] = [
       {
         id: 'task-4',
         name: 'Documentary - Ocean Life',
-        status: 'pending_client_approval',
+        status: 'planning',
         branch: 'Miami',
         clientName: 'Discovery',
         cantidadEpisodios: 4,
@@ -172,7 +172,7 @@ export const mockTaskGroups: TaskGroup[] = [
       {
         id: 'task-5',
         name: 'Animation - Kids Series',
-        status: 'delayed',
+        status: 'stuck',
         dateAssigned: new Date('2024-12-08'),
         branch: 'Bogotá',
         projectManager: mockUsers[3],

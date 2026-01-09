@@ -30,10 +30,25 @@ const UNIQUE_STATUSES: Status[] = [
   'ready_for_assets', 'ready_for_qc_premix', 'ready_for_final_delivery',
 ];
 
+// Fallback config for unknown statuses (from old data)
+const FALLBACK_CONFIG = { label: 'Unknown', className: 'bg-[hsl(225,15%,75%)] text-white' };
+
+// Map old status values to new ones
+const STATUS_MIGRATION: Record<string, Status> = {
+  'done': 'delivered',
+  'working': 'in_progress',
+  'stuck': 'delayed',
+  'waiting': 'on_hold',
+  'planning': 'pending_client_approval',
+};
+
 export function StatusBadge({ status, onStatusChange, isKickoffPhase = false, onSendToPhase }: StatusBadgeProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showPhaseMenu, setShowPhaseMenu] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Migrate old status values to new ones
+  const normalizedStatus = STATUS_MIGRATION[status] || status;
 
   // In Kickoff phase, show "Launch" instead of "Delivered"
   const getDisplayConfig = (statusKey: Status) => {
@@ -43,10 +58,10 @@ export function StatusBadge({ status, onStatusChange, isKickoffPhase = false, on
     if (!isKickoffPhase && statusKey === 'launch') {
       return null;
     }
-    return STATUS_CONFIG[statusKey];
+    return STATUS_CONFIG[statusKey] || FALLBACK_CONFIG;
   };
 
-  const config = getDisplayConfig(status) || STATUS_CONFIG[status];
+  const config = getDisplayConfig(normalizedStatus as Status) || FALLBACK_CONFIG;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

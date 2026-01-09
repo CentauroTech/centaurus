@@ -162,6 +162,15 @@ export function useBulkMoveToPhase(boardId: string) {
       const currentDate = new Date().toISOString().split('T')[0];
       const now = new Date().toISOString();
 
+      // First, set date_delivered on all tasks before moving (stamps delivery from current board)
+      const { error: deliveredError } = await supabase
+        .from('tasks')
+        .update({ date_delivered: currentDate })
+        .in('id', taskIds);
+
+      if (deliveredError) throw deliveredError;
+
+      // Then move to new board with fresh date_assigned and reset date_delivered
       const { error: updateError } = await supabase
         .from('tasks')
         .update({
@@ -169,6 +178,7 @@ export function useBulkMoveToPhase(boardId: string) {
           status: 'default',
           fase: targetPhase,
           date_assigned: currentDate,
+          date_delivered: null, // Reset for the new board
           last_updated: now,
         })
         .in('id', taskIds);
@@ -273,6 +283,13 @@ export function useMoveTaskToPhase(boardId: string) {
       const currentDate = new Date().toISOString().split('T')[0];
       const now = new Date().toISOString();
 
+      // First, set date_delivered on current task before moving (stamps delivery from current board)
+      await supabase
+        .from('tasks')
+        .update({ date_delivered: currentDate })
+        .eq('id', taskId);
+
+      // Then move to new board with fresh date_assigned and reset date_delivered
       const { error: updateError } = await supabase
         .from('tasks')
         .update({
@@ -280,6 +297,7 @@ export function useMoveTaskToPhase(boardId: string) {
           status: 'default',
           fase: targetPhase,
           date_assigned: currentDate,
+          date_delivered: null, // Reset for the new board
           last_updated: now,
         })
         .eq('id', taskId);

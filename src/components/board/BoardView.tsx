@@ -51,7 +51,7 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
   const addTaskGroupMutation = useAddTaskGroup(boardId);
   const updateTaskGroupMutation = useUpdateTaskGroup(boardId);
   const addTaskMutation = useAddTask(boardId);
-  const updateTaskMutation = useUpdateTask(boardId);
+  const updateTaskMutation = useUpdateTask(boardId, currentUserId);
   const deleteTaskMutation = useDeleteTask(boardId);
   const moveToNextPhaseMutation = useMoveToNextPhase(boardId, currentUserId);
   const moveTaskToPhaseMutation = useMoveTaskToPhase(boardId, currentUserId);

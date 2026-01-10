@@ -287,11 +287,21 @@ export function useAddTask(boardId: string) {
   });
 }
 
-export function useUpdateTask(boardId: string) {
+export function useUpdateTask(boardId: string, currentUserId?: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ taskId, updates }: { taskId: string; updates: Record<string, any> }) => {
+      // Fetch current task values to compare
+      const { data: currentTask, error: fetchError } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('id', taskId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Update the task
       const { data, error } = await supabase
         .from('tasks')
         .update({ ...updates, last_updated: new Date().toISOString() })
@@ -300,10 +310,49 @@ export function useUpdateTask(boardId: string) {
         .single();
 
       if (error) throw error;
+
+      // Log each changed field to activity_log
+      const activityLogs: Array<{
+        task_id: string;
+        type: string;
+        field: string;
+        old_value: string | null;
+        new_value: string | null;
+        user_id: string | null;
+      }> = [];
+
+      for (const [key, newValue] of Object.entries(updates)) {
+        const oldValue = currentTask[key];
+        
+        // Skip if values are the same
+        if (oldValue === newValue) continue;
+        if (oldValue === null && newValue === null) continue;
+        if (oldValue === undefined && newValue === null) continue;
+        
+        // Convert values to strings for storage
+        const oldStr = oldValue !== null && oldValue !== undefined ? String(oldValue) : null;
+        const newStr = newValue !== null && newValue !== undefined ? String(newValue) : null;
+        
+        activityLogs.push({
+          task_id: taskId,
+          type: 'field_change',
+          field: key,
+          old_value: oldStr,
+          new_value: newStr,
+          user_id: currentUserId || null,
+        });
+      }
+
+      // Insert all activity logs
+      if (activityLogs.length > 0) {
+        await supabase.from('activity_log').insert(activityLogs);
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['board', boardId] });
+      queryClient.invalidateQueries({ queryKey: ['activity-log'] });
     },
   });
 }

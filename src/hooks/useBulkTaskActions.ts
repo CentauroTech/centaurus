@@ -89,7 +89,7 @@ export function useBulkDelete(boardId: string) {
   });
 }
 
-export function useBulkMoveToPhase(boardId: string) {
+export function useBulkMoveToPhase(boardId: string, currentUserId?: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -185,7 +185,7 @@ export function useBulkMoveToPhase(boardId: string) {
 
       if (updateError) throw updateError;
 
-      // Log activity for each task
+      // Log activity for each task with user attribution
       for (const taskId of taskIds) {
         await supabase.from('activity_log').insert({
           task_id: taskId,
@@ -193,6 +193,7 @@ export function useBulkMoveToPhase(boardId: string) {
           field: 'fase',
           old_value: currentBoard.name,
           new_value: targetPhase,
+          user_id: currentUserId || null,
         });
       }
 
@@ -210,7 +211,7 @@ export function useBulkMoveToPhase(boardId: string) {
   });
 }
 
-export function useMoveTaskToPhase(boardId: string) {
+export function useMoveTaskToPhase(boardId: string, currentUserId?: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -304,13 +305,14 @@ export function useMoveTaskToPhase(boardId: string) {
 
       if (updateError) throw updateError;
 
-      // Log activity
+      // Log activity with user attribution
       await supabase.from('activity_log').insert({
         task_id: taskId,
         type: 'phase_change',
         field: 'fase',
         old_value: currentBoard.name,
         new_value: targetPhase,
+        user_id: currentUserId || null,
       });
 
       return { targetPhase };

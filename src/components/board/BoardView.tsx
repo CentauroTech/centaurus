@@ -18,6 +18,7 @@ import {
   useMoveTaskToPhase,
   AVAILABLE_PHASES 
 } from '@/hooks/useBulkTaskActions';
+import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 
 interface BoardGroup {
   id: string;
@@ -44,16 +45,19 @@ interface BoardViewProps {
 }
 
 function BoardViewContent({ board, boardId }: BoardViewProps) {
+  const { data: currentTeamMember } = useCurrentTeamMember();
+  const currentUserId = currentTeamMember?.id || null;
+  
   const addTaskGroupMutation = useAddTaskGroup(boardId);
   const updateTaskGroupMutation = useUpdateTaskGroup(boardId);
   const addTaskMutation = useAddTask(boardId);
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
-  const moveToNextPhaseMutation = useMoveToNextPhase(boardId);
-  const moveTaskToPhaseMutation = useMoveTaskToPhase(boardId);
+  const moveToNextPhaseMutation = useMoveToNextPhase(boardId, currentUserId);
+  const moveTaskToPhaseMutation = useMoveTaskToPhase(boardId, currentUserId);
   const bulkDuplicateMutation = useBulkDuplicate(boardId);
   const bulkDeleteMutation = useBulkDelete(boardId);
-  const bulkMoveMutation = useBulkMoveToPhase(boardId);
+  const bulkMoveMutation = useBulkMoveToPhase(boardId, currentUserId);
 
   const updateTask = (taskId: string, updates: Record<string, any>, groupId?: string, pruebaDeVoz?: boolean) => {
     // If status is changing to 'done', trigger phase progression

@@ -83,7 +83,7 @@ interface MoveToNextPhaseParams {
   pruebaDeVoz: boolean;
 }
 
-export function useMoveToNextPhase(boardId: string) {
+export function useMoveToNextPhase(boardId: string, currentUserId?: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -192,6 +192,7 @@ export function useMoveToNextPhase(boardId: string) {
         field: 'date_delivered',
         old_value: currentTask.date_delivered,
         new_value: currentDate,
+        user_id: currentUserId || null,
       });
 
       // 7. Move the task to the new group, update phase, and reset status
@@ -243,6 +244,7 @@ export function useMoveToNextPhase(boardId: string) {
               field: 'people',
               old_value: null,
               new_value: 'Natalia Aparicio',
+              user_id: currentUserId || null,
             });
           }
         }
@@ -255,6 +257,7 @@ export function useMoveToNextPhase(boardId: string) {
         field: 'date_assigned',
         old_value: currentTask.date_assigned,
         new_value: currentDate,
+        user_id: currentUserId || null,
       });
 
       // 10. Log the phase change in activity_log
@@ -264,6 +267,7 @@ export function useMoveToNextPhase(boardId: string) {
         field: 'fase',
         old_value: currentTask.fase || currentPhase,
         new_value: nextPhaseName,
+        user_id: currentUserId || null,
       });
 
       // Log the group/board change
@@ -273,6 +277,7 @@ export function useMoveToNextPhase(boardId: string) {
         field: 'board',
         old_value: currentBoard.name,
         new_value: nextBoard.name,
+        user_id: currentUserId || null,
       });
 
       return { 

@@ -174,6 +174,7 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                   isCollapsed: group.is_collapsed,
                   tasks: group.tasks.map((t) => ({
                     id: t.id,
+                    groupId: t.group_id, // Store original group_id for HQ phase progression
                     name: t.name,
                     status: t.status,
                     isPrivate: t.is_private,
@@ -280,8 +281,9 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                   if (updates.traductor !== undefined) dbUpdates.traductor_id = updates.traductor?.id || null;
                   if (updates.adaptador !== undefined) dbUpdates.adaptador_id = updates.adaptador?.id || null;
                   
-                  // Pass group.id and pruebaDeVoz for phase progression
-                  updateTask(taskId, dbUpdates, group.id, rawTask?.prueba_de_voz);
+                  // Use task's real group_id for phase progression (important for HQ view)
+                  const realGroupId = rawTask?.group_id || group.id;
+                  updateTask(taskId, dbUpdates, realGroupId, rawTask?.prueba_de_voz);
                 }}
                 onDeleteTask={deleteTask}
                 onAddTask={() => addTask(group.id)}

@@ -48,6 +48,7 @@ export interface ActivityItem {
 
 export interface Task {
   id: string;
+  groupId?: string; // Original group_id from database (needed for HQ phase progression)
   name: string;
   status: Status;
   isPrivate?: boolean;

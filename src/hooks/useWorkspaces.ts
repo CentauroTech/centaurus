@@ -287,6 +287,23 @@ export function useAddTask(boardId: string) {
   });
 }
 
+// Map of personnel field IDs to friendly names
+const personnelFieldNames: Record<string, string> = {
+  project_manager_id: 'Project Manager',
+  director_id: 'Director',
+  tecnico_id: 'Técnico',
+  qc_1_id: 'QC 1',
+  qc_retakes_id: 'QC Retakes',
+  mixer_bogota_id: 'Mixer Bogotá',
+  mixer_miami_id: 'Mixer Miami',
+  qc_mix_id: 'QC Mix',
+  traductor_id: 'Translator',
+  adaptador_id: 'Adapter',
+};
+
+// Fields that store team_member IDs
+const personnelFields = Object.keys(personnelFieldNames);
+
 export function useUpdateTask(boardId: string, currentUserId?: string | null) {
   const queryClient = useQueryClient();
 
@@ -300,6 +317,28 @@ export function useUpdateTask(boardId: string, currentUserId?: string | null) {
         .single();
 
       if (fetchError) throw fetchError;
+
+      // Collect all personnel IDs that need name resolution
+      const personnelIdsToResolve = new Set<string>();
+      
+      for (const [key, newValue] of Object.entries(updates)) {
+        if (personnelFields.includes(key)) {
+          const oldValue = currentTask[key];
+          if (oldValue) personnelIdsToResolve.add(oldValue);
+          if (newValue) personnelIdsToResolve.add(newValue);
+        }
+      }
+
+      // Fetch names for all personnel IDs at once
+      let personnelNames = new Map<string, string>();
+      if (personnelIdsToResolve.size > 0) {
+        const { data: members } = await supabase
+          .from('team_members')
+          .select('id, name')
+          .in('id', Array.from(personnelIdsToResolve));
+        
+        members?.forEach(m => personnelNames.set(m.id, m.name));
+      }
 
       // Update the task
       const { data, error } = await supabase
@@ -329,14 +368,21 @@ export function useUpdateTask(boardId: string, currentUserId?: string | null) {
         if (oldValue === null && newValue === null) continue;
         if (oldValue === undefined && newValue === null) continue;
         
-        // Convert values to strings for storage
-        const oldStr = oldValue !== null && oldValue !== undefined ? String(oldValue) : null;
-        const newStr = newValue !== null && newValue !== undefined ? String(newValue) : null;
+        // Use friendly field name and resolve personnel IDs to names
+        let fieldName = key;
+        let oldStr = oldValue !== null && oldValue !== undefined ? String(oldValue) : null;
+        let newStr = newValue !== null && newValue !== undefined ? String(newValue) : null;
+        
+        if (personnelFields.includes(key)) {
+          fieldName = personnelFieldNames[key];
+          oldStr = oldValue ? personnelNames.get(oldValue) || null : null;
+          newStr = newValue ? personnelNames.get(newValue) || null : null;
+        }
         
         activityLogs.push({
           task_id: taskId,
           type: 'field_change',
-          field: key,
+          field: fieldName,
           old_value: oldStr,
           new_value: newStr,
           user_id: currentUserId || null,

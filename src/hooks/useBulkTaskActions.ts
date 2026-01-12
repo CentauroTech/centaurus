@@ -185,6 +185,45 @@ export function useBulkMoveToPhase(boardId: string, currentUserId?: string | nul
 
       if (updateError) throw updateError;
 
+      // Handle Assets phase automation - assign Natalia Aparicio
+      if (normalizePhase(targetPhase) === 'assets') {
+        const { data: natalia } = await supabase
+          .from('team_members')
+          .select('id')
+          .ilike('name', '%Natalia Aparicio%')
+          .limit(1)
+          .single();
+
+        if (natalia) {
+          for (const taskId of taskIds) {
+            // Check if already assigned
+            const { data: existing } = await supabase
+              .from('task_people')
+              .select('id')
+              .eq('task_id', taskId)
+              .eq('team_member_id', natalia.id)
+              .maybeSingle();
+
+            if (!existing) {
+              await supabase.from('task_people').insert({
+                task_id: taskId,
+                team_member_id: natalia.id,
+              });
+
+              // Log the person assignment
+              await supabase.from('activity_log').insert({
+                task_id: taskId,
+                type: 'field_change',
+                field: 'people',
+                old_value: null,
+                new_value: 'Natalia Aparicio',
+                user_id: currentUserId || null,
+              });
+            }
+          }
+        }
+      }
+
       // Log activity for each task with user attribution
       for (const taskId of taskIds) {
         await supabase.from('activity_log').insert({
@@ -304,6 +343,43 @@ export function useMoveTaskToPhase(boardId: string, currentUserId?: string | nul
         .eq('id', taskId);
 
       if (updateError) throw updateError;
+
+      // Handle Assets phase automation - assign Natalia Aparicio
+      if (normalizePhase(targetPhase) === 'assets') {
+        const { data: natalia } = await supabase
+          .from('team_members')
+          .select('id')
+          .ilike('name', '%Natalia Aparicio%')
+          .limit(1)
+          .single();
+
+        if (natalia) {
+          // Check if already assigned
+          const { data: existing } = await supabase
+            .from('task_people')
+            .select('id')
+            .eq('task_id', taskId)
+            .eq('team_member_id', natalia.id)
+            .maybeSingle();
+
+          if (!existing) {
+            await supabase.from('task_people').insert({
+              task_id: taskId,
+              team_member_id: natalia.id,
+            });
+
+            // Log the person assignment
+            await supabase.from('activity_log').insert({
+              task_id: taskId,
+              type: 'field_change',
+              field: 'people',
+              old_value: null,
+              new_value: 'Natalia Aparicio',
+              user_id: currentUserId || null,
+            });
+          }
+        }
+      }
 
       // Log activity with user attribution
       await supabase.from('activity_log').insert({

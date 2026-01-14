@@ -7,7 +7,7 @@ import { Calendar } from '@/components/ui/calendar';
 
 interface DateCellProps {
   date?: Date | string;
-  onDateChange: (date: Date | undefined) => void;
+  onDateChange: (date: string | undefined) => void;
 }
 
 // Parse date string as local date (not UTC) to avoid timezone shift
@@ -21,6 +21,14 @@ function parseLocalDate(dateStr: string): Date {
     return new Date(year, month, day);
   }
   return new Date(dateStr);
+}
+
+// Format date as YYYY-MM-DD string for database storage
+function formatDateForDB(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export function DateCell({ date, onDateChange }: DateCellProps) {
@@ -39,7 +47,9 @@ export function DateCell({ date, onDateChange }: DateCellProps) {
   const isOverdue = isValidDate && isPast(dateObj) && !isToday(dateObj);
 
   const handleSelect = (selectedDate: Date | undefined) => {
-    onDateChange(selectedDate);
+    // Convert to YYYY-MM-DD string to avoid timezone issues
+    const dateString = selectedDate ? formatDateForDB(selectedDate) : undefined;
+    onDateChange(dateString);
     setOpen(false);
   };
 
@@ -63,6 +73,7 @@ export function DateCell({ date, onDateChange }: DateCellProps) {
           selected={isValidDate ? dateObj : undefined}
           onSelect={handleSelect}
           initialFocus
+          className="pointer-events-auto"
         />
       </PopoverContent>
     </Popover>

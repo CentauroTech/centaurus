@@ -20,6 +20,82 @@ const PHASE_ORDER = [
   'Deliveries',
 ];
 
+// Phase automation configuration - maps normalized phase names to team member names
+const PHASE_AUTOMATIONS: Record<string, string[]> = {
+  'assets': ['Natalia Aparicio'],
+  'translation': ['Julio Neri'],
+  'adapting': ['Julio Neri'],
+  'voicetests': ['Julio Neri', 'Judith Noguera'],
+  'recording': ['Judith Noguera'],
+  'premix': ['Judith Noguera'],
+  'qcpremix': ['Natalia Aparicio'],
+  'retakes': ['Judith Noguera'],
+  'qcretakes': ['Natalia Aparicio'],
+  'mix': ['Natalia Aparicio'],
+  'mixretakes': ['Natalia Aparicio'],
+  'deliveries': ['Natalia Aparicio'],
+};
+
+// Helper function to assign people to a task based on phase automation
+async function applyPhaseAutomation(
+  taskId: string,
+  normalizedPhase: string,
+  currentUserId: string | null | undefined
+): Promise<void> {
+  const assignees = PHASE_AUTOMATIONS[normalizedPhase];
+  if (!assignees || assignees.length === 0) return;
+
+  // Fetch team members for the assignees
+  const { data: teamMembers, error: teamError } = await supabase
+    .from('team_members')
+    .select('id, name')
+    .in('name', assignees);
+
+  if (teamError || !teamMembers || teamMembers.length === 0) {
+    console.error('Failed to fetch team members for automation:', teamError);
+    return;
+  }
+
+  // Get existing assignments to avoid duplicates
+  const { data: existingAssignments } = await supabase
+    .from('task_people')
+    .select('team_member_id')
+    .eq('task_id', taskId);
+
+  const existingIds = new Set(existingAssignments?.map(a => a.team_member_id) || []);
+
+  // Filter out already assigned members
+  const newAssignments = teamMembers.filter(tm => !existingIds.has(tm.id));
+
+  if (newAssignments.length === 0) return;
+
+  // Insert new assignments
+  const insertData = newAssignments.map(tm => ({
+    task_id: taskId,
+    team_member_id: tm.id
+  }));
+
+  const { error: insertError } = await supabase
+    .from('task_people')
+    .insert(insertData);
+
+  if (insertError) {
+    console.error('Failed to insert task_people:', insertError);
+    return;
+  }
+
+  // Log the assignment
+  const assignedNames = newAssignments.map(tm => tm.name).join(', ');
+  await supabase.from('activity_log').insert({
+    task_id: taskId,
+    type: 'field_change',
+    field: 'people',
+    old_value: null,
+    new_value: assignedNames,
+    user_id: currentUserId || null,
+  });
+}
+
 export function useBulkDuplicate(boardId: string) {
   const queryClient = useQueryClient();
 
@@ -185,43 +261,10 @@ export function useBulkMoveToPhase(boardId: string, currentUserId?: string | nul
 
       if (updateError) throw updateError;
 
-      // Handle Assets phase automation - assign Natalia Aparicio
-      if (normalizePhase(targetPhase) === 'assets') {
-        const { data: natalia } = await supabase
-          .from('team_members')
-          .select('id')
-          .ilike('name', '%Natalia Aparicio%')
-          .limit(1)
-          .single();
-
-        if (natalia) {
-          for (const taskId of taskIds) {
-            // Check if already assigned
-            const { data: existing } = await supabase
-              .from('task_people')
-              .select('id')
-              .eq('task_id', taskId)
-              .eq('team_member_id', natalia.id)
-              .maybeSingle();
-
-            if (!existing) {
-              await supabase.from('task_people').insert({
-                task_id: taskId,
-                team_member_id: natalia.id,
-              });
-
-              // Log the person assignment
-              await supabase.from('activity_log').insert({
-                task_id: taskId,
-                type: 'field_change',
-                field: 'people',
-                old_value: null,
-                new_value: 'Natalia Aparicio',
-                user_id: currentUserId || null,
-              });
-            }
-          }
-        }
+      // Apply phase automation (assign people based on phase)
+      const normalizedPhase = normalizePhase(targetPhase);
+      for (const taskId of taskIds) {
+        await applyPhaseAutomation(taskId, normalizedPhase, currentUserId);
       }
 
       // Log activity for each task with user attribution
@@ -344,42 +387,9 @@ export function useMoveTaskToPhase(boardId: string, currentUserId?: string | nul
 
       if (updateError) throw updateError;
 
-      // Handle Assets phase automation - assign Natalia Aparicio
-      if (normalizePhase(targetPhase) === 'assets') {
-        const { data: natalia } = await supabase
-          .from('team_members')
-          .select('id')
-          .ilike('name', '%Natalia Aparicio%')
-          .limit(1)
-          .single();
-
-        if (natalia) {
-          // Check if already assigned
-          const { data: existing } = await supabase
-            .from('task_people')
-            .select('id')
-            .eq('task_id', taskId)
-            .eq('team_member_id', natalia.id)
-            .maybeSingle();
-
-          if (!existing) {
-            await supabase.from('task_people').insert({
-              task_id: taskId,
-              team_member_id: natalia.id,
-            });
-
-            // Log the person assignment
-            await supabase.from('activity_log').insert({
-              task_id: taskId,
-              type: 'field_change',
-              field: 'people',
-              old_value: null,
-              new_value: 'Natalia Aparicio',
-              user_id: currentUserId || null,
-            });
-          }
-        }
-      }
+      // Apply phase automation (assign people based on phase)
+      const normalizedPhase = normalizePhase(targetPhase);
+      await applyPhaseAutomation(taskId, normalizedPhase, currentUserId);
 
       // Log activity with user attribution
       await supabase.from('activity_log').insert({

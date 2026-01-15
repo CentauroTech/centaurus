@@ -19,6 +19,9 @@ import {
   AVAILABLE_PHASES 
 } from '@/hooks/useBulkTaskActions';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { User } from '@/types/board';
 
 interface BoardGroup {
   id: string;
@@ -47,6 +50,7 @@ interface BoardViewProps {
 function BoardViewContent({ board, boardId }: BoardViewProps) {
   const { data: currentTeamMember } = useCurrentTeamMember();
   const currentUserId = currentTeamMember?.id || null;
+  const queryClient = useQueryClient();
   
   const addTaskGroupMutation = useAddTaskGroup(boardId);
   const updateTaskGroupMutation = useUpdateTaskGroup(boardId);
@@ -58,6 +62,38 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
   const bulkDuplicateMutation = useBulkDuplicate(boardId);
   const bulkDeleteMutation = useBulkDelete(boardId);
   const bulkMoveMutation = useBulkMoveToPhase(boardId, currentUserId);
+
+  // Handle people updates (junction table)
+  const updatePeople = async (taskId: string, newPeople: User[], oldPeople: User[]) => {
+    // Delete existing people for this task
+    await supabase.from('task_people').delete().eq('task_id', taskId);
+    
+    // Insert new people
+    if (newPeople.length > 0) {
+      await supabase.from('task_people').insert(
+        newPeople.map(p => ({ task_id: taskId, team_member_id: p.id }))
+      );
+    }
+    
+    // Log the change
+    const oldNames = oldPeople.map(p => p.name).join(', ') || null;
+    const newNames = newPeople.map(p => p.name).join(', ') || null;
+    
+    if (oldNames !== newNames) {
+      await supabase.from('activity_log').insert({
+        task_id: taskId,
+        type: 'field_change',
+        field: 'people',
+        old_value: oldNames,
+        new_value: newNames,
+        user_id: currentUserId,
+      });
+    }
+    
+    // Invalidate queries to refresh data
+    queryClient.invalidateQueries({ queryKey: ['board', boardId] });
+    queryClient.invalidateQueries({ queryKey: ['activity-log'] });
+  };
 
   const updateTask = (taskId: string, updates: Record<string, any>, groupId?: string, pruebaDeVoz?: boolean) => {
     // If status is changing to 'done', trigger phase progression
@@ -221,10 +257,11 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                     phaseDueDate: t.phase_due_date || undefined,
                     linkToColHQ: t.link_to_col_hq,
                     rateInfo: t.rate_info,
+                    people: t.people || [],
                     createdAt: new Date(t.created_at),
                   })),
                 }}
-                onUpdateTask={(taskId, updates) => {
+                onUpdateTask={async (taskId, updates) => {
                   // Find the raw task data
                   const rawTask = group.tasks.find(t => t.id === taskId);
                   
@@ -281,9 +318,18 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                   if (updates.traductor !== undefined) dbUpdates.traductor_id = updates.traductor?.id || null;
                   if (updates.adaptador !== undefined) dbUpdates.adaptador_id = updates.adaptador?.id || null;
                   
-                  // Use task's real group_id for phase progression (important for HQ view)
-                  const realGroupId = rawTask?.group_id || group.id;
-                  updateTask(taskId, dbUpdates, realGroupId, rawTask?.prueba_de_voz);
+                  // Handle people updates separately (junction table)
+                  if (updates.people !== undefined) {
+                    const oldPeople = rawTask?.people || [];
+                    await updatePeople(taskId, updates.people, oldPeople);
+                  }
+                  
+                  // Only call updateTask if there are regular field updates
+                  if (Object.keys(dbUpdates).length > 0) {
+                    // Use task's real group_id for phase progression (important for HQ view)
+                    const realGroupId = rawTask?.group_id || group.id;
+                    updateTask(taskId, dbUpdates, realGroupId, rawTask?.prueba_de_voz);
+                  }
                 }}
                 onDeleteTask={deleteTask}
                 onAddTask={() => addTask(group.id)}

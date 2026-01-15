@@ -110,6 +110,8 @@ export function useBoard(boardId: string | null) {
         const groupToBoardMap = new Map(allGroups?.map(g => [g.id, g.board_id]) || []);
         
         let allTasks: any[] = [];
+        let taskPeopleMap = new Map<string, any[]>();
+        
         if (allGroupIds.length > 0) {
           const { data: tasksData, error: tasksError } = await supabase
             .from('tasks')
@@ -122,6 +124,27 @@ export function useBoard(boardId: string | null) {
             ...t,
             comment_count: t.comments?.[0]?.count || 0,
           }));
+          
+          // Fetch task_people for all tasks
+          const allTaskIds = allTasks.map(t => t.id);
+          if (allTaskIds.length > 0) {
+            const { data: taskPeopleData, error: tpError } = await supabase
+              .from('task_people')
+              .select('task_id, team_member_id')
+              .in('task_id', allTaskIds);
+            
+            if (tpError) throw tpError;
+            
+            // Map task_id to array of team members
+            taskPeopleData?.forEach(tp => {
+              const member = teamMemberMap.get(tp.team_member_id);
+              if (member) {
+                const existing = taskPeopleMap.get(tp.task_id) || [];
+                existing.push(member);
+                taskPeopleMap.set(tp.task_id, existing);
+              }
+            });
+          }
         }
 
         // Extract phase from board name (e.g., "Col-Kickoff" -> "Kickoff", "Mia-Recording" -> "Recording")
@@ -130,13 +153,14 @@ export function useBoard(boardId: string | null) {
           return parts.length > 1 ? parts.slice(1).join('-') : boardName;
         };
 
-        // Add currentPhase to each task based on its board
+        // Add currentPhase and people to each task based on its board
         const tasksWithPhase = allTasks.map(t => {
           const boardId = groupToBoardMap.get(t.group_id);
           const boardName = boardId ? boardMap.get(boardId) : 'Unknown';
           return {
             ...t,
             currentPhase: extractPhase(boardName || 'Unknown'),
+            people: taskPeopleMap.get(t.id) || [],
           };
         });
 
@@ -172,6 +196,8 @@ export function useBoard(boardId: string | null) {
       const groupIds = groups.map((g) => g.id);
       
       let tasks: any[] = [];
+      let taskPeopleMap = new Map<string, any[]>();
+      
       if (groupIds.length > 0) {
         const { data: tasksData, error: tasksError } = await supabase
           .from('tasks')
@@ -184,6 +210,27 @@ export function useBoard(boardId: string | null) {
           ...t,
           comment_count: t.comments?.[0]?.count || 0,
         }));
+        
+        // Fetch task_people for all tasks
+        const taskIds = tasks.map(t => t.id);
+        if (taskIds.length > 0) {
+          const { data: taskPeopleData, error: tpError } = await supabase
+            .from('task_people')
+            .select('task_id, team_member_id')
+            .in('task_id', taskIds);
+          
+          if (tpError) throw tpError;
+          
+          // Map task_id to array of team members
+          taskPeopleData?.forEach(tp => {
+            const member = teamMemberMap.get(tp.team_member_id);
+            if (member) {
+              const existing = taskPeopleMap.get(tp.task_id) || [];
+              existing.push(member);
+              taskPeopleMap.set(tp.task_id, existing);
+            }
+          });
+        }
       }
 
       return {
@@ -191,7 +238,10 @@ export function useBoard(boardId: string | null) {
         teamMemberMap,
         groups: groups.map((g) => ({
           ...g,
-          tasks: tasks.filter((t) => t.group_id === g.id),
+          tasks: tasks.filter((t) => t.group_id === g.id).map(t => ({
+            ...t,
+            people: taskPeopleMap.get(t.id) || [],
+          })),
         })),
       };
     },

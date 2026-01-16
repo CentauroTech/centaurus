@@ -5,8 +5,8 @@ interface TaskTemplate {
   name: string;
   client_name?: string;
   project_manager_id?: string;
-  servicios?: string;
-  formato?: string;
+  servicios?: string[];
+  formato?: string[];
   cantidad_episodios?: number;
   branch?: string;
   genre?: string;

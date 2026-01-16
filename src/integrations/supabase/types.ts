@@ -358,7 +358,7 @@ export type Database = {
           entrega_sesiones: string | null
           fase: string | null
           final_runtime: string | null
-          formato: string | null
+          formato: string[] | null
           genre: string | null
           group_id: string
           hq: string | null
@@ -379,7 +379,7 @@ export type Database = {
           qc_retakes_id: string | null
           rate_info: string | null
           rates: number | null
-          servicios: string | null
+          servicios: string[] | null
           show_guide: string | null
           sort_order: number
           status: string
@@ -413,7 +413,7 @@ export type Database = {
           entrega_sesiones?: string | null
           fase?: string | null
           final_runtime?: string | null
-          formato?: string | null
+          formato?: string[] | null
           genre?: string | null
           group_id: string
           hq?: string | null
@@ -434,7 +434,7 @@ export type Database = {
           qc_retakes_id?: string | null
           rate_info?: string | null
           rates?: number | null
-          servicios?: string | null
+          servicios?: string[] | null
           show_guide?: string | null
           sort_order?: number
           status?: string
@@ -468,7 +468,7 @@ export type Database = {
           entrega_sesiones?: string | null
           fase?: string | null
           final_runtime?: string | null
-          formato?: string | null
+          formato?: string[] | null
           genre?: string | null
           group_id?: string
           hq?: string | null
@@ -489,7 +489,7 @@ export type Database = {
           qc_retakes_id?: string | null
           rate_info?: string | null
           rates?: number | null
-          servicios?: string | null
+          servicios?: string[] | null
           show_guide?: string | null
           sort_order?: number
           status?: string

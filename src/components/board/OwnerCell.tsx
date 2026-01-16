@@ -46,7 +46,7 @@ export function OwnerCell({ owner, onOwnerChange }: OwnerCellProps) {
           >
             {owner.initials}
           </div>
-          <span className="text-sm text-foreground">{owner.name}</span>
+          <span className="text-sm text-inherit">{owner.name}</span>
           <button
             onClick={(e) => {
               e.stopPropagation();

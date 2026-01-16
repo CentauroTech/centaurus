@@ -345,7 +345,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
       <tr
         className={cn(
           "group border-b border-border transition-smooth",
-          isPrivate && "border-l-[6px] border-l-slate-700 bg-slate-800/80 [&_*]:text-white [&_input]:text-white [&_span]:text-white [&_button]:text-white",
+          isPrivate && "border-l-[6px] border-l-slate-700 bg-slate-800/80 text-slate-100",
           !isPrivate && isHovered && "bg-muted/30",
           !isPrivate && isTaskSelected && "bg-primary/10",
           isPrivate && isHovered && "bg-slate-700/80",

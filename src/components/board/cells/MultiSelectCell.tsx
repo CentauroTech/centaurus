@@ -37,6 +37,9 @@ export function MultiSelectCell({ value = [], onChange, options, placeholder = '
     onChange(value.filter(v => v !== option));
   };
 
+  // Check if we're in a private task row (dark background)
+  const isInPrivateRow = dropdownRef.current?.closest('tr')?.classList.contains('border-l-slate-700');
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -48,12 +51,12 @@ export function MultiSelectCell({ value = [], onChange, options, placeholder = '
             {value.map((item) => (
               <span
                 key={item}
-                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded whitespace-nowrap"
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-white/90 text-slate-700 text-xs rounded whitespace-nowrap border border-slate-200"
               >
                 <span>{item}</span>
                 <button
                   onClick={(e) => handleRemove(item, e)}
-                  className="hover:bg-blue-200 rounded p-0.5 flex-shrink-0"
+                  className="hover:bg-slate-200 rounded p-0.5 flex-shrink-0"
                 >
                   <X className="w-2.5 h-2.5" />
                 </button>
@@ -61,12 +64,16 @@ export function MultiSelectCell({ value = [], onChange, options, placeholder = '
             ))}
           </div>
         ) : (
-          <span className="text-sm text-muted-foreground truncate flex-1">
+          <span className={cn(
+            "text-sm truncate flex-1",
+            isInPrivateRow ? "text-slate-400" : "text-muted-foreground"
+          )}>
             {placeholder}
           </span>
         )}
         <ChevronDown className={cn(
-          "w-3 h-3 text-muted-foreground transition-transform flex-shrink-0",
+          "w-3 h-3 transition-transform flex-shrink-0",
+          isInPrivateRow ? "text-slate-400" : "text-muted-foreground",
           isOpen && "rotate-180"
         )} />
       </button>

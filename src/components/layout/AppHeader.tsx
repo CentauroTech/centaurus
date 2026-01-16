@@ -36,7 +36,7 @@ export function AppHeader({ boardName }: AppHeaderProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search tasks..."
-            className="pl-9 w-64 h-9 bg-secondary border-0"
+            className="pl-9 w-64 h-9 bg-slate-100 border-0"
           />
         </div>
         

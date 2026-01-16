@@ -16,7 +16,7 @@ import { ComboboxCell } from './cells/ComboboxCell';
 import { DropdownCell } from './cells/DropdownCell';
 import { FileUploadCell } from './cells/FileUploadCell';
 import { LastUpdatedCell } from './cells/LastUpdatedCell';
-import { PrivacyCell } from './cells/PrivacyCell';
+import { PrivacyCell, RoleAssignment } from './cells/PrivacyCell';
 import { MultiSelectCell } from './cells/MultiSelectCell';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
@@ -100,6 +100,15 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
     updateViewersMutation.mutate({ taskId: task.id, viewerIds: newViewerIds });
   };
 
+  const handleRoleAssignments = (assignments: RoleAssignment[]) => {
+    // Apply each role assignment to the task
+    assignments.forEach(assignment => {
+      // Create a user object with just the id for person fields
+      const userValue = { id: assignment.memberId, name: assignment.memberName } as any;
+      handleUpdate(assignment.field, userValue);
+    });
+  };
+
   // Handle update with bulk edit support
   const handleUpdate = useCallback((field: string, value: any) => {
     // Check if this task is part of a multi-selection
@@ -161,6 +170,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
             onChange={(val) => handleUpdate('isPrivate', val)}
             taskId={task.id}
             onViewersChange={handleViewersChange}
+            onRoleAssignments={handleRoleAssignments}
             currentViewerIds={viewerIds}
           />
         );

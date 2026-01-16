@@ -21,11 +21,18 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface RoleAssignment {
+  field: string;
+  memberId: string;
+  memberName: string;
+}
+
 interface PrivacyCellProps {
   isPrivate?: boolean;
   onChange: (isPrivate: boolean) => void;
   taskId?: string;
   onViewersChange?: (viewerIds: string[]) => void;
+  onRoleAssignments?: (assignments: RoleAssignment[]) => void;
   currentViewerIds?: string[];
 }
 
@@ -38,6 +45,16 @@ interface TeamMember {
 }
 
 type FilterCategory = 'all' | 'translators' | 'adapters' | 'mixers' | 'qc_premix' | 'qc_mix';
+
+// Map filter categories to task fields
+const CATEGORY_TO_FIELD: Record<FilterCategory, string | null> = {
+  all: null,
+  translators: 'traductor',
+  adapters: 'adaptador',
+  mixers: 'mixerMiami',
+  qc_premix: 'qc1',
+  qc_mix: 'qcMix',
+};
 
 const FILTER_CATEGORIES: { key: FilterCategory; label: string; names: string[] }[] = [
   { key: 'all', label: 'All', names: [] },
@@ -53,11 +70,13 @@ export function PrivacyCell({
   onChange, 
   taskId,
   onViewersChange,
+  onRoleAssignments,
   currentViewerIds = []
 }: PrivacyCellProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedViewers, setSelectedViewers] = useState<string[]>(currentViewerIds);
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
+  const [roleAssignments, setRoleAssignments] = useState<RoleAssignment[]>([]);
 
   // Fetch guests (team members without @centauro.com email)
   const { data: guests = [] } = useQuery({
@@ -88,6 +107,7 @@ export function PrivacyCell({
       // Opening privacy - show dialog to select guests
       setSelectedViewers(currentViewerIds);
       setActiveFilter('all');
+      setRoleAssignments([]);
       setDialogOpen(true);
     } else {
       // Making public - just toggle off
@@ -103,20 +123,39 @@ export function PrivacyCell({
     if (onViewersChange) {
       onViewersChange(selectedViewers);
     }
+    if (onRoleAssignments && roleAssignments.length > 0) {
+      onRoleAssignments(roleAssignments);
+    }
     setDialogOpen(false);
   };
 
   const handleCancel = () => {
     setDialogOpen(false);
     setSelectedViewers(currentViewerIds);
+    setRoleAssignments([]);
   };
 
-  const toggleViewer = (viewerId: string) => {
-    setSelectedViewers(prev => 
-      prev.includes(viewerId) 
-        ? prev.filter(id => id !== viewerId)
-        : [...prev, viewerId]
-    );
+  const toggleViewer = (viewer: TeamMember) => {
+    const isCurrentlySelected = selectedViewers.includes(viewer.id);
+    
+    if (isCurrentlySelected) {
+      // Removing viewer - also remove any role assignments for this viewer
+      setSelectedViewers(prev => prev.filter(id => id !== viewer.id));
+      setRoleAssignments(prev => prev.filter(a => a.memberId !== viewer.id));
+    } else {
+      // Adding viewer
+      setSelectedViewers(prev => [...prev, viewer.id]);
+      
+      // If we're in a specific category (not 'all'), also add a role assignment
+      const field = CATEGORY_TO_FIELD[activeFilter];
+      if (field) {
+        // Remove any existing assignment for this field (only one person per role)
+        setRoleAssignments(prev => {
+          const filtered = prev.filter(a => a.field !== field);
+          return [...filtered, { field, memberId: viewer.id, memberName: viewer.name }];
+        });
+      }
+    }
   };
 
   return (
@@ -171,6 +210,16 @@ export function PrivacyCell({
               ))}
             </div>
 
+            {/* Role assignment indicator */}
+            {roleAssignments.length > 0 && (
+              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                <p className="font-medium mb-1">Role assignments:</p>
+                {roleAssignments.map(a => (
+                  <p key={a.field}>{a.field}: {a.memberName}</p>
+                ))}
+              </div>
+            )}
+
             {/* Guest list */}
             {filteredGuests.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
@@ -185,11 +234,11 @@ export function PrivacyCell({
                       "flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-muted transition-colors",
                       selectedViewers.includes(guest.id) && "bg-primary/10"
                     )}
-                    onClick={() => toggleViewer(guest.id)}
+                    onClick={() => toggleViewer(guest)}
                   >
                     <Checkbox
                       checked={selectedViewers.includes(guest.id)}
-                      onCheckedChange={() => toggleViewer(guest.id)}
+                      onCheckedChange={() => toggleViewer(guest)}
                     />
                     <Avatar className="h-8 w-8">
                       <AvatarFallback

@@ -20,6 +20,15 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
   const isSelectingRef = useRef(false);
   const portalId = useId();
 
+  // Debug logging
+  console.log('ComboboxCell:', { 
+    optionsReceived: options?.length, 
+    options: options?.slice(0, 3),
+    isOpen, 
+    inputValue,
+    value 
+  });
+
   useEffect(() => {
     setInputValue(value || '');
   }, [value]);

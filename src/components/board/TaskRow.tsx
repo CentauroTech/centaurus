@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { GripVertical, Trash2, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Task, User, COLUMNS, Phase } from '@/types/board';
+import { Task, User, COLUMNS, Phase, Status } from '@/types/board';
 import { StatusBadge } from './StatusBadge';
 import { OwnerCell } from './OwnerCell';
 import { DateCell } from './DateCell';
@@ -58,6 +58,7 @@ const FIELD_TO_DB_COLUMN: Record<string, string> = {
   formato: 'formato',
   genre: 'genre',
   lenguajeOriginal: 'lenguaje_original',
+  targetLanguage: 'target_language',
   rates: 'rates',
   showGuide: 'show_guide',
   tituloAprobadoEspanol: 'titulo_aprobado_espanol',
@@ -80,7 +81,15 @@ const FIELD_TO_DB_COLUMN: Record<string, string> = {
   traductor: 'traductor_id',
   adaptador: 'adaptador_id',
   people: 'people',
-  currentPhase: 'fase',
+  currentPhase: 'currentPhase', // This is a computed field, not from DB
+  lastUpdated: 'last_updated',
+};
+
+// Helper function to get task value using the mapping
+const getTaskValue = (task: Task, field: string): any => {
+  const dbColumn = FIELD_TO_DB_COLUMN[field] || field;
+  // Try the mapped DB column first, then fall back to the original field
+  return (task as any)[dbColumn] ?? (task as any)[field];
 };
 
 export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendToPhase }: TaskRowProps) {
@@ -155,7 +164,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
   }, [task.id, shouldApplyBulkEdit, getSelectedTaskIds, onBulkUpdate, onUpdate]);
 
   const renderCell = (column: typeof COLUMNS[number]) => {
-    const value = task[column.field];
+    const value = getTaskValue(task, column.field);
     
     // Special handling for Name column - add the updates button after
     if (column.field === 'name') {
@@ -186,7 +195,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
       case 'privacy':
         return (
           <PrivacyCell
-            isPrivate={task.isPrivate}
+            isPrivate={getTaskValue(task, 'isPrivate') as boolean}
             onChange={(val) => handleUpdate('isPrivate', val)}
             taskId={task.id}
             onViewersChange={handleViewersChange}
@@ -235,7 +244,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
         const isKickoffPhase = boardName?.toLowerCase().includes('kickoff') || false;
         return (
           <StatusBadge
-            status={task.status}
+            status={getTaskValue(task, 'status') as Status}
             onStatusChange={(val) => handleUpdate('status', val)}
             isKickoffPhase={isKickoffPhase}
             onSendToPhase={onSendToPhase}
@@ -342,7 +351,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
     }
   };
 
-  const isPrivate = task.isPrivate;
+  const isPrivate = getTaskValue(task, 'isPrivate') as boolean;
   
   // Determine the background class for sticky columns based on state
   const getStickyBg = () => {

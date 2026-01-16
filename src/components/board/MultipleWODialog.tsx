@@ -18,6 +18,7 @@ import {
   FORMATO_OPTIONS,
   LENGUAJE_OPTIONS,
   GENRE_OPTIONS,
+  TARGET_LANGUAGE_OPTIONS,
   ENTREGA_FINAL_SCRIPT_OPTIONS,
   ENTREGA_FINAL_DUB_AUDIO_OPTIONS,
 } from '@/types/board';
@@ -26,6 +27,14 @@ interface BoardGroup {
   id: string;
   name: string;
   color: string;
+}
+
+interface TeamMember {
+  id: string;
+  name: string;
+  initials: string;
+  color: string;
+  role: string;
 }
 
 interface MultipleWODialogProps {
@@ -46,6 +55,7 @@ export interface TaskTemplate {
   branch?: string;
   genre?: string;
   lenguaje_original?: string;
+  target_language?: string;
   locked_runtime?: string;
   final_runtime?: string;
   show_guide?: string;
@@ -66,6 +76,7 @@ const FIELD_TO_TEMPLATE_KEY: Record<string, keyof TaskTemplate> = {
   formato: 'formato',
   cantidadEpisodios: 'cantidad_episodios',
   lenguajeOriginal: 'lenguaje_original',
+  targetLanguage: 'target_language',
   lockedRuntime: 'locked_runtime',
   finalRuntime: 'final_runtime',
   showGuide: 'show_guide',
@@ -86,6 +97,7 @@ const getOptionsForField = (fieldId: string): string[] => {
     case 'servicios': return SERVICIOS_OPTIONS;
     case 'formato': return FORMATO_OPTIONS;
     case 'lenguajeOriginal': return LENGUAJE_OPTIONS;
+    case 'targetLanguage': return TARGET_LANGUAGE_OPTIONS;
     case 'entregaFinalScriptItems': return ENTREGA_FINAL_SCRIPT_OPTIONS;
     case 'entregaFinalDubAudioItems': return ENTREGA_FINAL_DUB_AUDIO_OPTIONS;
     default: return [];
@@ -103,13 +115,17 @@ const COLUMN_CATEGORIES = {
     label: 'Basic Info',
     columns: TEMPLATE_COLUMNS.filter(c => ['clientName', 'branch', 'genre', 'cantidadEpisodios'].includes(c.id)),
   },
+  language: {
+    label: 'Language & Title',
+    columns: TEMPLATE_COLUMNS.filter(c => ['lenguajeOriginal', 'targetLanguage', 'tituloAprobadoEspanol'].includes(c.id)),
+  },
   production: {
     label: 'Production Details',
-    columns: TEMPLATE_COLUMNS.filter(c => ['servicios', 'formato', 'lenguajeOriginal', 'studio'].includes(c.id)),
+    columns: TEMPLATE_COLUMNS.filter(c => ['servicios', 'formato', 'studio'].includes(c.id)),
   },
   content: {
     label: 'Content Info',
-    columns: TEMPLATE_COLUMNS.filter(c => ['lockedRuntime', 'finalRuntime', 'showGuide', 'tituloAprobadoEspanol'].includes(c.id)),
+    columns: TEMPLATE_COLUMNS.filter(c => ['lockedRuntime', 'finalRuntime', 'showGuide'].includes(c.id)),
   },
   deliverables: {
     label: 'Deliverables',
@@ -275,18 +291,21 @@ export function MultipleWODialog({
   const [count, setCount] = useState(5);
   const [template, setTemplate] = useState<TaskTemplate>({ name: '' });
   const [existingData, setExistingData] = useState<Record<string, string[]>>({});
+  const [projectManagers, setProjectManagers] = useState<TeamMember[]>([]);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
     basic: true,
+    language: true,
     production: false,
     content: false,
     deliverables: false,
     rates: false,
   });
 
-  // Fetch existing values for autocomplete
+  // Fetch existing values and project managers
   useEffect(() => {
     if (isOpen) {
       fetchExistingValues();
+      fetchProjectManagers();
     }
   }, [isOpen]);
 
@@ -303,6 +322,17 @@ export function MultipleWODialog({
         clientName: clients,
         studio: studios,
       });
+    }
+  };
+
+  const fetchProjectManagers = async () => {
+    const { data } = await supabase
+      .from('team_members')
+      .select('id, name, initials, color, role')
+      .eq('role', 'project_manager');
+
+    if (data) {
+      setProjectManagers(data);
     }
   };
 
@@ -422,7 +452,7 @@ export function MultipleWODialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
+      <DialogContent className="sm:max-w-[800px] max-h-[95vh] w-[95vw]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ListPlus className="w-5 h-5" />
@@ -431,7 +461,7 @@ export function MultipleWODialog({
         </DialogHeader>
 
         {step === 1 ? (
-          <ScrollArea className="max-h-[60vh] pr-4">
+          <ScrollArea className="max-h-[70vh] pr-4">
             <div className="space-y-4 py-4">
               {/* Group Selection */}
               <div className="space-y-2">
@@ -457,7 +487,7 @@ export function MultipleWODialog({
               </div>
 
               {/* Naming Pattern */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="baseName">Base Name</Label>
                   <Input
@@ -476,20 +506,17 @@ export function MultipleWODialog({
                     onChange={(e) => setStartingSuffix(e.target.value)}
                   />
                 </div>
-              </div>
-
-              {/* Count */}
-              <div className="space-y-2">
-                <Label htmlFor="count">Number of Items</Label>
-                <Input
-                  id="count"
-                  type="number"
-                  min={1}
-                  max={50}
-                  value={count}
-                  onChange={(e) => setCount(Math.min(50, Math.max(1, parseInt(e.target.value) || 1)))}
-                />
-                <p className="text-xs text-muted-foreground">Maximum 50 items at once</p>
+                <div className="space-y-2">
+                  <Label htmlFor="count">Number of Items</Label>
+                  <Input
+                    id="count"
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={count}
+                    onChange={(e) => setCount(Math.min(50, Math.max(1, parseInt(e.target.value) || 1)))}
+                  />
+                </div>
               </div>
 
               {/* Preview hint */}
@@ -503,8 +530,39 @@ export function MultipleWODialog({
                       <span className="font-medium">{generatedNames[generatedNames.length - 1]}</span>
                     </>
                   )}
+                  <span className="text-muted-foreground ml-2">({count} items)</span>
                 </div>
               )}
+
+              {/* Project Manager Selection */}
+              <div className="border-t pt-4">
+                <div className="space-y-2">
+                  <Label>Project Manager</Label>
+                  <Select 
+                    value={template.project_manager_id || ''} 
+                    onValueChange={(val) => setTemplate(prev => ({ ...prev, project_manager_id: val || undefined }))}
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Select project manager" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projectManagers.map((pm) => (
+                        <SelectItem key={pm.id} value={pm.id}>
+                          <span className="flex items-center gap-2">
+                            <span 
+                              className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-white"
+                              style={{ backgroundColor: pm.color }}
+                            >
+                              {pm.initials}
+                            </span>
+                            {pm.name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
               {/* Template Fields - Collapsible Categories */}
               <div className="space-y-2 border-t pt-4">
@@ -529,7 +587,7 @@ export function MultipleWODialog({
                         </span>
                       </CollapsibleTrigger>
                       <CollapsibleContent className="px-3 pb-3">
-                        <div className="grid grid-cols-2 gap-3 mt-2">
+                        <div className="grid grid-cols-3 gap-3 mt-2">
                           {category.columns.map((column) => (
                             <div key={column.id} className="space-y-1">
                               <Label className="text-xs">{column.label}</Label>
@@ -549,7 +607,7 @@ export function MultipleWODialog({
             <p className="text-sm text-muted-foreground mb-4">
               You are about to create <span className="font-semibold text-foreground">{count}</span> items:
             </p>
-            <ScrollArea className="h-[300px] border rounded-md p-3">
+            <ScrollArea className="h-[400px] border rounded-md p-3">
               <div className="space-y-1">
                 {generatedNames.map((name, idx) => (
                   <div 

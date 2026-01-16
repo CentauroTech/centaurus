@@ -384,6 +384,7 @@ export type Database = {
           sort_order: number
           status: string
           studio: string | null
+          target_language: string | null
           tecnico_id: string | null
           titulo_aprobado_espanol: string | null
           traductor_id: string | null
@@ -439,6 +440,7 @@ export type Database = {
           sort_order?: number
           status?: string
           studio?: string | null
+          target_language?: string | null
           tecnico_id?: string | null
           titulo_aprobado_espanol?: string | null
           traductor_id?: string | null
@@ -494,6 +496,7 @@ export type Database = {
           sort_order?: number
           status?: string
           studio?: string | null
+          target_language?: string | null
           tecnico_id?: string | null
           titulo_aprobado_espanol?: string | null
           traductor_id?: string | null

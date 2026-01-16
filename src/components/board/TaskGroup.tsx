@@ -91,9 +91,9 @@ export function TaskGroup({
         <div className="bg-card rounded-lg border border-border shadow-board overflow-visible animate-fade-in">
           <table className="w-full">
             <thead>
-              <tr className="bg-muted/50 border-b border-border">
+              <tr className="bg-slate-100 border-b border-border">
                 {/* Select All Checkbox */}
-                <th className="w-8 px-2 sticky left-0 bg-muted/50 z-10">
+                <th className="w-8 px-2 sticky left-0 bg-slate-100 z-20">
                   <Checkbox
                     checked={allSelected}
                     onCheckedChange={handleSelectAll}
@@ -103,7 +103,7 @@ export function TaskGroup({
                     )}
                   />
                 </th>
-                <th className="w-8 sticky left-8 bg-muted/50 z-10" />
+                <th className="w-8 sticky left-8 bg-slate-100 z-20" />
                 {COLUMNS.map((column, index) => {
                   // Make privacy (index 0) and name (index 1) columns sticky
                   const isSticky = index <= 1;
@@ -119,7 +119,8 @@ export function TaskGroup({
                       className={cn(
                         "py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap",
                         column.width,
-                        isSticky && "sticky bg-muted/50 z-10"
+                        isSticky && "sticky bg-slate-100 z-20",
+                        index === 1 && "border-r-2 border-slate-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
                       )}
                       style={isSticky ? { left: leftOffset } : undefined}
                     >

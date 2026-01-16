@@ -406,7 +406,8 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
               className={cn(
                 "py-2 px-3", 
                 column.width,
-                isSticky && cn("sticky z-20", stickyBg)
+                isSticky && cn("sticky z-20", stickyBg),
+                index === 1 && "border-r-2 border-slate-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
               )}
               style={isSticky ? { left: leftOffset } : undefined}
             >

@@ -302,9 +302,11 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
       <tr
         className={cn(
           "group border-b border-border transition-smooth",
-          isPrivate && "border-l-4 border-l-amber-500 bg-amber-500/5",
-          isHovered && "bg-muted/30",
-          isTaskSelected && "bg-primary/10"
+          isPrivate && "border-l-[6px] border-l-amber-500 bg-amber-500/15",
+          !isPrivate && isHovered && "bg-muted/30",
+          !isPrivate && isTaskSelected && "bg-primary/10",
+          isPrivate && isHovered && "bg-amber-500/20",
+          isPrivate && isTaskSelected && "bg-amber-500/25"
         )}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}

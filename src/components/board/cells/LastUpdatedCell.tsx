@@ -5,9 +5,10 @@ import { cn } from '@/lib/utils';
 interface LastUpdatedCellProps {
   date?: Date | string;
   updatedBy?: string;
+  isPrivate?: boolean;
 }
 
-export function LastUpdatedCell({ date, updatedBy }: LastUpdatedCellProps) {
+export function LastUpdatedCell({ date, updatedBy, isPrivate = false }: LastUpdatedCellProps) {
   if (!date) {
     return (
       <span className="text-sm opacity-60">-</span>
@@ -26,11 +27,17 @@ export function LastUpdatedCell({ date, updatedBy }: LastUpdatedCellProps) {
   const relativeTime = formatDistanceToNow(dateObj, { addSuffix: true });
 
   return (
-    <div className="flex items-center gap-1.5 text-sm text-inherit opacity-80">
-      <Clock className="w-3.5 h-3.5 flex-shrink-0" />
-      <span className="truncate" title={dateObj.toLocaleString()}>
-        {relativeTime}
-      </span>
+    <div 
+      className={cn(
+        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium",
+        isPrivate 
+          ? "bg-white text-slate-800" 
+          : "bg-slate-800 text-white"
+      )}
+      title={dateObj.toLocaleString()}
+    >
+      <Clock className="w-3 h-3 flex-shrink-0" />
+      <span className="truncate">{relativeTime}</span>
     </div>
   );
 }

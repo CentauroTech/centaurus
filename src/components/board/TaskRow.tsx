@@ -294,6 +294,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
             onChange={(val) => handleUpdate(column.field, val)}
             options={column.options || []}
             placeholder="Select..."
+            isPrivate={isPrivate}
           />
         );
       case 'dropdown':
@@ -303,6 +304,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
             onChange={(val) => handleUpdate(column.field, val)}
             options={column.options || []}
             placeholder="Select..."
+            isPrivate={isPrivate}
           />
         );
       case 'file':
@@ -311,6 +313,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
             value={value as string}
             onChange={(val) => handleUpdate(column.field, val)}
             placeholder="Upload"
+            isPrivate={isPrivate}
           />
         );
       case 'auto':
@@ -322,7 +325,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
         );
       case 'last-updated':
         return (
-          <LastUpdatedCell date={value as Date} />
+          <LastUpdatedCell date={value as Date} isPrivate={isPrivate} />
         );
       case 'multi-select':
         return (

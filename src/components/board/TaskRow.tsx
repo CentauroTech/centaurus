@@ -302,17 +302,17 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
       <tr
         className={cn(
           "group border-b border-border transition-smooth",
-          isPrivate && "border-l-[6px] border-l-amber-500 bg-amber-500/15",
+          isPrivate && "border-l-[6px] border-l-slate-700 bg-slate-800/80 text-slate-100",
           !isPrivate && isHovered && "bg-muted/30",
           !isPrivate && isTaskSelected && "bg-primary/10",
-          isPrivate && isHovered && "bg-amber-500/20",
-          isPrivate && isTaskSelected && "bg-amber-500/25"
+          isPrivate && isHovered && "bg-slate-700/80",
+          isPrivate && isTaskSelected && "bg-slate-700"
         )}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Checkbox */}
-        <td className="w-8 px-2 sticky left-0 bg-card z-10">
+        <td className={cn("w-8 px-2 sticky left-0 z-10", isPrivate ? "bg-slate-800/80" : "bg-card")}>
           <Checkbox
             checked={isTaskSelected}
             onCheckedChange={() => toggleTaskSelection(task.id)}
@@ -321,7 +321,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
         </td>
 
         {/* Drag Handle */}
-        <td className="w-8 px-2 sticky left-8 bg-card z-10">
+        <td className={cn("w-8 px-2 sticky left-8 z-10", isPrivate ? "bg-slate-800/80" : "bg-card")}>
           <div className="opacity-0 group-hover:opacity-100 transition-smooth cursor-grab">
             <GripVertical className="w-4 h-4 text-muted-foreground" />
           </div>
@@ -344,7 +344,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
               className={cn(
                 "py-2 px-3", 
                 column.width,
-                isSticky && "sticky bg-card z-10"
+                isSticky && (isPrivate ? "sticky bg-slate-800/80 z-10" : "sticky bg-card z-10")
               )}
               style={isSticky ? { left: leftOffset } : undefined}
             >

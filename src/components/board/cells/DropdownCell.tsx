@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -11,27 +12,83 @@ interface DropdownCellProps {
 
 export function DropdownCell({ value, onChange, options, placeholder = 'Select...' }: DropdownCellProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+        // Check if click is inside the portal dropdown
+        const dropdown = document.getElementById('dropdown-portal');
+        if (dropdown && dropdown.contains(event.target as Node)) {
+          return;
+        }
+        setIsOpen(false);
+      }
+    };
+
+    const handleScroll = () => {
+      if (isOpen) {
         setIsOpen(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: Math.max(rect.width, 160),
+      });
+    }
+  }, [isOpen]);
 
   const handleSelect = (option: string) => {
     onChange(option);
     setIsOpen(false);
   };
 
+  const dropdown = isOpen ? createPortal(
+    <div 
+      id="dropdown-portal"
+      className="fixed bg-card rounded-lg shadow-lg border border-border py-1 max-h-48 overflow-y-auto animate-fade-in"
+      style={{ 
+        top: position.top, 
+        left: position.left, 
+        width: position.width,
+        zIndex: 99999,
+      }}
+    >
+      {options.map((option) => (
+        <button
+          key={option}
+          onClick={() => handleSelect(option)}
+          className={cn(
+            "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-muted transition-smooth",
+            value === option && "bg-muted"
+          )}
+        >
+          <span>{option}</span>
+          {value === option && <Check className="w-4 h-4 text-primary" />}
+        </button>
+      ))}
+    </div>,
+    document.body
+  ) : null;
+
   return (
-    <div className="relative" ref={dropdownRef}>
+    <>
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1 w-full text-left"
       >
@@ -40,24 +97,7 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
         </span>
         <ChevronDown className={cn("w-3 h-3 text-muted-foreground transition-transform flex-shrink-0", isOpen && "rotate-180")} />
       </button>
-
-      {isOpen && (
-        <div className="absolute z-[9999] mt-1 left-0 bg-card rounded-lg shadow-dropdown border border-border py-1 min-w-[120px] max-h-48 overflow-y-auto animate-fade-in">
-          {options.map((option) => (
-            <button
-              key={option}
-              onClick={() => handleSelect(option)}
-              className={cn(
-                "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-muted transition-smooth",
-                value === option && "bg-muted"
-              )}
-            >
-              <span>{option}</span>
-              {value === option && <Check className="w-4 h-4 text-primary" />}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+      {dropdown}
+    </>
   );
 }

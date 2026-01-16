@@ -90,10 +90,10 @@ export function TaskGroup({
       {!isCollapsed && (
         <div className="bg-card rounded-lg border border-border shadow-board overflow-visible animate-fade-in">
           <table className="w-full">
-            <thead>
-              <tr className="bg-slate-100 border-b border-border">
+            <thead className="sticky top-0 z-30">
+              <tr className="bg-slate-100 border-b border-border shadow-sm">
                 {/* Select All Checkbox */}
-                <th className="w-8 px-2 sticky left-0 bg-slate-100 z-20">
+                <th className="w-8 px-2 sticky left-0 bg-slate-100 z-40">
                   <Checkbox
                     checked={allSelected}
                     onCheckedChange={handleSelectAll}
@@ -103,7 +103,7 @@ export function TaskGroup({
                     )}
                   />
                 </th>
-                <th className="w-8 sticky left-8 bg-slate-100 z-20" />
+                <th className="w-8 sticky left-8 bg-slate-100 z-40" />
                 {COLUMNS.map((column, index) => {
                   // Make privacy (index 0) and name (index 1) columns sticky
                   const isSticky = index <= 1;
@@ -117,9 +117,9 @@ export function TaskGroup({
                     <th 
                       key={column.id}
                       className={cn(
-                        "py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap",
+                        "py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap bg-slate-100",
                         column.width,
-                        isSticky && "sticky bg-slate-100 z-20",
+                        isSticky && "sticky z-40",
                         index === 1 && "border-r-2 border-slate-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
                       )}
                       style={isSticky ? { left: leftOffset } : undefined}

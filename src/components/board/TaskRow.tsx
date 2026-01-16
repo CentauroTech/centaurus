@@ -334,6 +334,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
             onChange={(val) => handleUpdate(column.field, val)}
             options={column.options || []}
             placeholder="Select..."
+            isPrivate={isPrivate}
           />
         );
       default:

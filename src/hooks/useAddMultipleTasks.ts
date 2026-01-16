@@ -52,6 +52,14 @@ export function useAddMultipleTasks(boardId: string) {
         studio: template.studio || null,
         entrega_final_script_items: template.entrega_final_script_items || null,
         entrega_final_dub_audio_items: template.entrega_final_dub_audio_items || null,
+        // Delivery dates
+        entrega_cliente: template.entrega_cliente || null,
+        entrega_miami_start: template.entrega_miami_start || null,
+        entrega_miami_end: template.entrega_miami_end || null,
+        entrega_sesiones: template.entrega_sesiones || null,
+        entrega_mix_retakes: template.entrega_mix_retakes || null,
+        entrega_final_script: template.entrega_final_script || null,
+        entrega_final_dub_audio: template.entrega_final_dub_audio || null,
       }));
 
       const { data, error } = await supabase

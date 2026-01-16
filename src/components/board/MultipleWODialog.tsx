@@ -65,6 +65,14 @@ export interface TaskTemplate {
   studio?: string;
   entrega_final_script_items?: string[];
   entrega_final_dub_audio_items?: string[];
+  // Delivery dates
+  entrega_cliente?: string;
+  entrega_miami_start?: string;
+  entrega_miami_end?: string;
+  entrega_sesiones?: string;
+  entrega_mix_retakes?: string;
+  entrega_final_script?: string;
+  entrega_final_dub_audio?: string;
 }
 
 // Map database field names to template keys
@@ -86,6 +94,14 @@ const FIELD_TO_TEMPLATE_KEY: Record<string, keyof TaskTemplate> = {
   studio: 'studio',
   entregaFinalScriptItems: 'entrega_final_script_items',
   entregaFinalDubAudioItems: 'entrega_final_dub_audio_items',
+  // Delivery dates
+  entregaCliente: 'entrega_cliente',
+  entregaMiamiStart: 'entrega_miami_start',
+  entregaMiamiEnd: 'entrega_miami_end',
+  entregaSesiones: 'entrega_sesiones',
+  entregaMixRetakes: 'entrega_mix_retakes',
+  entregaFinalScript: 'entrega_final_script',
+  entregaFinalDubAudio: 'entrega_final_dub_audio',
 };
 
 // Get options for a field
@@ -106,14 +122,14 @@ const getOptionsForField = (fieldId: string): string[] => {
 
 // Columns that can be set as template fields (exclude system/auto fields)
 const TEMPLATE_COLUMNS = COLUMNS.filter(col => 
-  !['isPrivate', 'name', 'status', 'lastUpdated', 'currentPhase', 'people', 'dateAssigned', 'dateDelivered', 'phaseDueDate', 'entregaCliente', 'premixRetakeList', 'mixRetakeList', 'projectManager', 'director', 'tecnico', 'qc1', 'qcRetakes', 'mixerBogota', 'mixerMiami', 'qcMix', 'traductor', 'adaptador', 'aorNeeded', 'pruebaDeVoz', 'aorComplete', 'dontUseStart', 'dontUseEnd', 'entregaMiamiStart', 'entregaMiamiEnd', 'entregaMixRetakes', 'entregaSesiones', 'entregaFinalDubAudio', 'entregaFinalScript', 'linkToColHQ', 'hq', 'workOrderNumber'].includes(col.id)
+  !['isPrivate', 'name', 'status', 'lastUpdated', 'currentPhase', 'people', 'dateAssigned', 'dateDelivered', 'phaseDueDate', 'premixRetakeList', 'mixRetakeList', 'projectManager', 'director', 'tecnico', 'qc1', 'qcRetakes', 'mixerBogota', 'mixerMiami', 'qcMix', 'traductor', 'adaptador', 'aorNeeded', 'pruebaDeVoz', 'aorComplete', 'dontUseStart', 'dontUseEnd', 'linkToColHQ', 'hq', 'workOrderNumber', 'cantidadEpisodios'].includes(col.id)
 );
 
 // Group template columns by category
 const COLUMN_CATEGORIES = {
   basic: {
     label: 'Basic Info',
-    columns: TEMPLATE_COLUMNS.filter(c => ['clientName', 'branch', 'genre', 'cantidadEpisodios'].includes(c.id)),
+    columns: TEMPLATE_COLUMNS.filter(c => ['clientName', 'branch', 'genre'].includes(c.id)),
   },
   language: {
     label: 'Language & Title',
@@ -126,6 +142,10 @@ const COLUMN_CATEGORIES = {
   content: {
     label: 'Content Info',
     columns: TEMPLATE_COLUMNS.filter(c => ['lockedRuntime', 'finalRuntime', 'showGuide'].includes(c.id)),
+  },
+  deliveryDates: {
+    label: 'Delivery Dates',
+    columns: TEMPLATE_COLUMNS.filter(c => ['entregaCliente', 'entregaMiamiStart', 'entregaMiamiEnd', 'entregaSesiones', 'entregaMixRetakes', 'entregaFinalScript', 'entregaFinalDubAudio'].includes(c.id)),
   },
   deliverables: {
     label: 'Deliverables',
@@ -301,7 +321,7 @@ export function MultipleWODialog({
   const [selectedGroupId, setSelectedGroupId] = useState<string>(groups[0]?.id || '');
   const [baseName, setBaseName] = useState('');
   const [startingSuffix, setStartingSuffix] = useState('1');
-  const [count, setCount] = useState(5);
+  const [episodes, setEpisodes] = useState(1);
   const [template, setTemplate] = useState<TaskTemplate>({ name: '' });
   const [existingData, setExistingData] = useState<Record<string, string[]>>({});
   const [projectManagers, setProjectManagers] = useState<TeamMember[]>([]);
@@ -310,6 +330,7 @@ export function MultipleWODialog({
     language: true,
     production: false,
     content: false,
+    deliveryDates: false,
     deliverables: false,
     rates: false,
   });
@@ -349,15 +370,15 @@ export function MultipleWODialog({
     }
   };
 
-  const generatedNames = baseName && startingSuffix 
-    ? generateSequentialNames(baseName, startingSuffix, count)
+  const generatedNames = baseName && startingSuffix && episodes > 0
+    ? generateSequentialNames(baseName, startingSuffix, episodes)
     : [];
 
   const handleReset = () => {
     setStep(1);
     setBaseName('');
     setStartingSuffix('1');
-    setCount(5);
+    setEpisodes(1);
     setTemplate({ name: '' });
   };
 
@@ -368,7 +389,9 @@ export function MultipleWODialog({
 
   const handleCreate = () => {
     if (selectedGroupId && generatedNames.length > 0) {
-      onCreateTasks(selectedGroupId, template, generatedNames);
+      // Include episodes in template
+      const templateWithEpisodes = { ...template, cantidad_episodios: episodes };
+      onCreateTasks(selectedGroupId, templateWithEpisodes, generatedNames);
       handleClose();
     }
   };
@@ -443,6 +466,16 @@ export function MultipleWODialog({
           />
         );
 
+      case 'date':
+        return (
+          <Input
+            type="date"
+            value={(value as string) || ''}
+            onChange={(e) => updateTemplate(column.id, e.target.value || undefined)}
+            className="h-8 text-xs"
+          />
+        );
+
       case 'text':
       default:
         return (
@@ -461,7 +494,7 @@ export function MultipleWODialog({
     setOpenCategories(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const canProceed = baseName.trim() !== '' && startingSuffix.trim() !== '' && count > 0 && selectedGroupId;
+  const canProceed = baseName.trim() !== '' && startingSuffix.trim() !== '' && episodes > 0 && selectedGroupId;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -520,30 +553,30 @@ export function MultipleWODialog({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="count">Number of Items</Label>
+                  <Label htmlFor="episodes">Number of Episodes</Label>
                   <Input
-                    id="count"
+                    id="episodes"
                     type="number"
                     min={1}
                     max={50}
-                    value={count}
-                    onChange={(e) => setCount(Math.min(50, Math.max(1, parseInt(e.target.value) || 1)))}
+                    value={episodes}
+                    onChange={(e) => setEpisodes(Math.min(50, Math.max(1, parseInt(e.target.value) || 1)))}
                   />
                 </div>
               </div>
 
               {/* Preview hint */}
-              {baseName && startingSuffix && (
+              {baseName && startingSuffix && episodes > 0 && (
                 <div className="bg-muted/50 rounded-md p-3 text-sm">
                   <span className="text-muted-foreground">Preview: </span>
                   <span className="font-medium">{generatedNames[0]}</span>
-                  {count > 1 && (
+                  {episodes > 1 && (
                     <>
                       <span className="text-muted-foreground"> → </span>
                       <span className="font-medium">{generatedNames[generatedNames.length - 1]}</span>
                     </>
                   )}
-                  <span className="text-muted-foreground ml-2">({count} items)</span>
+                  <span className="text-muted-foreground ml-2">({episodes} episodes)</span>
                 </div>
               )}
 
@@ -618,7 +651,7 @@ export function MultipleWODialog({
         ) : (
           <div className="py-4">
             <p className="text-sm text-muted-foreground mb-4">
-              You are about to create <span className="font-semibold text-foreground">{count}</span> items:
+              You are about to create <span className="font-semibold text-foreground">{episodes}</span> episodes:
             </p>
             <ScrollArea className="h-[400px] border rounded-md p-3">
               <div className="space-y-1">
@@ -654,7 +687,7 @@ export function MultipleWODialog({
               </Button>
               <Button onClick={handleCreate} disabled={isCreating}>
                 <Check className="w-4 h-4 mr-2" />
-                Create {count} Items
+                Create {episodes} Episodes
               </Button>
             </>
           )}

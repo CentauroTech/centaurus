@@ -94,7 +94,7 @@ export function MultiSelectCell({
       </button>
 
       {isOpen && (
-        <div className="absolute z-[9999] mt-1 left-0 bg-card rounded-lg shadow-dropdown border border-border py-1 min-w-[220px] max-h-64 overflow-y-auto animate-fade-in">
+        <div className="absolute z-[9999] mt-1 left-0 bg-white dark:bg-slate-900 rounded-lg shadow-dropdown border border-border py-1 min-w-[220px] max-h-64 overflow-y-auto animate-fade-in">
           {value.length > 0 && (
             <div className="px-3 py-2 border-b border-border">
               <div className="flex flex-wrap gap-1">
@@ -120,8 +120,8 @@ export function MultiSelectCell({
               key={option}
               onClick={() => handleToggle(option)}
               className={cn(
-                "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-muted transition-smooth",
-                valueSet.has(option) && "bg-muted"
+                "w-full px-3 py-2 text-left text-sm flex items-center justify-between text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-smooth",
+                valueSet.has(option) && "bg-slate-100 dark:bg-slate-800"
               )}
             >
               <span>{option}</span>

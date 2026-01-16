@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -10,9 +10,42 @@ interface MultiSelectCellProps {
   isPrivate?: boolean;
 }
 
-export function MultiSelectCell({ value = [], onChange, options, placeholder = 'Select...', isPrivate = false }: MultiSelectCellProps) {
+// Memoized option item to prevent re-renders
+const OptionItem = memo(function OptionItem({
+  option,
+  isSelected,
+  onToggle
+}: {
+  option: string;
+  isSelected: boolean;
+  onToggle: (option: string) => void;
+}) {
+  return (
+    <button
+      onClick={() => onToggle(option)}
+      className={cn(
+        "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-muted transition-smooth",
+        isSelected && "bg-muted"
+      )}
+    >
+      <span>{option}</span>
+      {isSelected && <Check className="w-4 h-4 text-blue-600 flex-shrink-0" />}
+    </button>
+  );
+});
+
+export const MultiSelectCell = memo(function MultiSelectCell({ 
+  value = [], 
+  onChange, 
+  options, 
+  placeholder = 'Select...', 
+  isPrivate = false 
+}: MultiSelectCellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Memoize value set for O(1) lookup
+  const valueSet = useMemo(() => new Set(value), [value]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -25,23 +58,27 @@ export function MultiSelectCell({ value = [], onChange, options, placeholder = '
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleToggle = (option: string) => {
-    if (value.includes(option)) {
-      onChange(value.filter(v => v !== option));
-    } else {
-      onChange([...value, option]);
-    }
-  };
+  const handleToggle = useCallback((option: string) => {
+    onChange(
+      valueSet.has(option)
+        ? value.filter(v => v !== option)
+        : [...value, option]
+    );
+  }, [value, valueSet, onChange]);
 
-  const handleRemove = (option: string, e: React.MouseEvent) => {
+  const handleRemove = useCallback((option: string, e: React.MouseEvent) => {
     e.stopPropagation();
     onChange(value.filter(v => v !== option));
-  };
+  }, [value, onChange]);
+
+  const toggleOpen = useCallback(() => {
+    setIsOpen(prev => !prev);
+  }, []);
 
   return (
     <div className="relative" ref={dropdownRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleOpen}
         className="flex items-center gap-1 w-full text-left min-h-[28px]"
       >
         {value.length > 0 ? (
@@ -103,20 +140,15 @@ export function MultiSelectCell({ value = [], onChange, options, placeholder = '
             </div>
           )}
           {options.map((option) => (
-            <button
+            <OptionItem
               key={option}
-              onClick={() => handleToggle(option)}
-              className={cn(
-                "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-muted transition-smooth",
-                value.includes(option) && "bg-muted"
-              )}
-            >
-              <span>{option}</span>
-              {value.includes(option) && <Check className="w-4 h-4 text-blue-600 flex-shrink-0" />}
-            </button>
+              option={option}
+              isSelected={valueSet.has(option)}
+              onToggle={handleToggle}
+            />
           ))}
         </div>
       )}
     </div>
   );
-}
+});

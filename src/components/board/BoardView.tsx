@@ -1,7 +1,9 @@
-import { Plus, Filter, Users, Calendar } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Filter, Users, Calendar, ListPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TaskGroup } from './TaskGroup';
 import { BulkActionsToolbar } from './BulkActionsToolbar';
+import { MultipleWODialog } from './MultipleWODialog';
 import { TaskSelectionProvider } from '@/contexts/TaskSelectionContext';
 import { BulkEditProvider, BulkUpdateParams } from '@/contexts/BulkEditContext';
 import { 
@@ -21,6 +23,7 @@ import {
   AVAILABLE_PHASES 
 } from '@/hooks/useBulkTaskActions';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
+import { useAddMultipleTasks } from '@/hooks/useAddMultipleTasks';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { User } from '@/types/board';
@@ -53,6 +56,7 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
   const { data: currentTeamMember } = useCurrentTeamMember();
   const currentUserId = currentTeamMember?.id || null;
   const queryClient = useQueryClient();
+  const [isMultipleWODialogOpen, setIsMultipleWODialogOpen] = useState(false);
   
   const addTaskGroupMutation = useAddTaskGroup(boardId);
   const updateTaskGroupMutation = useUpdateTaskGroup(boardId);
@@ -65,6 +69,10 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
   const bulkDeleteMutation = useBulkDelete(boardId);
   const bulkMoveMutation = useBulkMoveToPhase(boardId, currentUserId);
   const bulkUpdateFieldMutation = useBulkUpdateField(boardId, currentUserId);
+  const addMultipleTasksMutation = useAddMultipleTasks(boardId);
+
+  // Check if this is a Kickoff board
+  const isKickoffBoard = board.name.toLowerCase().includes('kickoff');
 
   // Handle people updates (junction table)
   const updatePeople = async (taskId: string, newPeople: User[], oldPeople: User[]) => {
@@ -188,11 +196,35 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
           </Button>
         </div>
 
-        <Button onClick={addGroup} size="sm" className="gap-2" disabled={addTaskGroupMutation.isPending}>
-          <Plus className="w-4 h-4" />
-          New Group
-        </Button>
+        <div className="flex items-center gap-2">
+          {isKickoffBoard && (
+            <Button 
+              onClick={() => setIsMultipleWODialogOpen(true)} 
+              size="sm" 
+              variant="outline"
+              className="gap-2"
+            >
+              <ListPlus className="w-4 h-4" />
+              Multiple WO
+            </Button>
+          )}
+          <Button onClick={addGroup} size="sm" className="gap-2" disabled={addTaskGroupMutation.isPending}>
+            <Plus className="w-4 h-4" />
+            New Group
+          </Button>
+        </div>
       </div>
+
+      {/* Multiple WO Dialog */}
+      <MultipleWODialog
+        isOpen={isMultipleWODialogOpen}
+        onClose={() => setIsMultipleWODialogOpen(false)}
+        onCreateTasks={(groupId, template, names) => {
+          addMultipleTasksMutation.mutate({ groupId, template, names });
+        }}
+        groups={board.groups.map(g => ({ id: g.id, name: g.name, color: g.color }))}
+        isCreating={addMultipleTasksMutation.isPending}
+      />
 
       {/* Scrollable Board Area */}
       <div className="flex-1 overflow-auto custom-scrollbar">

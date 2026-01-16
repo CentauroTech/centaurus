@@ -343,23 +343,38 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
   };
 
   const isPrivate = task.isPrivate;
+  
+  // Determine the background class for sticky columns based on state
+  const getStickyBg = () => {
+    if (isPrivate) {
+      if (isTaskSelected) return "bg-slate-700";
+      if (isHovered) return "bg-slate-700";
+      return "bg-slate-800";
+    } else {
+      if (isTaskSelected) return "bg-blue-50";
+      if (isHovered) return "bg-slate-100";
+      return "bg-white";
+    }
+  };
+  
+  const stickyBg = getStickyBg();
 
   return (
     <>
       <tr
         className={cn(
           "group border-b border-border transition-smooth",
-          isPrivate && "border-l-[6px] border-l-slate-700 bg-slate-800/80 text-slate-100",
+          isPrivate && "border-l-[6px] border-l-slate-700 bg-slate-800 text-slate-100",
           !isPrivate && isHovered && "bg-muted/30",
           !isPrivate && isTaskSelected && "bg-primary/10",
-          isPrivate && isHovered && "bg-slate-700/80",
+          isPrivate && isHovered && "bg-slate-700",
           isPrivate && isTaskSelected && "bg-slate-700"
         )}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Checkbox */}
-        <td className={cn("w-8 px-2 sticky left-0 z-10", isPrivate ? "bg-slate-800/80" : "bg-card")}>
+        <td className={cn("w-8 px-2 sticky left-0 z-20", stickyBg)}>
           <Checkbox
             checked={isTaskSelected}
             onCheckedChange={() => toggleTaskSelection(task.id)}
@@ -368,7 +383,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
         </td>
 
         {/* Drag Handle */}
-        <td className={cn("w-8 px-2 sticky left-8 z-10", isPrivate ? "bg-slate-800/80" : "bg-card")}>
+        <td className={cn("w-8 px-2 sticky left-8 z-20", stickyBg)}>
           <div className="opacity-0 group-hover:opacity-100 transition-smooth cursor-grab">
             <GripVertical className="w-4 h-4 text-muted-foreground" />
           </div>
@@ -391,7 +406,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
               className={cn(
                 "py-2 px-3", 
                 column.width,
-                isSticky && (isPrivate ? "sticky bg-slate-800/80 z-10" : "sticky bg-card z-10")
+                isSticky && cn("sticky z-20", stickyBg)
               )}
               style={isSticky ? { left: leftOffset } : undefined}
             >

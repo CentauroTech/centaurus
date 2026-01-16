@@ -37,9 +37,6 @@ export function MultiSelectCell({ value = [], onChange, options, placeholder = '
     onChange(value.filter(v => v !== option));
   };
 
-  // Check if we're in a private task row (dark background)
-  const isInPrivateRow = dropdownRef.current?.closest('tr')?.classList.contains('border-l-slate-700');
-
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -51,12 +48,12 @@ export function MultiSelectCell({ value = [], onChange, options, placeholder = '
             {value.map((item) => (
               <span
                 key={item}
-                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-white/90 text-slate-700 text-xs rounded whitespace-nowrap border border-slate-200"
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 text-amber-800 text-xs rounded whitespace-nowrap border border-amber-300 font-medium"
               >
                 <span>{item}</span>
                 <button
                   onClick={(e) => handleRemove(item, e)}
-                  className="hover:bg-slate-200 rounded p-0.5 flex-shrink-0"
+                  className="hover:bg-amber-200 rounded p-0.5 flex-shrink-0 text-amber-700"
                 >
                   <X className="w-2.5 h-2.5" />
                 </button>
@@ -64,16 +61,12 @@ export function MultiSelectCell({ value = [], onChange, options, placeholder = '
             ))}
           </div>
         ) : (
-          <span className={cn(
-            "text-sm truncate flex-1",
-            isInPrivateRow ? "text-slate-400" : "text-muted-foreground"
-          )}>
+          <span className="text-sm truncate flex-1 text-inherit opacity-60">
             {placeholder}
           </span>
         )}
         <ChevronDown className={cn(
-          "w-3 h-3 transition-transform flex-shrink-0",
-          isInPrivateRow ? "text-slate-400" : "text-muted-foreground",
+          "w-3 h-3 transition-transform flex-shrink-0 text-inherit opacity-60",
           isOpen && "rotate-180"
         )} />
       </button>

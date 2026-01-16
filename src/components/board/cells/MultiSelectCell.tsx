@@ -34,7 +34,7 @@ const OptionItem = memo(function OptionItem({
   );
 });
 
-export const MultiSelectCell = memo(function MultiSelectCell({ 
+function MultiSelectCellComponent({ 
   value = [], 
   onChange, 
   options, 
@@ -151,4 +151,6 @@ export const MultiSelectCell = memo(function MultiSelectCell({
       )}
     </div>
   );
-});
+}
+
+export const MultiSelectCell = memo(MultiSelectCellComponent);

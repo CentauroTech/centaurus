@@ -8,9 +8,10 @@ interface ComboboxCellProps {
   onChange: (value: string) => void;
   options: string[];
   placeholder?: string;
+  isPrivate?: boolean;
 }
 
-export function ComboboxCell({ value, onChange, options, placeholder = 'Select...' }: ComboboxCellProps) {
+export function ComboboxCell({ value, onChange, options, placeholder = 'Select...', isPrivate = false }: ComboboxCellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value || '');
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -187,22 +188,43 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
   return (
     <>
       <div className="flex items-center gap-1" ref={containerRef}>
-        <input
-          ref={inputRef}
-          type="text"
-          value={inputValue}
-          onChange={handleInputChange}
-          onFocus={() => setIsOpen(true)}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          className="w-full bg-transparent border-0 outline-none text-sm focus:ring-0 truncate text-inherit placeholder:opacity-60"
-          placeholder={placeholder}
-        />
+        {value ? (
+          <span className={cn(
+            "px-2 py-0.5 rounded text-xs font-medium truncate",
+            isPrivate 
+              ? "bg-white text-slate-800" 
+              : "bg-slate-800 text-white"
+          )}>
+            {value}
+          </span>
+        ) : (
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={handleInputChange}
+            onFocus={() => setIsOpen(true)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className="w-full bg-transparent border-0 outline-none text-sm focus:ring-0 truncate text-inherit placeholder:opacity-60"
+            placeholder={placeholder}
+          />
+        )}
         <button
           type="button"
           onMouseDown={(e) => {
             e.preventDefault();
-            setIsOpen(!isOpen);
+            if (value) {
+              // Clear value to allow editing
+              setInputValue('');
+              onChange('');
+              setTimeout(() => {
+                inputRef.current?.focus();
+                setIsOpen(true);
+              }, 0);
+            } else {
+              setIsOpen(!isOpen);
+            }
           }}
           className="p-0.5 hover:bg-white/10 rounded transition-colors"
         >

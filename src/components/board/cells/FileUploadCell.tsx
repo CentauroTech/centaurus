@@ -6,9 +6,10 @@ interface FileUploadCellProps {
   value?: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  isPrivate?: boolean;
 }
 
-export function FileUploadCell({ value, onChange, placeholder = 'Upload file' }: FileUploadCellProps) {
+export function FileUploadCell({ value, onChange, placeholder = 'Upload file', isPrivate = false }: FileUploadCellProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,8 +28,15 @@ export function FileUploadCell({ value, onChange, placeholder = 'Upload file' }:
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <FileText className="w-4 h-4 text-amber-500 flex-shrink-0" />
-        <span className="text-sm text-inherit truncate max-w-[100px]">{value}</span>
+        <span className={cn(
+          "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium truncate max-w-[120px]",
+          isPrivate 
+            ? "bg-white text-slate-800" 
+            : "bg-slate-800 text-white"
+        )}>
+          <FileText className="w-3 h-3 flex-shrink-0" />
+          <span className="truncate">{value}</span>
+        </span>
         {isHovered && (
           <div className="flex items-center gap-1">
             <button

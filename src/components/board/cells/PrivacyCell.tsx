@@ -74,6 +74,7 @@ export function PrivacyCell({
   currentViewerIds = []
 }: PrivacyCellProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [confirmPublicOpen, setConfirmPublicOpen] = useState(false);
   const [selectedViewers, setSelectedViewers] = useState<string[]>(currentViewerIds);
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
   const [roleAssignments, setRoleAssignments] = useState<RoleAssignment[]>([]);
@@ -110,12 +111,17 @@ export function PrivacyCell({
       setRoleAssignments([]);
       setDialogOpen(true);
     } else {
-      // Making public - just toggle off
-      onChange(false);
-      if (onViewersChange) {
-        onViewersChange([]);
-      }
+      // Already private - show confirmation to make public
+      setConfirmPublicOpen(true);
     }
+  };
+
+  const handleConfirmMakePublic = () => {
+    onChange(false);
+    if (onViewersChange) {
+      onViewersChange([]);
+    }
+    setConfirmPublicOpen(false);
   };
 
   const handleConfirmPrivate = () => {
@@ -267,6 +273,27 @@ export function PrivacyCell({
             <Button onClick={handleConfirmPrivate}>
               <Lock className="w-4 h-4 mr-2" />
               Make Private
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Make Public Dialog */}
+      <Dialog open={confirmPublicOpen} onOpenChange={setConfirmPublicOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Make task public?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to make this task public? The guest viewers will be removed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setConfirmPublicOpen(false)}>
+              No
+            </Button>
+            <Button onClick={handleConfirmMakePublic}>
+              <Unlock className="w-4 h-4 mr-2" />
+              Yes
             </Button>
           </DialogFooter>
         </DialogContent>

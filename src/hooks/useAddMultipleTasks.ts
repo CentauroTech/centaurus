@@ -43,6 +43,7 @@ export function useAddMultipleTasks(boardId: string) {
         genre: template.genre || null,
         lenguaje_original: template.lenguaje_original || null,
         target_language: template.target_language || null,
+        prueba_de_voz: template.prueba_de_voz || null,
         locked_runtime: template.locked_runtime || null,
         final_runtime: template.final_runtime || null,
         show_guide: template.show_guide || null,

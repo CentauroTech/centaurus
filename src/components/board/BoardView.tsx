@@ -106,7 +106,7 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
     queryClient.invalidateQueries({ queryKey: ['activity-log'] });
   };
 
-  const updateTask = (taskId: string, updates: Record<string, any>, groupId?: string, pruebaDeVoz?: boolean) => {
+  const updateTask = (taskId: string, updates: Record<string, any>, groupId?: string, pruebaDeVoz?: string | null) => {
     // If status is changing to 'done', trigger phase progression
     if (updates.status === 'done' && groupId) {
       updateTaskMutation.mutate({ taskId, updates }, {
@@ -115,7 +115,7 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
           moveToNextPhaseMutation.mutate({
             taskId,
             currentGroupId: groupId,
-            pruebaDeVoz: pruebaDeVoz ?? false,
+            pruebaDeVoz: pruebaDeVoz ?? null,
           });
         },
       });

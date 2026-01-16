@@ -323,14 +323,30 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
         </td>
 
         {/* Dynamic Columns */}
-        {COLUMNS.map((column) => (
-          <td 
-            key={column.id} 
-            className={cn("py-2 px-3", column.width)}
-          >
-            {renderCell(column)}
-          </td>
-        ))}
+        {COLUMNS.map((column, index) => {
+          // Make privacy (index 0) and name (index 1) columns sticky
+          const isSticky = index <= 1;
+          // Calculate left offset: checkbox (32px) + drag handle (32px) + previous sticky columns
+          const leftOffset = isSticky 
+            ? index === 0 
+              ? 64  // left-16 (after checkbox + drag)
+              : 96  // left-24 (after checkbox + drag + privacy)
+            : undefined;
+          
+          return (
+            <td 
+              key={column.id} 
+              className={cn(
+                "py-2 px-3", 
+                column.width,
+                isSticky && "sticky bg-card z-10"
+              )}
+              style={isSticky ? { left: leftOffset } : undefined}
+            >
+              {renderCell(column)}
+            </td>
+          );
+        })}
 
         {/* Actions */}
         <td className="py-2 px-3 w-12">

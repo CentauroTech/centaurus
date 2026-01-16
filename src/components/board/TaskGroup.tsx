@@ -104,17 +104,29 @@ export function TaskGroup({
                   />
                 </th>
                 <th className="w-8 sticky left-8 bg-muted/50 z-10" />
-                {COLUMNS.map((column) => (
-                  <th 
-                    key={column.id}
-                    className={cn(
-                      "py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap",
-                      column.width
-                    )}
-                  >
-                    {column.label}
-                  </th>
-                ))}
+                {COLUMNS.map((column, index) => {
+                  // Make privacy (index 0) and name (index 1) columns sticky
+                  const isSticky = index <= 1;
+                  const leftOffset = isSticky 
+                    ? index === 0 
+                      ? 64  // after checkbox + drag
+                      : 96  // after checkbox + drag + privacy
+                    : undefined;
+                  
+                  return (
+                    <th 
+                      key={column.id}
+                      className={cn(
+                        "py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap",
+                        column.width,
+                        isSticky && "sticky bg-muted/50 z-10"
+                      )}
+                      style={isSticky ? { left: leftOffset } : undefined}
+                    >
+                      {column.label}
+                    </th>
+                  );
+                })}
                 <th className="w-12" />
               </tr>
             </thead>

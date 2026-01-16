@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,8 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const portalId = useId();
 
   useEffect(() => {
     setInputValue(value || '');
@@ -23,10 +25,9 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        // Check if click is inside the portal dropdown
-        const dropdown = document.getElementById('combobox-portal');
-        if (dropdown && dropdown.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (containerRef.current && !containerRef.current.contains(target)) {
+        if (dropdownRef.current && dropdownRef.current.contains(target)) {
           return;
         }
         setIsOpen(false);
@@ -37,19 +38,22 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
     };
 
     const handleScroll = () => {
-      if (isOpen) {
-        setIsOpen(false);
-        if (inputValue !== value) {
-          onChange(inputValue);
-        }
+      if (isOpen && containerRef.current) {
+        // Recalculate position on scroll
+        const rect = containerRef.current.getBoundingClientRect();
+        setPosition({
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: Math.max(rect.width, 200),
+        });
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('scroll', handleScroll, true);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('scroll', handleScroll, true);
     };
   }, [inputValue, value, onChange, isOpen]);
 
@@ -57,16 +61,16 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       setPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
-        width: Math.max(rect.width, 180),
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: Math.max(rect.width, 200),
       });
     }
   }, [isOpen]);
 
-  const filteredOptions = options.filter(option => 
+  const filteredOptions = options?.filter(option => 
     option.toLowerCase().includes(inputValue.toLowerCase())
-  );
+  ) || [];
 
   const handleSelect = (option: string) => {
     setInputValue(option);
@@ -90,8 +94,9 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
 
   const dropdown = isOpen ? createPortal(
     <div 
-      id="combobox-portal"
-      className="fixed bg-card rounded-lg shadow-lg border border-border py-1 max-h-48 overflow-y-auto animate-fade-in"
+      ref={dropdownRef}
+      id={portalId}
+      className="fixed bg-popover text-popover-foreground rounded-lg shadow-lg border border-border py-1 max-h-60 overflow-y-auto"
       style={{ 
         top: position.top, 
         left: position.left, 
@@ -105,8 +110,8 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
             key={option}
             onClick={() => handleSelect(option)}
             className={cn(
-              "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-muted transition-smooth",
-              value === option && "bg-muted"
+              "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-accent transition-colors",
+              value === option && "bg-accent"
             )}
           >
             <span>{option}</span>
@@ -117,7 +122,7 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
         inputValue && (
           <button
             onClick={() => handleSelect(inputValue)}
-            className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-smooth text-muted-foreground"
+            className="w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors text-muted-foreground"
           >
             Add "{inputValue}"
           </button>
@@ -137,20 +142,13 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
           onChange={handleInputChange}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          onBlur={() => {
-            // Delay blur to allow click on dropdown
-            setTimeout(() => {
-              if (inputValue !== value) {
-                onChange(inputValue);
-              }
-            }, 150);
-          }}
           className="w-full bg-transparent border-0 outline-none text-sm text-foreground focus:ring-0 truncate"
           placeholder={placeholder}
         />
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="p-0.5 hover:bg-muted rounded transition-smooth"
+          className="p-0.5 hover:bg-muted rounded transition-colors"
+          type="button"
         >
           <ChevronDown className={cn("w-3 h-3 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
         </button>

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { User } from '@/types/board';
 
 // Phase order for reference
 const PHASE_ORDER = [
@@ -416,3 +417,101 @@ export function useMoveTaskToPhase(boardId: string, currentUserId?: string | nul
 }
 
 export const AVAILABLE_PHASES = PHASE_ORDER;
+
+// Bulk update field for multiple tasks
+export function useBulkUpdateField(boardId: string, currentUserId?: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      taskIds, 
+      field, 
+      value,
+      displayField,
+      oldValues,
+    }: { 
+      taskIds: string[]; 
+      field: string; 
+      value: any;
+      displayField?: string;
+      oldValues?: Map<string, any>;
+    }) => {
+      // Handle people field separately (junction table)
+      if (field === 'people') {
+        const people = value as User[];
+        
+        for (const taskId of taskIds) {
+          // Delete existing people for this task
+          await supabase.from('task_people').delete().eq('task_id', taskId);
+          
+          // Insert new people
+          if (people.length > 0) {
+            await supabase.from('task_people').insert(
+              people.map(p => ({ task_id: taskId, team_member_id: p.id }))
+            );
+          }
+        }
+        
+        // Log activity
+        const newNames = people.map(p => p.name).join(', ') || null;
+        for (const taskId of taskIds) {
+          await supabase.from('activity_log').insert({
+            task_id: taskId,
+            type: 'field_change',
+            field: displayField || field,
+            old_value: null,
+            new_value: newNames,
+            user_id: currentUserId || null,
+          });
+        }
+        
+        return { count: taskIds.length, field };
+      }
+
+      // Update regular fields
+      const updates: Record<string, any> = { [field]: value };
+      
+      // Auto-set date_delivered when status is 'done'
+      if (field === 'status' && value === 'done') {
+        updates.date_delivered = new Date().toISOString().split('T')[0];
+      }
+      
+      const { error } = await supabase
+        .from('tasks')
+        .update(updates)
+        .in('id', taskIds);
+
+      if (error) throw error;
+
+      // Log activity for each task
+      const displayValue = typeof value === 'object' && value?.name 
+        ? value.name 
+        : typeof value === 'object' && value?.id 
+          ? value.id 
+          : String(value ?? '');
+
+      for (const taskId of taskIds) {
+        await supabase.from('activity_log').insert({
+          task_id: taskId,
+          type: 'field_change',
+          field: displayField || field,
+          old_value: oldValues?.get(taskId) ?? null,
+          new_value: displayValue,
+          user_id: currentUserId || null,
+        });
+      }
+
+      return { count: taskIds.length, field };
+    },
+    onSuccess: (result) => {
+      toast.success(`Updated ${result.field} for ${result.count} ${result.count === 1 ? 'task' : 'tasks'}`);
+      queryClient.invalidateQueries({ queryKey: ['board'] });
+      queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+      queryClient.invalidateQueries({ queryKey: ['activity-log'] });
+    },
+    onError: (error) => {
+      console.error('Failed to bulk update:', error);
+      toast.error('Failed to update tasks');
+    },
+  });
+}

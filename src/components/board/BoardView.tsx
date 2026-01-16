@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { TaskGroup } from './TaskGroup';
 import { BulkActionsToolbar } from './BulkActionsToolbar';
 import { TaskSelectionProvider } from '@/contexts/TaskSelectionContext';
+import { BulkEditProvider, BulkUpdateParams } from '@/contexts/BulkEditContext';
 import { 
   useAddTaskGroup, 
   useUpdateTaskGroup, 
@@ -16,6 +17,7 @@ import {
   useBulkDelete, 
   useBulkMoveToPhase, 
   useMoveTaskToPhase,
+  useBulkUpdateField,
   AVAILABLE_PHASES 
 } from '@/hooks/useBulkTaskActions';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
@@ -62,6 +64,7 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
   const bulkDuplicateMutation = useBulkDuplicate(boardId);
   const bulkDeleteMutation = useBulkDelete(boardId);
   const bulkMoveMutation = useBulkMoveToPhase(boardId, currentUserId);
+  const bulkUpdateFieldMutation = useBulkUpdateField(boardId, currentUserId);
 
   // Handle people updates (junction table)
   const updatePeople = async (taskId: string, newPeople: User[], oldPeople: User[]) => {
@@ -156,7 +159,17 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
     moveTaskToPhaseMutation.mutate({ taskId, targetPhase: phase });
   };
 
+  const handleBulkUpdate = (params: BulkUpdateParams) => {
+    bulkUpdateFieldMutation.mutate({
+      taskIds: params.taskIds,
+      field: params.field,
+      value: params.value,
+      displayField: params.displayField,
+    });
+  };
+
   return (
+    <BulkEditProvider onBulkUpdate={handleBulkUpdate}>
     <div className="flex-1 flex flex-col p-6 overflow-hidden">
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-6 flex-shrink-0">
@@ -380,6 +393,7 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
         availablePhases={AVAILABLE_PHASES}
       />
     </div>
+    </BulkEditProvider>
   );
 }
 

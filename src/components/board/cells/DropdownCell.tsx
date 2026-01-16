@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -14,16 +14,14 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const dropdownId = useRef(`dropdown-${Math.random().toString(36).substr(2, 9)}`);
-  
-  console.log('DropdownCell render:', { value, options, optionsLength: options?.length, isOpen });
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const portalId = useId();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
-        // Check if click is inside the portal dropdown
-        const dropdown = document.getElementById(dropdownId.current);
-        if (dropdown && dropdown.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (buttonRef.current && !buttonRef.current.contains(target)) {
+        if (dropdownRef.current && dropdownRef.current.contains(target)) {
           return;
         }
         setIsOpen(false);
@@ -31,16 +29,22 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
     };
 
     const handleScroll = () => {
-      if (isOpen) {
-        setIsOpen(false);
+      if (isOpen && buttonRef.current) {
+        // Recalculate position on scroll
+        const rect = buttonRef.current.getBoundingClientRect();
+        setPosition({
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: Math.max(rect.width, 160),
+        });
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('scroll', handleScroll, true);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('scroll', handleScroll, true);
     };
   }, [isOpen]);
 
@@ -48,8 +52,8 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
     if (isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       setPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
+        top: rect.bottom + 4,
+        left: rect.left,
         width: Math.max(rect.width, 160),
       });
     }
@@ -60,10 +64,13 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
     setIsOpen(false);
   };
 
-  const dropdown = isOpen && options && options.length > 0 ? createPortal(
+  const safeOptions = options || [];
+
+  const dropdown = isOpen && safeOptions.length > 0 ? createPortal(
     <div 
-      id={dropdownId.current}
-      className="fixed bg-card rounded-lg shadow-lg border border-border py-1 max-h-48 overflow-y-auto animate-fade-in"
+      ref={dropdownRef}
+      id={portalId}
+      className="fixed bg-popover text-popover-foreground rounded-lg shadow-lg border border-border py-1 max-h-60 overflow-y-auto"
       style={{ 
         top: position.top, 
         left: position.left, 
@@ -71,13 +78,13 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
         zIndex: 99999,
       }}
     >
-      {options.map((option) => (
+      {safeOptions.map((option) => (
         <button
           key={option}
           onClick={() => handleSelect(option)}
           className={cn(
-            "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-muted transition-smooth",
-            value === option && "bg-muted"
+            "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-accent transition-colors",
+            value === option && "bg-accent"
           )}
         >
           <span>{option}</span>
@@ -94,6 +101,7 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1 w-full text-left"
+        type="button"
       >
         <span className={cn("text-sm truncate flex-1", value ? "text-foreground" : "text-muted-foreground")}>
           {value || placeholder}

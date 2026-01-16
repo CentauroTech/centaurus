@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { GripVertical, Trash2, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Task, User, COLUMNS, Phase } from '@/types/board';
@@ -20,6 +20,7 @@ import { PrivacyCell } from './cells/PrivacyCell';
 import { MultiSelectCell } from './cells/MultiSelectCell';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
+import { useBulkEdit } from '@/contexts/BulkEditContext';
 import { mockUsers } from '@/data/mockData';
 
 interface TaskRowProps {
@@ -31,13 +32,89 @@ interface TaskRowProps {
   onSendToPhase?: (phase: string) => void;
 }
 
+// Map frontend field names to database column names
+const FIELD_TO_DB_COLUMN: Record<string, string> = {
+  name: 'name',
+  isPrivate: 'is_private',
+  status: 'status',
+  dateAssigned: 'date_assigned',
+  dateDelivered: 'date_delivered',
+  branch: 'branch',
+  clientName: 'client_name',
+  entregaMiamiStart: 'entrega_miami_start',
+  entregaMiamiEnd: 'entrega_miami_end',
+  entregaMixRetakes: 'entrega_mix_retakes',
+  entregaCliente: 'entrega_cliente',
+  entregaSesiones: 'entrega_sesiones',
+  cantidadEpisodios: 'cantidad_episodios',
+  lockedRuntime: 'locked_runtime',
+  finalRuntime: 'final_runtime',
+  servicios: 'servicios',
+  entregaFinalScriptItems: 'entrega_final_script_items',
+  entregaFinalDubAudioItems: 'entrega_final_dub_audio_items',
+  pruebaDeVoz: 'prueba_de_voz',
+  aorNeeded: 'aor_needed',
+  formato: 'formato',
+  genre: 'genre',
+  lenguajeOriginal: 'lenguaje_original',
+  rates: 'rates',
+  showGuide: 'show_guide',
+  tituloAprobadoEspanol: 'titulo_aprobado_espanol',
+  workOrderNumber: 'work_order_number',
+  fase: 'fase',
+  phaseDueDate: 'phase_due_date',
+  aorComplete: 'aor_complete',
+  studio: 'studio',
+  hq: 'hq',
+  linkToColHQ: 'link_to_col_hq',
+  rateInfo: 'rate_info',
+  projectManager: 'project_manager_id',
+  director: 'director_id',
+  tecnico: 'tecnico_id',
+  qc1: 'qc_1_id',
+  qcRetakes: 'qc_retakes_id',
+  mixerBogota: 'mixer_bogota_id',
+  mixerMiami: 'mixer_miami_id',
+  qcMix: 'qc_mix_id',
+  traductor: 'traductor_id',
+  adaptador: 'adaptador_id',
+  people: 'people',
+  currentPhase: 'fase',
+};
+
 export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendToPhase }: TaskRowProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
   const { toggleTaskSelection, isSelected } = useTaskSelection();
+  const { shouldApplyBulkEdit, getSelectedTaskIds, onBulkUpdate } = useBulkEdit();
 
   const commentCount = task.commentCount || 0;
   const isTaskSelected = isSelected(task.id);
+
+  // Handle update with bulk edit support
+  const handleUpdate = useCallback((field: string, value: any) => {
+    // Check if this task is part of a multi-selection
+    if (shouldApplyBulkEdit(task.id) && onBulkUpdate) {
+      const selectedIds = getSelectedTaskIds();
+      const dbColumn = FIELD_TO_DB_COLUMN[field] || field;
+      
+      // For person fields, extract the ID for the database
+      let dbValue = value;
+      if (field.endsWith('Manager') || ['director', 'tecnico', 'qc1', 'qcRetakes', 'mixerBogota', 'mixerMiami', 'qcMix', 'traductor', 'adaptador'].includes(field)) {
+        dbValue = value?.id || null;
+      }
+      
+      onBulkUpdate({
+        taskIds: selectedIds,
+        field: dbColumn,
+        value: dbValue,
+        displayField: field,
+      });
+    } else {
+      // Single task update
+      onUpdate({ [field]: value });
+    }
+  }, [task.id, shouldApplyBulkEdit, getSelectedTaskIds, onBulkUpdate, onUpdate]);
 
   const renderCell = (column: typeof COLUMNS[number]) => {
     const value = task[column.field];
@@ -48,7 +125,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
         <div className="flex items-center gap-2">
           <TextCell
             value={value as string}
-            onChange={(val) => onUpdate({ [column.field]: val })}
+            onChange={(val) => handleUpdate(column.field, val)}
           />
           <button
             onClick={() => setIsDetailsPanelOpen(true)}
@@ -72,42 +149,42 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
         return (
           <PrivacyCell
             isPrivate={task.isPrivate}
-            onChange={(val) => onUpdate({ isPrivate: val })}
+            onChange={(val) => handleUpdate('isPrivate', val)}
           />
         );
       case 'text':
         return (
           <TextCell
             value={value as string}
-            onChange={(val) => onUpdate({ [column.field]: val })}
+            onChange={(val) => handleUpdate(column.field, val)}
           />
         );
       case 'number':
         return (
           <NumberCell
             value={value as number}
-            onChange={(val) => onUpdate({ [column.field]: val })}
+            onChange={(val) => handleUpdate(column.field, val)}
           />
         );
       case 'date':
         return (
           <DateCell
             date={value as Date}
-            onDateChange={(val) => onUpdate({ [column.field]: val })}
+            onDateChange={(val) => handleUpdate(column.field, val)}
           />
         );
       case 'person':
         return (
           <OwnerCell
             owner={value as User}
-            onOwnerChange={(val) => onUpdate({ [column.field]: val })}
+            onOwnerChange={(val) => handleUpdate(column.field, val)}
           />
         );
       case 'people':
         return (
           <PeopleCell
             people={value as User[]}
-            onChange={(val) => onUpdate({ [column.field]: val })}
+            onChange={(val) => handleUpdate(column.field, val)}
           />
         );
       case 'status':
@@ -116,7 +193,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
         return (
           <StatusBadge
             status={task.status}
-            onStatusChange={(val) => onUpdate({ status: val })}
+            onStatusChange={(val) => handleUpdate('status', val)}
             isKickoffPhase={isKickoffPhase}
             onSendToPhase={onSendToPhase}
           />
@@ -125,7 +202,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
         return (
           <PhaseCell
             phase={value as Phase}
-            onPhaseChange={(val) => onUpdate({ [column.field]: val })}
+            onPhaseChange={(val) => handleUpdate(column.field, val)}
           />
         );
       case 'current-phase':
@@ -157,21 +234,21 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
         return (
           <BooleanCell
             value={value as boolean}
-            onChange={(val) => onUpdate({ [column.field]: val })}
+            onChange={(val) => handleUpdate(column.field, val)}
           />
         );
       case 'link':
         return (
           <LinkCell
             value={value as string}
-            onChange={(val) => onUpdate({ [column.field]: val })}
+            onChange={(val) => handleUpdate(column.field, val)}
           />
         );
       case 'combobox':
         return (
           <ComboboxCell
             value={value as string}
-            onChange={(val) => onUpdate({ [column.field]: val })}
+            onChange={(val) => handleUpdate(column.field, val)}
             options={column.options || []}
             placeholder="Select..."
           />
@@ -180,7 +257,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
         return (
           <DropdownCell
             value={value as string}
-            onChange={(val) => onUpdate({ [column.field]: val })}
+            onChange={(val) => handleUpdate(column.field, val)}
             options={column.options || []}
             placeholder="Select..."
           />
@@ -189,7 +266,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
         return (
           <FileUploadCell
             value={value as string}
-            onChange={(val) => onUpdate({ [column.field]: val })}
+            onChange={(val) => handleUpdate(column.field, val)}
             placeholder="Upload"
           />
         );
@@ -208,7 +285,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
         return (
           <MultiSelectCell
             value={value as string[]}
-            onChange={(val) => onUpdate({ [column.field]: val })}
+            onChange={(val) => handleUpdate(column.field, val)}
             options={column.options || []}
             placeholder="Select..."
           />

@@ -14,12 +14,15 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownId = useRef(`dropdown-${Math.random().toString(36).substr(2, 9)}`);
+  
+  console.log('DropdownCell render:', { value, options, optionsLength: options?.length, isOpen });
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
         // Check if click is inside the portal dropdown
-        const dropdown = document.getElementById('dropdown-portal');
+        const dropdown = document.getElementById(dropdownId.current);
         if (dropdown && dropdown.contains(event.target as Node)) {
           return;
         }
@@ -57,9 +60,9 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
     setIsOpen(false);
   };
 
-  const dropdown = isOpen ? createPortal(
+  const dropdown = isOpen && options && options.length > 0 ? createPortal(
     <div 
-      id="dropdown-portal"
+      id={dropdownId.current}
       className="fixed bg-card rounded-lg shadow-lg border border-border py-1 max-h-48 overflow-y-auto animate-fade-in"
       style={{ 
         top: position.top, 

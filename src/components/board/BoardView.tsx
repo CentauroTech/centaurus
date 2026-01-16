@@ -231,6 +231,8 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                     servicios: t.servicios,
                     entregaFinalDubAudio: t.entrega_final_dub_audio || undefined,
                     entregaFinalScript: t.entrega_final_script || undefined,
+                    entregaFinalScriptItems: t.entrega_final_script_items || [],
+                    entregaFinalDubAudioItems: t.entrega_final_dub_audio_items || [],
                     pruebaDeVoz: t.prueba_de_voz,
                     aorNeeded: t.aor_needed,
                     formato: t.formato,
@@ -291,6 +293,8 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                   if (updates.servicios !== undefined) dbUpdates.servicios = updates.servicios;
                   if (updates.entregaFinalDubAudio !== undefined) dbUpdates.entrega_final_dub_audio = updates.entregaFinalDubAudio;
                   if (updates.entregaFinalScript !== undefined) dbUpdates.entrega_final_script = updates.entregaFinalScript;
+                  if (updates.entregaFinalScriptItems !== undefined) dbUpdates.entrega_final_script_items = updates.entregaFinalScriptItems;
+                  if (updates.entregaFinalDubAudioItems !== undefined) dbUpdates.entrega_final_dub_audio_items = updates.entregaFinalDubAudioItems;
                   if (updates.pruebaDeVoz !== undefined) dbUpdates.prueba_de_voz = updates.pruebaDeVoz;
                   if (updates.aorNeeded !== undefined) dbUpdates.aor_needed = updates.aorNeeded;
                   if (updates.formato !== undefined) dbUpdates.formato = updates.formato;

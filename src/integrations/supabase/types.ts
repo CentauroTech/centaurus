@@ -313,7 +313,9 @@ export type Database = {
           dont_use_start: string | null
           entrega_cliente: string | null
           entrega_final_dub_audio: string | null
+          entrega_final_dub_audio_items: string[] | null
           entrega_final_script: string | null
+          entrega_final_script_items: string[] | null
           entrega_miami_end: string | null
           entrega_miami_start: string | null
           entrega_mix_retakes: string | null
@@ -365,7 +367,9 @@ export type Database = {
           dont_use_start?: string | null
           entrega_cliente?: string | null
           entrega_final_dub_audio?: string | null
+          entrega_final_dub_audio_items?: string[] | null
           entrega_final_script?: string | null
+          entrega_final_script_items?: string[] | null
           entrega_miami_end?: string | null
           entrega_miami_start?: string | null
           entrega_mix_retakes?: string | null
@@ -417,7 +421,9 @@ export type Database = {
           dont_use_start?: string | null
           entrega_cliente?: string | null
           entrega_final_dub_audio?: string | null
+          entrega_final_dub_audio_items?: string[] | null
           entrega_final_script?: string | null
+          entrega_final_script_items?: string[] | null
           entrega_miami_end?: string | null
           entrega_miami_start?: string | null
           entrega_mix_retakes?: string | null

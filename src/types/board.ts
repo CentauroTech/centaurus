@@ -68,6 +68,8 @@ export interface Task {
   servicios?: string;
   entregaFinalDubAudio?: Date | string;
   entregaFinalScript?: Date | string;
+  entregaFinalScriptItems?: string[];
+  entregaFinalDubAudioItems?: string[];
   pruebaDeVoz?: boolean;
   aorNeeded?: boolean;
   formato?: string;
@@ -148,7 +150,7 @@ export const PHASE_CONFIG: Record<Phase, { label: string; className: string }> =
 export interface ColumnConfig {
   id: string;
   label: string;
-  type: 'text' | 'date' | 'person' | 'status' | 'phase' | 'current-phase' | 'number' | 'boolean' | 'link' | 'people' | 'combobox' | 'dropdown' | 'file' | 'auto' | 'last-updated' | 'privacy';
+  type: 'text' | 'date' | 'person' | 'status' | 'phase' | 'current-phase' | 'number' | 'boolean' | 'link' | 'people' | 'combobox' | 'dropdown' | 'file' | 'auto' | 'last-updated' | 'privacy' | 'multi-select';
   width: string;
   field: keyof Task;
   options?: string[];
@@ -160,6 +162,39 @@ export const CLIENT_OPTIONS = ['Netflix', 'Amazon', 'Disney+', 'HBO Max', 'Apple
 export const SERVICIOS_OPTIONS = ['Dubbing', 'Subtitling', 'Voice Over', 'Audio Description', 'Localization'];
 export const FORMATO_OPTIONS = ['Feature Film', 'Series', 'Documentary', 'Short Film', 'Animation'];
 export const LENGUAJE_OPTIONS = ['English', 'Spanish', 'Portuguese', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Mandarin'];
+
+export const ENTREGA_FINAL_SCRIPT_OPTIONS = [
+  '5.0 Dx',
+  'AD Script',
+  'Dub Card - Netflix Portal',
+  'Dub Card - Image',
+  'Dub Card - Mpg',
+  'Dub Card - Png',
+  'Dub Card - Tiff',
+  'Forced Narratives XML',
+  'Forced Narratives STL',
+  'List of Forced Narratives',
+  'Metadata Traducción',
+  'Mix 5.1',
+  'Mix Stereo 2.0',
+  'Subtitles XML',
+  'Subtitles SRT',
+  'Translated Script'
+];
+
+export const ENTREGA_FINAL_DUB_AUDIO_OPTIONS = [
+  'AIFFF Files',
+  'Archivos .wav Individuales',
+  'Audios en Wav en Mono',
+  'BWAV ADM',
+  'Dialogue Stems',
+  'Foley',
+  'Lip Sync',
+  'M&E',
+  'Protools + Metadata',
+  'Protools Sessions (Only Voices no Premix)',
+  'Ver Kickoff Instructions'
+];
 
 export const COLUMNS: ColumnConfig[] = [
   { id: 'isPrivate', label: '', type: 'privacy', width: 'w-10', field: 'isPrivate' },
@@ -189,4 +224,6 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'servicios', label: 'Services', type: 'combobox', width: 'w-36', field: 'servicios', options: SERVICIOS_OPTIONS },
   { id: 'formato', label: 'Format', type: 'combobox', width: 'w-32', field: 'formato', options: FORMATO_OPTIONS },
   { id: 'branch', label: 'Branch', type: 'dropdown', width: 'w-28', field: 'branch', options: BRANCH_OPTIONS },
+  { id: 'entregaFinalScriptItems', label: 'Entrega Final - Script/Dubcard', type: 'multi-select', width: 'w-44', field: 'entregaFinalScriptItems', options: ENTREGA_FINAL_SCRIPT_OPTIONS },
+  { id: 'entregaFinalDubAudioItems', label: 'Entrega Final - Dub Audio', type: 'multi-select', width: 'w-44', field: 'entregaFinalDubAudioItems', options: ENTREGA_FINAL_DUB_AUDIO_OPTIONS },
 ];

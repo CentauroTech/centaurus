@@ -65,7 +65,7 @@ export interface Task {
   cantidadEpisodios?: number;
   lockedRuntime?: string;
   finalRuntime?: string;
-  servicios?: string;
+  servicios?: string[];
   genre?: string;
   entregaFinalDubAudio?: Date | string;
   entregaFinalScript?: Date | string;
@@ -73,7 +73,7 @@ export interface Task {
   entregaFinalDubAudioItems?: string[];
   pruebaDeVoz?: boolean;
   aorNeeded?: boolean;
-  formato?: string;
+  formato?: string[];
   lenguajeOriginal?: string;
   rates?: number;
   showGuide?: string;
@@ -259,8 +259,8 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'qcRetakes', label: 'QC Retakes', type: 'person', width: 'w-28', field: 'qcRetakes' },
   { id: 'mixer', label: 'Mixer', type: 'person', width: 'w-28', field: 'mixerMiami' },
   { id: 'qcMix', label: 'QC Mix', type: 'person', width: 'w-28', field: 'qcMix' },
-  { id: 'servicios', label: 'Services', type: 'combobox', width: 'w-40', field: 'servicios', options: SERVICIOS_OPTIONS },
-  { id: 'formato', label: 'Format', type: 'combobox', width: 'w-36', field: 'formato', options: FORMATO_OPTIONS },
+  { id: 'servicios', label: 'Services', type: 'multi-select', width: 'w-56', field: 'servicios', options: SERVICIOS_OPTIONS },
+  { id: 'formato', label: 'Format', type: 'multi-select', width: 'w-44', field: 'formato', options: FORMATO_OPTIONS },
   { id: 'branch', label: 'Branch', type: 'dropdown', width: 'w-24', field: 'branch', options: BRANCH_OPTIONS },
   { id: 'genre', label: 'Genre', type: 'dropdown', width: 'w-24', field: 'genre', options: GENRE_OPTIONS },
   { id: 'entregaFinalScriptItems', label: 'Entrega Script/Dubcard', type: 'multi-select', width: 'w-80', field: 'entregaFinalScriptItems', options: ENTREGA_FINAL_SCRIPT_OPTIONS },

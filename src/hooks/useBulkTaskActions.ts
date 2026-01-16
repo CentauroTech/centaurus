@@ -452,19 +452,6 @@ export function useBulkUpdateField(boardId: string, currentUserId?: string | nul
           }
         }
         
-        // Log activity
-        const newNames = people.map(p => p.name).join(', ') || null;
-        for (const taskId of taskIds) {
-          await supabase.from('activity_log').insert({
-            task_id: taskId,
-            type: 'field_change',
-            field: displayField || field,
-            old_value: null,
-            new_value: newNames,
-            user_id: currentUserId || null,
-          });
-        }
-        
         return { count: taskIds.length, field };
       }
 
@@ -483,35 +470,56 @@ export function useBulkUpdateField(boardId: string, currentUserId?: string | nul
 
       if (error) throw error;
 
-      // Log activity for each task
-      const displayValue = typeof value === 'object' && value?.name 
-        ? value.name 
-        : typeof value === 'object' && value?.id 
-          ? value.id 
-          : String(value ?? '');
-
-      for (const taskId of taskIds) {
-        await supabase.from('activity_log').insert({
-          task_id: taskId,
-          type: 'field_change',
-          field: displayField || field,
-          old_value: oldValues?.get(taskId) ?? null,
-          new_value: displayValue,
-          user_id: currentUserId || null,
-        });
-      }
-
       return { count: taskIds.length, field };
+    },
+    // Optimistic update for immediate UI response
+    onMutate: async ({ taskIds, field, value }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['board', boardId] });
+
+      // Snapshot the previous value
+      const previousBoard = queryClient.getQueryData(['board', boardId]);
+
+      // Optimistically update the cache
+      queryClient.setQueryData(['board', boardId], (old: any) => {
+        if (!old?.groups) return old;
+        
+        return {
+          ...old,
+          groups: old.groups.map((group: any) => ({
+            ...group,
+            tasks: group.tasks.map((task: any) => {
+              if (taskIds.includes(task.id)) {
+                // Map database column names to task property names
+                const propKey = field.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+                return { 
+                  ...task, 
+                  [propKey]: value,
+                  [field]: value,
+                };
+              }
+              return task;
+            }),
+          })),
+        };
+      });
+
+      return { previousBoard };
+    },
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousBoard) {
+        queryClient.setQueryData(['board', boardId], context.previousBoard);
+      }
+      console.error('Failed to bulk update:', err);
+      toast.error('Failed to update tasks');
     },
     onSuccess: (result) => {
       toast.success(`Updated ${result.field} for ${result.count} ${result.count === 1 ? 'task' : 'tasks'}`);
-      queryClient.invalidateQueries({ queryKey: ['board'] });
-      queryClient.invalidateQueries({ queryKey: ['workspaces'] });
-      queryClient.invalidateQueries({ queryKey: ['activity-log'] });
     },
-    onError: (error) => {
-      console.error('Failed to bulk update:', error);
-      toast.error('Failed to update tasks');
+    onSettled: () => {
+      // Refetch after mutation settles
+      queryClient.invalidateQueries({ queryKey: ['board', boardId] });
     },
   });
 }

@@ -359,38 +359,47 @@ export function useUpdateTask(boardId: string, currentUserId?: string | null) {
 
   return useMutation({
     mutationFn: async ({ taskId, updates }: { taskId: string; updates: Record<string, any> }) => {
-      // Fetch current task values to compare
-      const { data: currentTask, error: fetchError } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('id', taskId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Collect all personnel IDs that need name resolution
-      const personnelIdsToResolve = new Set<string>();
+      // Check if we need to fetch current task for logging
+      // Only fetch for personnel fields that need name resolution
+      const hasPersonnelFields = Object.keys(updates).some(key => personnelFields.includes(key));
       
-      for (const [key, newValue] of Object.entries(updates)) {
-        if (personnelFields.includes(key)) {
-          const oldValue = currentTask[key];
-          if (oldValue) personnelIdsToResolve.add(oldValue);
-          if (newValue) personnelIdsToResolve.add(newValue);
+      let currentTask: Record<string, any> | null = null;
+      let personnelNames = new Map<string, string>();
+      
+      if (hasPersonnelFields) {
+        // Fetch current task values only for personnel fields
+        const { data, error: fetchError } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('id', taskId)
+          .single();
+
+        if (fetchError) throw fetchError;
+        currentTask = data;
+
+        // Collect all personnel IDs that need name resolution
+        const personnelIdsToResolve = new Set<string>();
+        
+        for (const [key, newValue] of Object.entries(updates)) {
+          if (personnelFields.includes(key)) {
+            const oldValue = currentTask[key];
+            if (oldValue) personnelIdsToResolve.add(oldValue);
+            if (newValue) personnelIdsToResolve.add(newValue);
+          }
+        }
+
+        // Fetch names for all personnel IDs at once
+        if (personnelIdsToResolve.size > 0) {
+          const { data: members } = await supabase
+            .from('team_members')
+            .select('id, name')
+            .in('id', Array.from(personnelIdsToResolve));
+          
+          members?.forEach(m => personnelNames.set(m.id, m.name));
         }
       }
 
-      // Fetch names for all personnel IDs at once
-      let personnelNames = new Map<string, string>();
-      if (personnelIdsToResolve.size > 0) {
-        const { data: members } = await supabase
-          .from('team_members')
-          .select('id, name')
-          .in('id', Array.from(personnelIdsToResolve));
-        
-        members?.forEach(m => personnelNames.set(m.id, m.name));
-      }
-
-      // Update the task
+      // Update the task - this is the main operation
       const { data, error } = await supabase
         .from('tasks')
         .update({ ...updates, last_updated: new Date().toISOString() })
@@ -400,55 +409,89 @@ export function useUpdateTask(boardId: string, currentUserId?: string | null) {
 
       if (error) throw error;
 
-      // Log each changed field to activity_log
-      const activityLogs: Array<{
-        task_id: string;
-        type: string;
-        field: string;
-        old_value: string | null;
-        new_value: string | null;
-        user_id: string | null;
-      }> = [];
+      // Log activity only for personnel field changes (skip for simple fields to improve performance)
+      if (hasPersonnelFields && currentTask) {
+        const activityLogs: Array<{
+          task_id: string;
+          type: string;
+          field: string;
+          old_value: string | null;
+          new_value: string | null;
+          user_id: string | null;
+        }> = [];
 
-      for (const [key, newValue] of Object.entries(updates)) {
-        const oldValue = currentTask[key];
-        
-        // Skip if values are the same
-        if (oldValue === newValue) continue;
-        if (oldValue === null && newValue === null) continue;
-        if (oldValue === undefined && newValue === null) continue;
-        
-        // Use friendly field name and resolve personnel IDs to names
-        let fieldName = key;
-        let oldStr = oldValue !== null && oldValue !== undefined ? String(oldValue) : null;
-        let newStr = newValue !== null && newValue !== undefined ? String(newValue) : null;
-        
-        if (personnelFields.includes(key)) {
-          fieldName = personnelFieldNames[key];
-          oldStr = oldValue ? personnelNames.get(oldValue) || null : null;
-          newStr = newValue ? personnelNames.get(newValue) || null : null;
+        for (const [key, newValue] of Object.entries(updates)) {
+          if (!personnelFields.includes(key)) continue;
+          
+          const oldValue = currentTask[key];
+          if (oldValue === newValue) continue;
+          
+          const fieldName = personnelFieldNames[key];
+          const oldStr = oldValue ? personnelNames.get(oldValue) || null : null;
+          const newStr = newValue ? personnelNames.get(newValue) || null : null;
+          
+          activityLogs.push({
+            task_id: taskId,
+            type: 'field_change',
+            field: fieldName,
+            old_value: oldStr,
+            new_value: newStr,
+            user_id: currentUserId || null,
+          });
         }
-        
-        activityLogs.push({
-          task_id: taskId,
-          type: 'field_change',
-          field: fieldName,
-          old_value: oldStr,
-          new_value: newStr,
-          user_id: currentUserId || null,
-        });
-      }
 
-      // Insert all activity logs
-      if (activityLogs.length > 0) {
-        await supabase.from('activity_log').insert(activityLogs);
+        if (activityLogs.length > 0) {
+          await supabase.from('activity_log').insert(activityLogs);
+        }
       }
 
       return data;
     },
-    onSuccess: () => {
+    // Optimistic update for immediate UI response
+    onMutate: async ({ taskId, updates }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['board', boardId] });
+
+      // Snapshot the previous value
+      const previousBoard = queryClient.getQueryData(['board', boardId]);
+
+      // Optimistically update the cache
+      queryClient.setQueryData(['board', boardId], (old: any) => {
+        if (!old?.groups) return old;
+        
+        return {
+          ...old,
+          groups: old.groups.map((group: any) => ({
+            ...group,
+            tasks: group.tasks.map((task: any) => {
+              if (task.id === taskId) {
+                // Apply updates to the task
+                const updatedTask = { ...task };
+                for (const [key, value] of Object.entries(updates)) {
+                  // Map database column names to task property names
+                  const propKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+                  updatedTask[propKey] = value;
+                  updatedTask[key] = value; // Also set the original key
+                }
+                return updatedTask;
+              }
+              return task;
+            }),
+          })),
+        };
+      });
+
+      return { previousBoard };
+    },
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousBoard) {
+        queryClient.setQueryData(['board', boardId], context.previousBoard);
+      }
+    },
+    onSettled: () => {
+      // Refetch after mutation settles (but UI already updated)
       queryClient.invalidateQueries({ queryKey: ['board', boardId] });
-      queryClient.invalidateQueries({ queryKey: ['activity-log'] });
     },
   });
 }

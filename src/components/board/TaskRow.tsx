@@ -109,6 +109,26 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
     });
   };
 
+  // Role fields that can be assigned via privacy dialog
+  const PRIVACY_ROLE_FIELDS = ['traductor', 'adaptador', 'mixerMiami', 'qc1', 'qcMix'];
+
+  const handleMakePublic = () => {
+    // Clear viewers
+    updateViewersMutation.mutate({ taskId: task.id, viewerIds: [] });
+    
+    // Clear role columns where the assigned person was a viewer
+    PRIVACY_ROLE_FIELDS.forEach(field => {
+      const currentValue = task[field as keyof Task] as { id: string } | undefined;
+      if (currentValue?.id && viewerIds.includes(currentValue.id)) {
+        // This role column has a viewer assigned - clear it
+        onUpdate({ [field]: null });
+      }
+    });
+    
+    // Set task as public
+    onUpdate({ isPrivate: false });
+  };
+
   // Handle update with bulk edit support
   const handleUpdate = useCallback((field: string, value: any) => {
     // Check if this task is part of a multi-selection
@@ -171,6 +191,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
             taskId={task.id}
             onViewersChange={handleViewersChange}
             onRoleAssignments={handleRoleAssignments}
+            onMakePublic={handleMakePublic}
             currentViewerIds={viewerIds}
           />
         );

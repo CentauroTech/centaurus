@@ -33,6 +33,7 @@ interface PrivacyCellProps {
   taskId?: string;
   onViewersChange?: (viewerIds: string[]) => void;
   onRoleAssignments?: (assignments: RoleAssignment[]) => void;
+  onMakePublic?: () => void;
   currentViewerIds?: string[];
 }
 
@@ -71,6 +72,7 @@ export function PrivacyCell({
   taskId,
   onViewersChange,
   onRoleAssignments,
+  onMakePublic,
   currentViewerIds = []
 }: PrivacyCellProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -117,9 +119,13 @@ export function PrivacyCell({
   };
 
   const handleConfirmMakePublic = () => {
-    onChange(false);
-    if (onViewersChange) {
-      onViewersChange([]);
+    if (onMakePublic) {
+      onMakePublic();
+    } else {
+      onChange(false);
+      if (onViewersChange) {
+        onViewersChange([]);
+      }
     }
     setConfirmPublicOpen(false);
   };

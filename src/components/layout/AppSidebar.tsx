@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Home, Search, Plus, Settings, HelpCircle, LayoutGrid } from 'lucide-react';
+import { ChevronDown, ChevronRight, Home, Search, Plus, Settings, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkspaceWithBoards } from '@/hooks/useWorkspaces';
+import centaurusLogo from '@/assets/centaurus-logo.jpeg';
 
 interface AppSidebarProps {
   workspaces: WorkspaceWithBoards[];
@@ -26,11 +27,13 @@ export function AppSidebar({ workspaces, selectedBoardId, onSelectBoard }: AppSi
     <aside className="w-64 bg-sidebar-bg text-sidebar-foreground flex flex-col h-screen">
       {/* Logo */}
       <div className="p-4 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <LayoutGrid className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-display font-semibold text-lg">workday</span>
+        <div className="flex items-center gap-3">
+          <img 
+            src={centaurusLogo} 
+            alt="Centaurus Logo" 
+            className="w-10 h-10 rounded-full object-cover"
+          />
+          <span className="font-display font-semibold text-lg">Centaurus</span>
         </div>
       </div>
 

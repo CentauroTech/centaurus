@@ -297,6 +297,42 @@ export type Database = {
           },
         ]
       }
+      task_viewers: {
+        Row: {
+          created_at: string
+          id: string
+          task_id: string
+          team_member_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          task_id: string
+          team_member_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          task_id?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_viewers_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_viewers_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           adaptador_id: string | null
@@ -529,7 +565,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_task: { Args: { task_id_param: string }; Returns: boolean }
       current_team_member_id: { Args: never; Returns: string }
+      is_guest: { Args: never; Returns: boolean }
       is_project_manager: { Args: never; Returns: boolean }
       is_team_member: { Args: never; Returns: boolean }
     }

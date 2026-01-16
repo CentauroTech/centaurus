@@ -21,6 +21,7 @@ import { MultiSelectCell } from './cells/MultiSelectCell';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 import { useBulkEdit } from '@/contexts/BulkEditContext';
+import { useTaskViewers, useUpdateTaskViewers } from '@/hooks/useTaskViewers';
 import { mockUsers } from '@/data/mockData';
 
 interface TaskRowProps {
@@ -87,9 +88,17 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
   const { toggleTaskSelection, isSelected } = useTaskSelection();
   const { shouldApplyBulkEdit, getSelectedTaskIds, onBulkUpdate } = useBulkEdit();
+  
+  // Task viewers for privacy feature
+  const { data: viewerIds = [] } = useTaskViewers(task.id);
+  const updateViewersMutation = useUpdateTaskViewers(boardId || '');
 
   const commentCount = task.commentCount || 0;
   const isTaskSelected = isSelected(task.id);
+  
+  const handleViewersChange = (newViewerIds: string[]) => {
+    updateViewersMutation.mutate({ taskId: task.id, viewerIds: newViewerIds });
+  };
 
   // Handle update with bulk edit support
   const handleUpdate = useCallback((field: string, value: any) => {
@@ -150,6 +159,9 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
           <PrivacyCell
             isPrivate={task.isPrivate}
             onChange={(val) => handleUpdate('isPrivate', val)}
+            taskId={task.id}
+            onViewersChange={handleViewersChange}
+            currentViewerIds={viewerIds}
           />
         );
       case 'text':

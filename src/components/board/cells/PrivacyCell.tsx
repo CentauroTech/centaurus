@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, Unlock, X, Check } from 'lucide-react';
+import { Lock, Unlock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -37,6 +37,17 @@ interface TeamMember {
   email: string | null;
 }
 
+type FilterCategory = 'all' | 'translators' | 'adapters' | 'mixers' | 'qc_premix' | 'qc_mix';
+
+const FILTER_CATEGORIES: { key: FilterCategory; label: string; names: string[] }[] = [
+  { key: 'all', label: 'All', names: [] },
+  { key: 'translators', label: 'Translators', names: ['Marina', 'Leandra', 'Zana', 'Fabio', 'Natalia', 'William', 'Pequerrecho'] },
+  { key: 'adapters', label: 'Adapters', names: ['Ethan', 'John', 'Jennyfer', 'Marina', 'Leandra', 'Zana', 'Pequerrecho', 'Fabio', 'Natalia', 'William'] },
+  { key: 'mixers', label: 'Mixers', names: ['Brazil', 'Edgar', 'Edwin', 'Fabio', 'Gonzalo', 'Joao', 'Julian', 'Chris'] },
+  { key: 'qc_premix', label: 'QC Premix', names: ['Chris'] },
+  { key: 'qc_mix', label: 'QC Mix', names: ['Brazil', 'Chris', 'Edwin', 'Joao', 'Julian', 'Willy'] },
+];
+
 export function PrivacyCell({ 
   isPrivate = false, 
   onChange, 
@@ -46,6 +57,7 @@ export function PrivacyCell({
 }: PrivacyCellProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedViewers, setSelectedViewers] = useState<string[]>(currentViewerIds);
+  const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
 
   // Fetch guests (team members without @centauro.com email)
   const { data: guests = [] } = useQuery({
@@ -61,10 +73,21 @@ export function PrivacyCell({
     },
   });
 
+  const filteredGuests = activeFilter === 'all' 
+    ? guests 
+    : guests.filter(guest => {
+        const category = FILTER_CATEGORIES.find(c => c.key === activeFilter);
+        if (!category) return true;
+        return category.names.some(name => 
+          guest.name.toLowerCase().includes(name.toLowerCase())
+        );
+      });
+
   const handlePrivacyClick = () => {
     if (!isPrivate) {
       // Opening privacy - show dialog to select guests
       setSelectedViewers(currentViewerIds);
+      setActiveFilter('all');
       setDialogOpen(true);
     } else {
       // Making public - just toggle off
@@ -132,14 +155,30 @@ export function PrivacyCell({
             </DialogDescription>
           </DialogHeader>
           
-          <div className="py-4">
-            {guests.length === 0 ? (
+          <div className="py-4 space-y-4">
+            {/* Filter buttons */}
+            <div className="flex flex-wrap gap-2">
+              {FILTER_CATEGORIES.map((category) => (
+                <Button
+                  key={category.key}
+                  variant={activeFilter === category.key ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setActiveFilter(category.key)}
+                  className="text-xs"
+                >
+                  {category.label}
+                </Button>
+              ))}
+            </div>
+
+            {/* Guest list */}
+            {filteredGuests.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No guests found. Guests are team members without @centauro.com emails.
+                No guests found in this category.
               </p>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {guests.map((guest) => (
+                {filteredGuests.map((guest) => (
                   <div
                     key={guest.id}
                     className={cn(

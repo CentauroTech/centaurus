@@ -188,13 +188,8 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
   return (
     <>
       <div className="flex items-center gap-1" ref={containerRef}>
-        {value ? (
-          <span className={cn(
-            "px-2 py-0.5 rounded text-xs font-medium truncate",
-            isPrivate 
-              ? "bg-white text-slate-800" 
-              : "bg-slate-800 text-white"
-          )}>
+        {value && isPrivate ? (
+          <span className="px-2 py-0.5 rounded text-xs font-medium truncate bg-white text-slate-800">
             {value}
           </span>
         ) : (
@@ -214,7 +209,7 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
           type="button"
           onMouseDown={(e) => {
             e.preventDefault();
-            if (value) {
+            if (value && isPrivate) {
               // Clear value to allow editing
               setInputValue('');
               onChange('');

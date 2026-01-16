@@ -7,9 +7,10 @@ interface MultiSelectCellProps {
   onChange: (value: string[]) => void;
   options: string[];
   placeholder?: string;
+  isPrivate?: boolean;
 }
 
-export function MultiSelectCell({ value = [], onChange, options, placeholder = 'Select...' }: MultiSelectCellProps) {
+export function MultiSelectCell({ value = [], onChange, options, placeholder = 'Select...', isPrivate = false }: MultiSelectCellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -48,12 +49,20 @@ export function MultiSelectCell({ value = [], onChange, options, placeholder = '
             {value.map((item) => (
               <span
                 key={item}
-                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 text-amber-800 text-xs rounded whitespace-nowrap border border-amber-300 font-medium"
+                className={cn(
+                  "inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs rounded whitespace-nowrap font-medium",
+                  isPrivate 
+                    ? "bg-white text-slate-800 border border-slate-200" 
+                    : "bg-amber-100 text-amber-800 border border-amber-300"
+                )}
               >
                 <span>{item}</span>
                 <button
                   onClick={(e) => handleRemove(item, e)}
-                  className="hover:bg-amber-200 rounded p-0.5 flex-shrink-0 text-amber-700"
+                  className={cn(
+                    "rounded p-0.5 flex-shrink-0",
+                    isPrivate ? "hover:bg-slate-200 text-slate-600" : "hover:bg-amber-200 text-amber-700"
+                  )}
                 >
                   <X className="w-2.5 h-2.5" />
                 </button>

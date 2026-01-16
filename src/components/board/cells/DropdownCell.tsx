@@ -104,18 +104,13 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
         className="flex items-center gap-1 w-full text-left"
         type="button"
       >
-        {value ? (
-          <span className={cn(
-            "px-2 py-0.5 rounded text-xs font-medium truncate",
-            isPrivate 
-              ? "bg-white text-slate-800" 
-              : "bg-slate-800 text-white"
-          )}>
+        {value && isPrivate ? (
+          <span className="px-2 py-0.5 rounded text-xs font-medium truncate bg-white text-slate-800">
             {value}
           </span>
         ) : (
-          <span className="text-sm truncate flex-1 text-inherit opacity-60">
-            {placeholder}
+          <span className={cn("text-sm truncate flex-1 text-inherit", !value && "opacity-60")}>
+            {value || placeholder}
           </span>
         )}
         <ChevronDown className={cn("w-3 h-3 opacity-60 transition-transform flex-shrink-0", isOpen && "rotate-180")} />

@@ -26,17 +26,21 @@ export function LastUpdatedCell({ date, updatedBy, isPrivate = false }: LastUpda
 
   const relativeTime = formatDistanceToNow(dateObj, { addSuffix: true });
 
+  if (isPrivate) {
+    return (
+      <div 
+        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-white text-slate-800"
+        title={dateObj.toLocaleString()}
+      >
+        <Clock className="w-3 h-3 flex-shrink-0" />
+        <span className="truncate">{relativeTime}</span>
+      </div>
+    );
+  }
+
   return (
-    <div 
-      className={cn(
-        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium",
-        isPrivate 
-          ? "bg-white text-slate-800" 
-          : "bg-slate-800 text-white"
-      )}
-      title={dateObj.toLocaleString()}
-    >
-      <Clock className="w-3 h-3 flex-shrink-0" />
+    <div className="flex items-center gap-1.5 text-sm text-inherit opacity-80" title={dateObj.toLocaleString()}>
+      <Clock className="w-3.5 h-3.5 flex-shrink-0" />
       <span className="truncate">{relativeTime}</span>
     </div>
   );

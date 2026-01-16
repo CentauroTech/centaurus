@@ -158,7 +158,7 @@ export interface ColumnConfig {
 }
 
 // Dropdown options for various fields
-export const BRANCH_OPTIONS = ['Miami', 'Colombia', 'Mexico', 'Argentina', 'Spain'];
+export const BRANCH_OPTIONS = ['Colombia', 'Miami', 'Brazil', 'Mexico'];
 export const CLIENT_OPTIONS = ['Netflix', 'Amazon', 'Disney+', 'HBO Max', 'Apple TV+', 'Paramount+'];
 export const SERVICIOS_OPTIONS = [
   'Audio Description AD',

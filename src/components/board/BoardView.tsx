@@ -236,6 +236,7 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                     pruebaDeVoz: t.prueba_de_voz,
                     aorNeeded: t.aor_needed,
                     formato: t.formato,
+                    genre: t.genre,
                     lenguajeOriginal: t.lenguaje_original,
                     rates: t.rates,
                     showGuide: t.show_guide,
@@ -298,6 +299,7 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                   if (updates.pruebaDeVoz !== undefined) dbUpdates.prueba_de_voz = updates.pruebaDeVoz;
                   if (updates.aorNeeded !== undefined) dbUpdates.aor_needed = updates.aorNeeded;
                   if (updates.formato !== undefined) dbUpdates.formato = updates.formato;
+                  if (updates.genre !== undefined) dbUpdates.genre = updates.genre;
                   if (updates.lenguajeOriginal !== undefined) dbUpdates.lenguaje_original = updates.lenguajeOriginal;
                   if (updates.rates !== undefined) dbUpdates.rates = updates.rates;
                   if (updates.showGuide !== undefined) dbUpdates.show_guide = updates.showGuide;

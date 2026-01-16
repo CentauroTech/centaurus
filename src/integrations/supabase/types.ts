@@ -323,6 +323,7 @@ export type Database = {
           fase: string | null
           final_runtime: string | null
           formato: string | null
+          genre: string | null
           group_id: string
           hq: string | null
           id: string
@@ -377,6 +378,7 @@ export type Database = {
           fase?: string | null
           final_runtime?: string | null
           formato?: string | null
+          genre?: string | null
           group_id: string
           hq?: string | null
           id?: string
@@ -431,6 +433,7 @@ export type Database = {
           fase?: string | null
           final_runtime?: string | null
           formato?: string | null
+          genre?: string | null
           group_id?: string
           hq?: string | null
           id?: string

@@ -66,6 +66,7 @@ export interface Task {
   lockedRuntime?: string;
   finalRuntime?: string;
   servicios?: string;
+  genre?: string;
   entregaFinalDubAudio?: Date | string;
   entregaFinalScript?: Date | string;
   entregaFinalScriptItems?: string[];
@@ -159,9 +160,46 @@ export interface ColumnConfig {
 // Dropdown options for various fields
 export const BRANCH_OPTIONS = ['Miami', 'Colombia', 'Mexico', 'Argentina', 'Spain'];
 export const CLIENT_OPTIONS = ['Netflix', 'Amazon', 'Disney+', 'HBO Max', 'Apple TV+', 'Paramount+'];
-export const SERVICIOS_OPTIONS = ['Dubbing', 'Subtitling', 'Voice Over', 'Audio Description', 'Localization'];
+export const SERVICIOS_OPTIONS = [
+  'Audio Description AD',
+  'Audiobook',
+  'BWAV ADM',
+  'Casting',
+  'Casting Only',
+  'Closed Captioning',
+  'Conformance',
+  'Creation of Original Voices',
+  'Dubbing',
+  'Dubbing Lip Sync',
+  'Dubbing of Songs',
+  'Edición de Audio',
+  'Foley',
+  'M&E',
+  'Gráficas',
+  'Guide Track Recording',
+  'Localization',
+  'Mix 2.0',
+  'Mix Atmos',
+  'Mix Dobly Atmos',
+  'Revisión de Dialogo',
+  'Subtitles',
+  'Subtitling',
+  'Voice Over',
+];
 export const FORMATO_OPTIONS = ['Feature Film', 'Series', 'Documentary', 'Short Film', 'Animation'];
 export const LENGUAJE_OPTIONS = ['English', 'Spanish', 'Portuguese', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Mandarin'];
+export const GENRE_OPTIONS = [
+  'Action',
+  'Adventure',
+  'Comedy',
+  'Drama',
+  'Family',
+  'Kids',
+  'Horror',
+  'Musical',
+  'Reality',
+  'Fantasy',
+];
 
 export const ENTREGA_FINAL_SCRIPT_OPTIONS = [
   '5.0 Dx',
@@ -224,6 +262,7 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'servicios', label: 'Services', type: 'combobox', width: 'w-36', field: 'servicios', options: SERVICIOS_OPTIONS },
   { id: 'formato', label: 'Format', type: 'combobox', width: 'w-32', field: 'formato', options: FORMATO_OPTIONS },
   { id: 'branch', label: 'Branch', type: 'dropdown', width: 'w-28', field: 'branch', options: BRANCH_OPTIONS },
+  { id: 'genre', label: 'Genre', type: 'dropdown', width: 'w-28', field: 'genre', options: GENRE_OPTIONS },
   { id: 'entregaFinalScriptItems', label: 'Entrega Final - Script/Dubcard', type: 'multi-select', width: 'w-44', field: 'entregaFinalScriptItems', options: ENTREGA_FINAL_SCRIPT_OPTIONS },
   { id: 'entregaFinalDubAudioItems', label: 'Entrega Final - Dub Audio', type: 'multi-select', width: 'w-44', field: 'entregaFinalDubAudioItems', options: ENTREGA_FINAL_DUB_AUDIO_OPTIONS },
 ];

@@ -19,6 +19,7 @@ import {
   LENGUAJE_OPTIONS,
   GENRE_OPTIONS,
   TARGET_LANGUAGE_OPTIONS,
+  VOICE_TEST_OPTIONS,
   ENTREGA_FINAL_SCRIPT_OPTIONS,
   ENTREGA_FINAL_DUB_AUDIO_OPTIONS,
 } from '@/types/board';
@@ -56,6 +57,7 @@ export interface TaskTemplate {
   genre?: string;
   lenguaje_original?: string;
   target_language?: string;
+  prueba_de_voz?: string;
   locked_runtime?: string;
   final_runtime?: string;
   show_guide?: string;
@@ -85,6 +87,7 @@ const FIELD_TO_TEMPLATE_KEY: Record<string, keyof TaskTemplate> = {
   cantidadEpisodios: 'cantidad_episodios',
   lenguajeOriginal: 'lenguaje_original',
   targetLanguage: 'target_language',
+  pruebaDeVoz: 'prueba_de_voz',
   lockedRuntime: 'locked_runtime',
   finalRuntime: 'final_runtime',
   showGuide: 'show_guide',
@@ -114,6 +117,7 @@ const getOptionsForField = (fieldId: string): string[] => {
     case 'formato': return FORMATO_OPTIONS;
     case 'lenguajeOriginal': return LENGUAJE_OPTIONS;
     case 'targetLanguage': return TARGET_LANGUAGE_OPTIONS;
+    case 'pruebaDeVoz': return VOICE_TEST_OPTIONS;
     case 'entregaFinalScriptItems': return ENTREGA_FINAL_SCRIPT_OPTIONS;
     case 'entregaFinalDubAudioItems': return ENTREGA_FINAL_DUB_AUDIO_OPTIONS;
     default: return [];
@@ -122,7 +126,7 @@ const getOptionsForField = (fieldId: string): string[] => {
 
 // Columns that can be set as template fields (exclude system/auto fields)
 const TEMPLATE_COLUMNS = COLUMNS.filter(col => 
-  !['isPrivate', 'name', 'status', 'lastUpdated', 'currentPhase', 'people', 'dateAssigned', 'dateDelivered', 'phaseDueDate', 'premixRetakeList', 'mixRetakeList', 'projectManager', 'director', 'tecnico', 'qc1', 'qcRetakes', 'mixerBogota', 'mixerMiami', 'qcMix', 'traductor', 'adaptador', 'aorNeeded', 'pruebaDeVoz', 'aorComplete', 'dontUseStart', 'dontUseEnd', 'linkToColHQ', 'hq', 'workOrderNumber', 'cantidadEpisodios'].includes(col.id)
+  !['isPrivate', 'name', 'status', 'lastUpdated', 'currentPhase', 'people', 'dateAssigned', 'dateDelivered', 'phaseDueDate', 'premixRetakeList', 'mixRetakeList', 'projectManager', 'director', 'tecnico', 'qc1', 'qcRetakes', 'mixerBogota', 'mixerMiami', 'qcMix', 'traductor', 'adaptador', 'aorNeeded', 'aorComplete', 'dontUseStart', 'dontUseEnd', 'linkToColHQ', 'hq', 'workOrderNumber', 'cantidadEpisodios'].includes(col.id)
 );
 
 // Group template columns by category
@@ -137,7 +141,7 @@ const COLUMN_CATEGORIES = {
   },
   production: {
     label: 'Production Details',
-    columns: TEMPLATE_COLUMNS.filter(c => ['servicios', 'formato', 'studio'].includes(c.id)),
+    columns: TEMPLATE_COLUMNS.filter(c => ['servicios', 'formato', 'studio', 'pruebaDeVoz'].includes(c.id)),
   },
   content: {
     label: 'Content Info',

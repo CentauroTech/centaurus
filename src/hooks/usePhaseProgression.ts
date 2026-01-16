@@ -131,7 +131,7 @@ const normalizePhase = (phaseName: string): string => {
 };
 
 // Get next phase based on current phase and task properties
-const getNextPhase = (currentPhase: string, pruebaDeVoz: boolean): string | null => {
+const getNextPhase = (currentPhase: string, pruebaDeVoz: string | null): string | null => {
   const normalized = normalizePhase(currentPhase);
   const currentIndex = PHASE_ORDER.indexOf(normalized);
   
@@ -139,8 +139,8 @@ const getNextPhase = (currentPhase: string, pruebaDeVoz: boolean): string | null
     return null; // Already at last phase or unknown phase
   }
   
-  // Special case: after adapting, skip voicetests if prueba_de_voz is false
-  if (normalized === 'adapting' && !pruebaDeVoz) {
+  // Special case: after adapting, skip voicetests if prueba_de_voz is not 'Yes'
+  if (normalized === 'adapting' && pruebaDeVoz !== 'Yes') {
     return 'recording';
   }
   
@@ -156,7 +156,7 @@ const extractPhaseFromBoardName = (boardName: string): string => {
 interface MoveToNextPhaseParams {
   taskId: string;
   currentGroupId: string;
-  pruebaDeVoz: boolean;
+  pruebaDeVoz: string | null;
 }
 
 export function useMoveToNextPhase(boardId: string, currentUserId?: string | null) {

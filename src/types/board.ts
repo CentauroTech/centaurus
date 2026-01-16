@@ -71,7 +71,7 @@ export interface Task {
   entregaFinalScript?: Date | string;
   entregaFinalScriptItems?: string[];
   entregaFinalDubAudioItems?: string[];
-  pruebaDeVoz?: boolean;
+  pruebaDeVoz?: string;
   aorNeeded?: boolean;
   formato?: string[];
   lenguajeOriginal?: string;
@@ -237,6 +237,8 @@ export const ENTREGA_FINAL_DUB_AUDIO_OPTIONS = [
 
 export const TARGET_LANGUAGE_OPTIONS = ['English', 'Spanish (Latin America)', 'Spanish (Spain)', 'Portuguese (Brazil)', 'Portuguese (Portugal)', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Mandarin', 'Cantonese'];
 
+export const VOICE_TEST_OPTIONS = ['Yes', 'No', 'Voice Bank'];
+
 export const COLUMNS: ColumnConfig[] = [
   { id: 'isPrivate', label: '', type: 'privacy', width: 'w-8', field: 'isPrivate' },
   { id: 'name', label: 'Project Name', type: 'text', width: 'w-56', field: 'name' },
@@ -256,6 +258,7 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'premixRetakeList', label: 'Premix Retakes', type: 'file', width: 'w-28', field: 'premixRetakeList' },
   { id: 'mixRetakeList', label: 'Mix Retakes', type: 'file', width: 'w-28', field: 'mixRetakeList' },
   { id: 'aorNeeded', label: 'AOR', type: 'boolean', width: 'w-16', field: 'aorNeeded' },
+  { id: 'pruebaDeVoz', label: 'Voice Test', type: 'dropdown', width: 'w-24', field: 'pruebaDeVoz', options: VOICE_TEST_OPTIONS },
   { id: 'traductor', label: 'Translator', type: 'person', width: 'w-28', field: 'traductor' },
   { id: 'adaptador', label: 'Adapter', type: 'person', width: 'w-28', field: 'adaptador' },
   { id: 'premix', label: 'Premix', type: 'person', width: 'w-28', field: 'mixerBogota' },

@@ -46,7 +46,7 @@ export function NumberCell({ value, onChange, placeholder = '-' }: NumberCellPro
       onFocus={handleFocus}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      className="w-full bg-transparent border-0 outline-none text-sm text-foreground focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+      className="w-full bg-transparent border-0 outline-none text-sm focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-inherit placeholder:text-slate-400"
       placeholder={placeholder}
     />
   );

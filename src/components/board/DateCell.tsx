@@ -58,9 +58,9 @@ export function DateCell({ date, onDateChange }: DateCellProps) {
       <PopoverTrigger asChild>
         <button
           className={cn(
-            "flex items-center gap-2 px-2 py-1 rounded text-sm transition-smooth hover:bg-muted w-full",
-            isValidDate ? "text-foreground" : "text-muted-foreground",
-            isOverdue && "text-destructive"
+            "flex items-center gap-2 px-2 py-1 rounded text-sm transition-smooth hover:bg-muted/50 w-full",
+            isValidDate ? "text-inherit" : "text-slate-400",
+            isOverdue && "text-red-400"
           )}
         >
           <CalendarIcon className="w-4 h-4 flex-shrink-0" />

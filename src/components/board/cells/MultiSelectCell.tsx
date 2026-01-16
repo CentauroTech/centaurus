@@ -37,24 +37,34 @@ export function MultiSelectCell({ value = [], onChange, options, placeholder = '
     onChange(value.filter(v => v !== option));
   };
 
-  const displayValue = value.length > 0 
-    ? value.length === 1 
-      ? value[0] 
-      : `${value.length} selected`
-    : placeholder;
-
   return (
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1 w-full text-left min-h-[28px]"
       >
-        <span className={cn(
-          "text-sm truncate flex-1",
-          value.length > 0 ? "text-foreground" : "text-muted-foreground"
-        )}>
-          {displayValue}
-        </span>
+        {value.length > 0 ? (
+          <div className="flex flex-wrap gap-1 flex-1 min-w-0">
+            {value.map((item) => (
+              <span
+                key={item}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded"
+              >
+                <span className="truncate max-w-[80px]">{item}</span>
+                <button
+                  onClick={(e) => handleRemove(item, e)}
+                  className="hover:bg-primary/20 rounded p-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span className="text-sm text-muted-foreground truncate flex-1">
+            {placeholder}
+          </span>
+        )}
         <ChevronDown className={cn(
           "w-3 h-3 text-muted-foreground transition-transform flex-shrink-0",
           isOpen && "rotate-180"

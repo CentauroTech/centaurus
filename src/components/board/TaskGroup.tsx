@@ -88,7 +88,7 @@ export function TaskGroup({
 
       {/* Tasks Table */}
       {!isCollapsed && (
-        <div className="bg-card rounded-lg border border-border shadow-board overflow-hidden animate-fade-in">
+        <div className="bg-card rounded-lg border border-border shadow-board overflow-visible animate-fade-in">
           <table className="w-full">
             <thead>
               <tr className="bg-muted/50 border-b border-border">

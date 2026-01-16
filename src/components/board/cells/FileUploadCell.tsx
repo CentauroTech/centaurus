@@ -27,23 +27,23 @@ export function FileUploadCell({ value, onChange, placeholder = 'Upload file' }:
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <FileText className="w-4 h-4 text-primary flex-shrink-0" />
-        <span className="text-sm text-foreground truncate max-w-[100px]">{value}</span>
+        <FileText className="w-4 h-4 text-amber-500 flex-shrink-0" />
+        <span className="text-sm text-inherit truncate max-w-[100px]">{value}</span>
         {isHovered && (
           <div className="flex items-center gap-1">
             <button
               onClick={() => window.open(value, '_blank')}
-              className="p-1 hover:bg-muted rounded transition-smooth"
+              className="p-1 hover:bg-white/10 rounded transition-smooth"
               title="Open file"
             >
-              <ExternalLink className="w-3 h-3 text-muted-foreground" />
+              <ExternalLink className="w-3 h-3 opacity-60" />
             </button>
             <button
               onClick={() => onChange('')}
-              className="p-1 hover:bg-muted rounded transition-smooth"
+              className="p-1 hover:bg-white/10 rounded transition-smooth"
               title="Remove file"
             >
-              <X className="w-3 h-3 text-muted-foreground" />
+              <X className="w-3 h-3 opacity-60" />
             </button>
           </div>
         )}
@@ -52,7 +52,7 @@ export function FileUploadCell({ value, onChange, placeholder = 'Upload file' }:
   }
 
   return (
-    <label className="flex items-center gap-2 cursor-pointer text-muted-foreground hover:text-foreground transition-smooth">
+    <label className="flex items-center gap-2 cursor-pointer opacity-60 hover:opacity-100 transition-smooth">
       <Upload className="w-4 h-4" />
       <span className="text-sm">{placeholder}</span>
       <input

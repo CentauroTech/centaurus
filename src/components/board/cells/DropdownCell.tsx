@@ -103,10 +103,10 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
         className="flex items-center gap-1 w-full text-left"
         type="button"
       >
-        <span className={cn("text-sm truncate flex-1", value ? "text-foreground" : "text-muted-foreground")}>
+        <span className={cn("text-sm truncate flex-1 text-inherit", !value && "opacity-60")}>
           {value || placeholder}
         </span>
-        <ChevronDown className={cn("w-3 h-3 text-muted-foreground transition-transform flex-shrink-0", isOpen && "rotate-180")} />
+        <ChevronDown className={cn("w-3 h-3 opacity-60 transition-transform flex-shrink-0", isOpen && "rotate-180")} />
       </button>
       {dropdown}
     </>

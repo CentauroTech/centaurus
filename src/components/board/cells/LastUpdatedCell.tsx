@@ -10,7 +10,7 @@ interface LastUpdatedCellProps {
 export function LastUpdatedCell({ date, updatedBy }: LastUpdatedCellProps) {
   if (!date) {
     return (
-      <span className="text-sm text-muted-foreground">-</span>
+      <span className="text-sm opacity-60">-</span>
     );
   }
 
@@ -19,14 +19,14 @@ export function LastUpdatedCell({ date, updatedBy }: LastUpdatedCellProps) {
 
   if (!isValidDate) {
     return (
-      <span className="text-sm text-muted-foreground">-</span>
+      <span className="text-sm opacity-60">-</span>
     );
   }
 
   const relativeTime = formatDistanceToNow(dateObj, { addSuffix: true });
 
   return (
-    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+    <div className="flex items-center gap-1.5 text-sm text-inherit opacity-80">
       <Clock className="w-3.5 h-3.5 flex-shrink-0" />
       <span className="truncate" title={dateObj.toLocaleString()}>
         {relativeTime}

@@ -195,7 +195,7 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
           onFocus={() => setIsOpen(true)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          className="w-full bg-transparent border-0 outline-none text-sm text-foreground focus:ring-0 truncate"
+          className="w-full bg-transparent border-0 outline-none text-sm focus:ring-0 truncate text-inherit placeholder:opacity-60"
           placeholder={placeholder}
         />
         <button
@@ -204,9 +204,9 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
             e.preventDefault();
             setIsOpen(!isOpen);
           }}
-          className="p-0.5 hover:bg-muted rounded transition-colors"
+          className="p-0.5 hover:bg-white/10 rounded transition-colors"
         >
-          <ChevronDown className={cn("w-3 h-3 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
+          <ChevronDown className={cn("w-3 h-3 opacity-60 transition-transform", isOpen && "rotate-180")} />
         </button>
       </div>
       {dropdown}

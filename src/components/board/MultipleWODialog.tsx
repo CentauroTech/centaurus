@@ -26,8 +26,8 @@ interface TaskTemplate {
   name: string;
   client_name?: string;
   project_manager_id?: string;
-  servicios?: string;
-  formato?: string;
+  servicios?: string[];
+  formato?: string[];
   cantidad_episodios?: number;
   branch?: string;
   genre?: string;
@@ -53,8 +53,8 @@ export function MultipleWODialog({
   const [template, setTemplate] = useState<TaskTemplate>({
     name: '',
     client_name: '',
-    servicios: '',
-    formato: '',
+    servicios: [],
+    formato: [],
     branch: '',
   });
 
@@ -70,8 +70,8 @@ export function MultipleWODialog({
     setTemplate({
       name: '',
       client_name: '',
-      servicios: '',
-      formato: '',
+      servicios: [],
+      formato: [],
       branch: '',
     });
   };
@@ -197,8 +197,8 @@ export function MultipleWODialog({
                 <div className="space-y-2">
                   <Label htmlFor="services" className="text-xs">Services</Label>
                   <Select 
-                    value={template.servicios || ''} 
-                    onValueChange={(val) => setTemplate({ ...template, servicios: val })}
+                    value={template.servicios?.[0] || ''} 
+                    onValueChange={(val) => setTemplate({ ...template, servicios: val ? [val] : [] })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select service" />
@@ -213,8 +213,8 @@ export function MultipleWODialog({
                 <div className="space-y-2">
                   <Label htmlFor="format" className="text-xs">Format</Label>
                   <Select 
-                    value={template.formato || ''} 
-                    onValueChange={(val) => setTemplate({ ...template, formato: val })}
+                    value={template.formato?.[0] || ''} 
+                    onValueChange={(val) => setTemplate({ ...template, formato: val ? [val] : [] })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select format" />

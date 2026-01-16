@@ -1,17 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-interface TaskTemplate {
-  name: string;
-  client_name?: string;
-  project_manager_id?: string;
-  servicios?: string[];
-  formato?: string[];
-  cantidad_episodios?: number;
-  branch?: string;
-  genre?: string;
-  lenguaje_original?: string;
-}
+import { TaskTemplate } from '@/components/board/MultipleWODialog';
 
 interface CreateMultipleTasksParams {
   groupId: string;
@@ -52,6 +42,15 @@ export function useAddMultipleTasks(boardId: string) {
         branch: template.branch || null,
         genre: template.genre || null,
         lenguaje_original: template.lenguaje_original || null,
+        locked_runtime: template.locked_runtime || null,
+        final_runtime: template.final_runtime || null,
+        show_guide: template.show_guide || null,
+        titulo_aprobado_espanol: template.titulo_aprobado_espanol || null,
+        rate_info: template.rate_info || null,
+        rates: template.rates || null,
+        studio: template.studio || null,
+        entrega_final_script_items: template.entrega_final_script_items || null,
+        entrega_final_dub_audio_items: template.entrega_final_dub_audio_items || null,
       }));
 
       const { data, error } = await supabase

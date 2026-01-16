@@ -17,6 +17,7 @@ import { DropdownCell } from './cells/DropdownCell';
 import { FileUploadCell } from './cells/FileUploadCell';
 import { LastUpdatedCell } from './cells/LastUpdatedCell';
 import { PrivacyCell } from './cells/PrivacyCell';
+import { MultiSelectCell } from './cells/MultiSelectCell';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 import { mockUsers } from '@/data/mockData';
@@ -202,6 +203,15 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
       case 'last-updated':
         return (
           <LastUpdatedCell date={value as Date} />
+        );
+      case 'multi-select':
+        return (
+          <MultiSelectCell
+            value={value as string[]}
+            onChange={(val) => onUpdate({ [column.field]: val })}
+            options={column.options || []}
+            placeholder="Select..."
+          />
         );
       default:
         return <span className="text-sm text-muted-foreground">-</span>;

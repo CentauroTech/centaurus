@@ -244,6 +244,7 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'clientName', label: 'Client', type: 'combobox', width: 'w-32', field: 'clientName', options: CLIENT_OPTIONS },
   { id: 'cantidadEpisodios', label: 'Episodes', type: 'number', width: 'w-20', field: 'cantidadEpisodios' },
   { id: 'entregaCliente', label: 'Client Due', type: 'date', width: 'w-28', field: 'entregaCliente' },
+  { id: 'entregaMiamiEnd', label: 'Miami Due', type: 'date', width: 'w-28', field: 'entregaMiamiEnd' },
   { id: 'lockedRuntime', label: 'Runtime', type: 'text', width: 'w-20', field: 'lockedRuntime' },
   { id: 'people', label: 'People', type: 'people', width: 'w-32', field: 'people' },
   { id: 'currentPhase', label: 'Phase', type: 'current-phase', width: 'w-24', field: 'currentPhase' },

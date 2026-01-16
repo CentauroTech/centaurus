@@ -302,10 +302,10 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
       <tr
         className={cn(
           "group border-b border-border transition-smooth",
-          isPrivate && "bg-black text-white",
+          isPrivate && "bg-black/30",
           !isPrivate && isHovered && "bg-muted/30",
           !isPrivate && isTaskSelected && "bg-primary/10",
-          isPrivate && isTaskSelected && "bg-black/90"
+          isPrivate && isTaskSelected && "bg-black/40"
         )}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -313,7 +313,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
         {/* Checkbox */}
         <td className={cn(
           "w-8 px-2 sticky left-0 z-10",
-          isPrivate ? "bg-black" : "bg-card"
+          isPrivate ? "bg-black/30" : "bg-card"
         )}>
           <Checkbox
             checked={isTaskSelected}
@@ -325,10 +325,10 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
         {/* Drag Handle */}
         <td className={cn(
           "w-8 px-2 sticky left-8 z-10",
-          isPrivate ? "bg-black" : "bg-card"
+          isPrivate ? "bg-black/30" : "bg-card"
         )}>
           <div className="opacity-0 group-hover:opacity-100 transition-smooth cursor-grab">
-            <GripVertical className={cn("w-4 h-4", isPrivate ? "text-white/50" : "text-muted-foreground")} />
+            <GripVertical className="w-4 h-4 text-muted-foreground" />
           </div>
         </td>
 
@@ -350,7 +350,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, onSendTo
                 "py-2 px-3", 
                 column.width,
                 isSticky && "sticky z-10",
-                isSticky && (isPrivate ? "bg-black" : "bg-card")
+                isSticky && (isPrivate ? "bg-black/30" : "bg-card")
               )}
               style={isSticky ? { left: leftOffset } : undefined}
             >

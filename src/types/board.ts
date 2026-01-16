@@ -263,6 +263,6 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'formato', label: 'Format', type: 'combobox', width: 'w-36', field: 'formato', options: FORMATO_OPTIONS },
   { id: 'branch', label: 'Branch', type: 'dropdown', width: 'w-24', field: 'branch', options: BRANCH_OPTIONS },
   { id: 'genre', label: 'Genre', type: 'dropdown', width: 'w-24', field: 'genre', options: GENRE_OPTIONS },
-  { id: 'entregaFinalScriptItems', label: 'Entrega Script/Dubcard', type: 'multi-select', width: 'w-64', field: 'entregaFinalScriptItems', options: ENTREGA_FINAL_SCRIPT_OPTIONS },
-  { id: 'entregaFinalDubAudioItems', label: 'Entrega Dub Audio', type: 'multi-select', width: 'w-64', field: 'entregaFinalDubAudioItems', options: ENTREGA_FINAL_DUB_AUDIO_OPTIONS },
+  { id: 'entregaFinalScriptItems', label: 'Entrega Script/Dubcard', type: 'multi-select', width: 'w-80', field: 'entregaFinalScriptItems', options: ENTREGA_FINAL_SCRIPT_OPTIONS },
+  { id: 'entregaFinalDubAudioItems', label: 'Entrega Dub Audio', type: 'multi-select', width: 'w-80', field: 'entregaFinalDubAudioItems', options: ENTREGA_FINAL_DUB_AUDIO_OPTIONS },
 ];

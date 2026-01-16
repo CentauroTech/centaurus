@@ -48,14 +48,14 @@ export function MultiSelectCell({ value = [], onChange, options, placeholder = '
             {value.map((item) => (
               <span
                 key={item}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded"
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded whitespace-nowrap"
               >
-                <span className="truncate max-w-[80px]">{item}</span>
+                <span>{item}</span>
                 <button
                   onClick={(e) => handleRemove(item, e)}
-                  className="hover:bg-primary/20 rounded p-0.5"
+                  className="hover:bg-primary/20 rounded p-0.5 flex-shrink-0"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-2.5 h-2.5" />
                 </button>
               </span>
             ))}
@@ -79,9 +79,9 @@ export function MultiSelectCell({ value = [], onChange, options, placeholder = '
                 {value.map((item) => (
                   <span
                     key={item}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full whitespace-nowrap"
                   >
-                    <span className="truncate max-w-[120px]">{item}</span>
+                    <span>{item}</span>
                     <button
                       onClick={(e) => handleRemove(item, e)}
                       className="hover:bg-primary/20 rounded-full p-0.5"
@@ -102,7 +102,7 @@ export function MultiSelectCell({ value = [], onChange, options, placeholder = '
                 value.includes(option) && "bg-muted"
               )}
             >
-              <span className="truncate">{option}</span>
+              <span>{option}</span>
               {value.includes(option) && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
             </button>
           ))}

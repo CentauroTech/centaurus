@@ -235,7 +235,7 @@ export const ENTREGA_FINAL_DUB_AUDIO_OPTIONS = [
   'Ver Kickoff Instructions'
 ];
 
-export const TARGET_LANGUAGE_OPTIONS = ['Spanish (Latin America)', 'Spanish (Spain)', 'Portuguese (Brazil)', 'Portuguese (Portugal)', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Mandarin', 'Cantonese'];
+export const TARGET_LANGUAGE_OPTIONS = ['English', 'Spanish (Latin America)', 'Spanish (Spain)', 'Portuguese (Brazil)', 'Portuguese (Portugal)', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Mandarin', 'Cantonese'];
 
 export const COLUMNS: ColumnConfig[] = [
   { id: 'isPrivate', label: '', type: 'privacy', width: 'w-8', field: 'isPrivate' },

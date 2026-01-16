@@ -17,6 +17,7 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const isSelectingRef = useRef(false);
   const portalId = useId();
 
   useEffect(() => {
@@ -26,31 +27,39 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-      if (containerRef.current && !containerRef.current.contains(target)) {
-        if (dropdownRef.current && dropdownRef.current.contains(target)) {
-          return;
-        }
-        setIsOpen(false);
-        if (inputValue !== value) {
-          onChange(inputValue);
-        }
+      
+      // Check if clicking inside container
+      if (containerRef.current && containerRef.current.contains(target)) {
+        return;
+      }
+      
+      // Check if clicking inside dropdown
+      if (dropdownRef.current && dropdownRef.current.contains(target)) {
+        return;
+      }
+      
+      setIsOpen(false);
+      if (inputValue !== value) {
+        onChange(inputValue);
       }
     };
 
     const handleScroll = () => {
       if (isOpen && containerRef.current) {
-        // Recalculate position on scroll
         const rect = containerRef.current.getBoundingClientRect();
         setPosition({
           top: rect.bottom + 4,
           left: rect.left,
-          width: Math.max(rect.width, 200),
+          width: Math.max(rect.width, 220),
         });
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('scroll', handleScroll, true);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('scroll', handleScroll, true);
+    }
+    
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       window.removeEventListener('scroll', handleScroll, true);
@@ -63,19 +72,24 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
       setPosition({
         top: rect.bottom + 4,
         left: rect.left,
-        width: Math.max(rect.width, 200),
+        width: Math.max(rect.width, 220),
       });
     }
   }, [isOpen]);
 
-  const filteredOptions = options?.filter(option => 
+  const safeOptions = options || [];
+  const filteredOptions = safeOptions.filter(option => 
     option.toLowerCase().includes(inputValue.toLowerCase())
-  ) || [];
+  );
 
   const handleSelect = (option: string) => {
+    isSelectingRef.current = true;
     setInputValue(option);
     onChange(option);
     setIsOpen(false);
+    setTimeout(() => {
+      isSelectingRef.current = false;
+    }, 100);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,6 +106,18 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
     }
   };
 
+  const handleBlur = () => {
+    // Don't close if we're selecting an option
+    if (isSelectingRef.current) return;
+    
+    // Delay to allow click events to register
+    setTimeout(() => {
+      if (!isSelectingRef.current && inputValue !== value) {
+        onChange(inputValue);
+      }
+    }, 200);
+  };
+
   const dropdown = isOpen ? createPortal(
     <div 
       ref={dropdownRef}
@@ -103,12 +129,20 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
         width: position.width,
         zIndex: 99999,
       }}
+      onMouseDown={(e) => {
+        // Prevent blur from firing
+        e.preventDefault();
+      }}
     >
       {filteredOptions.length > 0 ? (
         filteredOptions.map((option) => (
           <button
             key={option}
-            onClick={() => handleSelect(option)}
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              handleSelect(option);
+            }}
             className={cn(
               "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-accent transition-colors",
               value === option && "bg-accent"
@@ -121,7 +155,11 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
       ) : (
         inputValue && (
           <button
-            onClick={() => handleSelect(inputValue)}
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              handleSelect(inputValue);
+            }}
             className="w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors text-muted-foreground"
           >
             Add "{inputValue}"
@@ -141,14 +179,18 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
           value={inputValue}
           onChange={handleInputChange}
           onFocus={() => setIsOpen(true)}
+          onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           className="w-full bg-transparent border-0 outline-none text-sm text-foreground focus:ring-0 truncate"
           placeholder={placeholder}
         />
         <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="p-0.5 hover:bg-muted rounded transition-colors"
           type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            setIsOpen(!isOpen);
+          }}
+          className="p-0.5 hover:bg-muted rounded transition-colors"
         >
           <ChevronDown className={cn("w-3 h-3 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
         </button>

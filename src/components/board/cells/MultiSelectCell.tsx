@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -10,31 +10,7 @@ interface MultiSelectCellProps {
   isPrivate?: boolean;
 }
 
-// Memoized option item to prevent re-renders
-const OptionItem = memo(function OptionItem({
-  option,
-  isSelected,
-  onToggle
-}: {
-  option: string;
-  isSelected: boolean;
-  onToggle: (option: string) => void;
-}) {
-  return (
-    <button
-      onClick={() => onToggle(option)}
-      className={cn(
-        "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-muted transition-smooth",
-        isSelected && "bg-muted"
-      )}
-    >
-      <span>{option}</span>
-      {isSelected && <Check className="w-4 h-4 text-blue-600 flex-shrink-0" />}
-    </button>
-  );
-});
-
-function MultiSelectCellComponent({ 
+export function MultiSelectCell({ 
   value = [], 
   onChange, 
   options, 
@@ -140,17 +116,20 @@ function MultiSelectCellComponent({
             </div>
           )}
           {options.map((option) => (
-            <OptionItem
+            <button
               key={option}
-              option={option}
-              isSelected={valueSet.has(option)}
-              onToggle={handleToggle}
-            />
+              onClick={() => handleToggle(option)}
+              className={cn(
+                "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-muted transition-smooth",
+                valueSet.has(option) && "bg-muted"
+              )}
+            >
+              <span>{option}</span>
+              {valueSet.has(option) && <Check className="w-4 h-4 text-blue-600 flex-shrink-0" />}
+            </button>
           ))}
         </div>
       )}
     </div>
   );
 }
-
-export const MultiSelectCell = memo(MultiSelectCellComponent);

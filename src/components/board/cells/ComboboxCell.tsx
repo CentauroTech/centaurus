@@ -20,15 +20,6 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
   const isSelectingRef = useRef(false);
   const portalId = useId();
 
-  // Debug logging
-  console.log('ComboboxCell:', { 
-    optionsReceived: options?.length, 
-    options: options?.slice(0, 3),
-    isOpen, 
-    inputValue,
-    value 
-  });
-
   useEffect(() => {
     setInputValue(value || '');
   }, [value]);
@@ -37,12 +28,10 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
       
-      // Check if clicking inside container
       if (containerRef.current && containerRef.current.contains(target)) {
         return;
       }
       
-      // Check if clicking inside dropdown
       if (dropdownRef.current && dropdownRef.current.contains(target)) {
         return;
       }
@@ -56,11 +45,20 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
     const handleScroll = () => {
       if (isOpen && containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const spaceBelow = viewportHeight - rect.bottom - 10;
+        const spaceAbove = rect.top - 10;
+        
+        // Position dropdown above if not enough space below
+        const dropdownHeight = Math.min(300, spaceBelow > 150 ? spaceBelow : spaceAbove);
+        const showAbove = spaceBelow < 150 && spaceAbove > spaceBelow;
+        
         setPosition({
-          top: rect.bottom + 4,
+          top: showAbove ? rect.top - dropdownHeight - 4 : rect.bottom + 4,
           left: rect.left,
-          width: Math.max(rect.width, 220),
-        });
+          width: Math.max(rect.width, 250),
+          maxHeight: dropdownHeight,
+        } as any);
       }
     };
 
@@ -78,11 +76,20 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
   useEffect(() => {
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - rect.bottom - 10;
+      const spaceAbove = rect.top - 10;
+      
+      const maxDropdownHeight = 300;
+      const showAbove = spaceBelow < 150 && spaceAbove > spaceBelow;
+      const availableHeight = showAbove ? Math.min(spaceAbove, maxDropdownHeight) : Math.min(spaceBelow, maxDropdownHeight);
+      
       setPosition({
-        top: rect.bottom + 4,
+        top: showAbove ? rect.top - availableHeight - 4 : rect.bottom + 4,
         left: rect.left,
-        width: Math.max(rect.width, 220),
-      });
+        width: Math.max(rect.width, 250),
+        maxHeight: availableHeight,
+      } as any);
     }
   }, [isOpen]);
 
@@ -116,10 +123,8 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
   };
 
   const handleBlur = () => {
-    // Don't close if we're selecting an option
     if (isSelectingRef.current) return;
     
-    // Delay to allow click events to register
     setTimeout(() => {
       if (!isSelectingRef.current && inputValue !== value) {
         onChange(inputValue);
@@ -131,15 +136,15 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
     <div 
       ref={dropdownRef}
       id={portalId}
-      className="fixed bg-popover text-popover-foreground rounded-lg shadow-lg border border-border py-1 max-h-60 overflow-y-auto"
+      className="fixed bg-popover text-popover-foreground rounded-lg shadow-lg border border-border py-1 overflow-y-auto overflow-x-hidden"
       style={{ 
         top: position.top, 
         left: position.left, 
         width: position.width,
+        maxHeight: (position as any).maxHeight || 300,
         zIndex: 99999,
       }}
       onMouseDown={(e) => {
-        // Prevent blur from firing
         e.preventDefault();
       }}
     >
@@ -157,23 +162,23 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
               value === option && "bg-accent"
             )}
           >
-            <span>{option}</span>
-            {value === option && <Check className="w-4 h-4 text-primary" />}
+            <span className="truncate">{option}</span>
+            {value === option && <Check className="w-4 h-4 text-primary flex-shrink-0 ml-2" />}
           </button>
         ))
+      ) : inputValue ? (
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            handleSelect(inputValue);
+          }}
+          className="w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors text-muted-foreground"
+        >
+          Add "{inputValue}"
+        </button>
       ) : (
-        inputValue && (
-          <button
-            type="button"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              handleSelect(inputValue);
-            }}
-            className="w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors text-muted-foreground"
-          >
-            Add "{inputValue}"
-          </button>
-        )
+        <div className="px-3 py-2 text-sm text-muted-foreground">No options available</div>
       )}
     </div>,
     document.body

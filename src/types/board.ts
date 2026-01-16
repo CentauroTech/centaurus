@@ -75,6 +75,7 @@ export interface Task {
   aorNeeded?: boolean;
   formato?: string[];
   lenguajeOriginal?: string;
+  targetLanguage?: string;
   rates?: number;
   showGuide?: string;
   tituloAprobadoEspanol?: string;
@@ -234,6 +235,8 @@ export const ENTREGA_FINAL_DUB_AUDIO_OPTIONS = [
   'Ver Kickoff Instructions'
 ];
 
+export const TARGET_LANGUAGE_OPTIONS = ['Spanish (Latin America)', 'Spanish (Spain)', 'Portuguese (Brazil)', 'Portuguese (Portugal)', 'French', 'German', 'Italian', 'Japanese', 'Korean', 'Mandarin', 'Cantonese'];
+
 export const COLUMNS: ColumnConfig[] = [
   { id: 'isPrivate', label: '', type: 'privacy', width: 'w-8', field: 'isPrivate' },
   { id: 'name', label: 'Project Name', type: 'text', width: 'w-56', field: 'name' },
@@ -259,6 +262,9 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'qcRetakes', label: 'QC Retakes', type: 'person', width: 'w-28', field: 'qcRetakes' },
   { id: 'mixer', label: 'Mixer', type: 'person', width: 'w-28', field: 'mixerMiami' },
   { id: 'qcMix', label: 'QC Mix', type: 'person', width: 'w-28', field: 'qcMix' },
+  { id: 'lenguajeOriginal', label: 'Original Language', type: 'dropdown', width: 'w-32', field: 'lenguajeOriginal', options: LENGUAJE_OPTIONS },
+  { id: 'targetLanguage', label: 'Target Language', type: 'dropdown', width: 'w-32', field: 'targetLanguage', options: TARGET_LANGUAGE_OPTIONS },
+  { id: 'tituloAprobadoEspanol', label: 'Approved Title', type: 'text', width: 'w-40', field: 'tituloAprobadoEspanol' },
   { id: 'servicios', label: 'Services', type: 'multi-select', width: 'w-56', field: 'servicios', options: SERVICIOS_OPTIONS },
   { id: 'formato', label: 'Format', type: 'multi-select', width: 'w-44', field: 'formato', options: FORMATO_OPTIONS },
   { id: 'branch', label: 'Branch', type: 'dropdown', width: 'w-24', field: 'branch', options: BRANCH_OPTIONS },

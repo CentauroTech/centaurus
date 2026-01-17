@@ -311,19 +311,26 @@ export function useAddTask(boardId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (task: { group_id: string; name?: string }) => {
-      // Generate a work order number: WO-YYYYMMDD-XXXX
-      const now = new Date();
-      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-      const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const workOrderNumber = `WO-${dateStr}-${randomPart}`;
+    mutationFn: async (task: { 
+      group_id: string; 
+      name?: string;
+      branch?: string;           
+      project_manager_id?: string;  
+    }) => {
+      // Branch and project_manager_id are required by database constraints
+      // If not provided, use default values (will be updated by user after creation)
+      if (!task.branch || !task.project_manager_id) {
+        throw new Error('Branch and Project Manager are required. Please use the Multiple WO tool to create tasks.');
+      }
 
+      // The database trigger will auto-generate the work order number
       const { data, error } = await supabase
         .from('tasks')
         .insert({ 
           group_id: task.group_id, 
           name: task.name || '',
-          work_order_number: workOrderNumber,
+          branch: task.branch,
+          project_manager_id: task.project_manager_id,
         })
         .select()
         .single();

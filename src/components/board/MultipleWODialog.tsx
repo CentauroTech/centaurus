@@ -498,7 +498,12 @@ export function MultipleWODialog({
     setOpenCategories(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const canProceed = baseName.trim() !== '' && startingSuffix.trim() !== '' && episodes > 0 && selectedGroupId;
+  const canProceed = baseName.trim() !== '' && 
+    startingSuffix.trim() !== '' && 
+    episodes > 0 && 
+    selectedGroupId && 
+    template.branch &&  // Required
+    template.project_manager_id;  // Required
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -584,34 +589,64 @@ export function MultipleWODialog({
                 </div>
               )}
 
-              {/* Project Manager Selection */}
+              {/* Required Fields */}
               <div className="border-t pt-4">
-                <div className="space-y-2">
-                  <Label>Project Manager</Label>
-                  <Select 
-                    value={template.project_manager_id || ''} 
-                    onValueChange={(val) => setTemplate(prev => ({ ...prev, project_manager_id: val || undefined }))}
-                  >
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="Select project manager" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projectManagers.map((pm) => (
-                        <SelectItem key={pm.id} value={pm.id}>
-                          <span className="flex items-center gap-2">
-                            <span 
-                              className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-white"
-                              style={{ backgroundColor: pm.color }}
-                            >
-                              {pm.initials}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Branch - Required */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-1">
+                      Branch <span className="text-destructive">*</span>
+                    </Label>
+                    <Select 
+                      value={template.branch || ''} 
+                      onValueChange={(val) => setTemplate(prev => ({ ...prev, branch: val || undefined }))}
+                    >
+                      <SelectTrigger className={cn("h-9", !template.branch && "border-destructive/50")}>
+                        <SelectValue placeholder="Select branch" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BRANCH_OPTIONS.map((branch) => (
+                          <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Project Manager - Required */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-1">
+                      Project Manager <span className="text-destructive">*</span>
+                    </Label>
+                    <Select 
+                      value={template.project_manager_id || ''} 
+                      onValueChange={(val) => setTemplate(prev => ({ ...prev, project_manager_id: val || undefined }))}
+                    >
+                      <SelectTrigger className={cn("h-9", !template.project_manager_id && "border-destructive/50")}>
+                        <SelectValue placeholder="Select project manager" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projectManagers.map((pm) => (
+                          <SelectItem key={pm.id} value={pm.id}>
+                            <span className="flex items-center gap-2">
+                              <span 
+                                className="w-6 h-6 rounded-full flex items-center justify-center text-xs text-white"
+                                style={{ backgroundColor: pm.color }}
+                              >
+                                {pm.initials}
+                              </span>
+                              {pm.name}
                             </span>
-                            {pm.name}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+                {(!template.branch || !template.project_manager_id) && (
+                  <p className="text-xs text-destructive mt-2">
+                    Branch and Project Manager are required to generate Work Order numbers.
+                  </p>
+                )}
               </div>
 
               {/* Template Fields - Collapsible Categories */}

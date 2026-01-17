@@ -175,6 +175,108 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          bell_assignments: boolean
+          bell_mentions: boolean
+          created_at: string
+          email_assignments: boolean
+          email_mentions: boolean
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bell_assignments?: boolean
+          bell_mentions?: boolean
+          created_at?: string
+          email_assignments?: boolean
+          email_mentions?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bell_assignments?: boolean
+          bell_mentions?: boolean
+          created_at?: string
+          email_assignments?: boolean
+          email_mentions?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string | null
+          read_at: string | null
+          task_id: string | null
+          title: string
+          triggered_by_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          read_at?: string | null
+          task_id?: string | null
+          title: string
+          triggered_by_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          read_at?: string | null
+          task_id?: string | null
+          title?: string
+          triggered_by_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_triggered_by_id_fkey"
+            columns: ["triggered_by_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_files: {
         Row: {
           id: string
@@ -569,6 +671,17 @@ export type Database = {
     }
     Functions: {
       can_view_task: { Args: { task_id_param: string }; Returns: boolean }
+      create_notification: {
+        Args: {
+          p_message?: string
+          p_task_id: string
+          p_title: string
+          p_triggered_by_id: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       current_team_member_id: { Args: never; Returns: string }
       is_guest: { Args: never; Returns: boolean }
       is_project_manager: { Args: never; Returns: boolean }

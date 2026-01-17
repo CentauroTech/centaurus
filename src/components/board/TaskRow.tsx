@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { GripVertical, Trash2, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Task, User, COLUMNS, COLUMNS_COLOMBIA, Phase, Status, ColumnConfig } from '@/types/board';
+import { Task, User, Phase, Status, ColumnConfig } from '@/types/board';
 import { StatusBadge } from './StatusBadge';
 import { OwnerCell } from './OwnerCell';
 import { DateCell } from './DateCell';
@@ -31,6 +31,7 @@ interface TaskRowProps {
   boardId?: string;
   boardName?: string;
   workspaceName?: string;
+  columns: ColumnConfig[];
   onSendToPhase?: (phase: string) => void;
 }
 
@@ -93,14 +94,11 @@ const getTaskValue = (task: Task, field: string): any => {
   return (task as any)[dbColumn] ?? (task as any)[field];
 };
 
-export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, workspaceName, onSendToPhase }: TaskRowProps) {
+export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, workspaceName, columns, onSendToPhase }: TaskRowProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
   const { toggleTaskSelection, isSelected } = useTaskSelection();
   const { shouldApplyBulkEdit, getSelectedTaskIds, onBulkUpdate } = useBulkEdit();
-  
-  // Select columns based on workspace
-  const columns: ColumnConfig[] = workspaceName === 'Colombia' ? COLUMNS_COLOMBIA : COLUMNS;
   
   // Task viewers for privacy feature
   const { data: viewerIds = [] } = useTaskViewers(task.id);

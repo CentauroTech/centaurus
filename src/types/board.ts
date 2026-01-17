@@ -250,7 +250,7 @@ export const STUDIO_OPTIONS = ['Studio A', 'Studio B', 'Studio C', 'External'];
 
 export const COLUMNS: ColumnConfig[] = [
   { id: 'isPrivate', label: '', type: 'privacy', width: 'w-8', field: 'isPrivate' },
-  { id: 'name', label: 'Project Name', type: 'text', width: 'w-72', field: 'name' },
+  { id: 'name', label: 'Project Name', type: 'text', width: 'w-96', field: 'name' },
   { id: 'workOrderNumber', label: 'WO#', type: 'text', width: 'w-32', field: 'workOrderNumber' },
   { id: 'projectManager', label: 'Project Manager', type: 'person', width: 'w-32', field: 'projectManager' },
   { id: 'clientName', label: 'Client', type: 'combobox', width: 'w-32', field: 'clientName', options: CLIENT_OPTIONS },
@@ -296,7 +296,7 @@ export const COLUMNS: ColumnConfig[] = [
 
 export const COLUMNS_COLOMBIA: ColumnConfig[] = [
   { id: 'isPrivate', label: '', type: 'privacy', width: 'w-8', field: 'isPrivate' },
-  { id: 'name', label: 'Project Name', type: 'text', width: 'w-72', field: 'name' },
+  { id: 'name', label: 'Project Name', type: 'text', width: 'w-96', field: 'name' },
   { id: 'workOrderNumber', label: 'WO#', type: 'text', width: 'w-32', field: 'workOrderNumber' },
   { id: 'projectManager', label: 'Project Manager', type: 'person', width: 'w-32', field: 'projectManager' },
   { id: 'clientName', label: 'Cliente', type: 'combobox', width: 'w-32', field: 'clientName', options: CLIENT_OPTIONS },

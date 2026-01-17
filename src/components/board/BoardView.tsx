@@ -129,7 +129,13 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
   };
 
   const addTask = (groupId: string) => {
-    addTaskMutation.mutate({ group_id: groupId });
+    // Single task creation requires branch and project_manager_id
+    // Show error toast prompting to use Multiple WO tool
+    addTaskMutation.mutate({ group_id: groupId }, {
+      onError: (error) => {
+        console.error('Use Multiple WO tool:', error.message);
+      }
+    });
   };
 
   const updateGroup = (groupId: string, updates: Partial<{ name: string; color: string; is_collapsed: boolean }>) => {

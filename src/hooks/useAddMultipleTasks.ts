@@ -23,23 +23,22 @@ export function useAddMultipleTasks(boardId: string) {
         .limit(1);
 
       let nextSortOrder = (existingTasks?.[0]?.sort_order ?? -1) + 1;
-
-      // Generate unique work order numbers
-      const timestamp = Date.now();
       
       // Create tasks with sequential names
+      // The database trigger will auto-generate work_order_number based on branch + PM + date
       const tasksToInsert = names.map((name, index) => ({
         group_id: groupId,
         name: name,
         status: 'working',
         sort_order: nextSortOrder + index,
-        work_order_number: `WO-${timestamp}-${index + 1}`,
+        // Required fields - the trigger will generate WO# from these
+        branch: template.branch,
+        project_manager_id: template.project_manager_id,
+        // Optional fields from template
         client_name: template.client_name || null,
-        project_manager_id: template.project_manager_id || null,
         servicios: template.servicios || null,
         formato: template.formato || null,
         cantidad_episodios: template.cantidad_episodios || null,
-        branch: template.branch || null,
         genre: template.genre || null,
         lenguaje_original: template.lenguaje_original || null,
         target_language: template.target_language || null,

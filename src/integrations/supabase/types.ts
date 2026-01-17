@@ -338,7 +338,7 @@ export type Database = {
           adaptador_id: string | null
           aor_complete: boolean | null
           aor_needed: boolean | null
-          branch: string | null
+          branch: string
           cantidad_episodios: number | null
           client_name: string | null
           created_at: string
@@ -372,7 +372,7 @@ export type Database = {
           mixer_miami_id: string | null
           name: string
           phase_due_date: string | null
-          project_manager_id: string | null
+          project_manager_id: string
           prueba_de_voz: string | null
           qc_1_id: string | null
           qc_mix_id: string | null
@@ -394,7 +394,7 @@ export type Database = {
           adaptador_id?: string | null
           aor_complete?: boolean | null
           aor_needed?: boolean | null
-          branch?: string | null
+          branch: string
           cantidad_episodios?: number | null
           client_name?: string | null
           created_at?: string
@@ -428,7 +428,7 @@ export type Database = {
           mixer_miami_id?: string | null
           name?: string
           phase_due_date?: string | null
-          project_manager_id?: string | null
+          project_manager_id: string
           prueba_de_voz?: string | null
           qc_1_id?: string | null
           qc_mix_id?: string | null
@@ -450,7 +450,7 @@ export type Database = {
           adaptador_id?: string | null
           aor_complete?: boolean | null
           aor_needed?: boolean | null
-          branch?: string | null
+          branch?: string
           cantidad_episodios?: number | null
           client_name?: string | null
           created_at?: string
@@ -484,7 +484,7 @@ export type Database = {
           mixer_miami_id?: string | null
           name?: string
           phase_due_date?: string | null
-          project_manager_id?: string | null
+          project_manager_id?: string
           prueba_de_voz?: string | null
           qc_1_id?: string | null
           qc_mix_id?: string | null

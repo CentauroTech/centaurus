@@ -241,6 +241,7 @@ export const VOICE_TEST_OPTIONS = ['Yes', 'No', 'Voice Bank'];
 
 export const COLUMNS: ColumnConfig[] = [
   { id: 'isPrivate', label: '', type: 'privacy', width: 'w-8', field: 'isPrivate' },
+  { id: 'workOrderNumber', label: 'WO#', type: 'text', width: 'w-32', field: 'workOrderNumber' },
   { id: 'name', label: 'Project Name', type: 'text', width: 'w-56', field: 'name' },
   { id: 'projectManager', label: 'Project Manager', type: 'person', width: 'w-32', field: 'projectManager' },
   { id: 'clientName', label: 'Client', type: 'combobox', width: 'w-32', field: 'clientName', options: CLIENT_OPTIONS },

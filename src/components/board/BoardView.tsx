@@ -118,7 +118,24 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
     queryClient.invalidateQueries({ queryKey: ['activity-log'] });
   };
 
-  const updateTask = (taskId: string, updates: Record<string, any>, groupId?: string, pruebaDeVoz?: string | null) => {
+  const updateTask = (taskId: string, updates: Record<string, any>, groupId?: string, pruebaDeVoz?: string | null, currentStatus?: string) => {
+    // STATUS LOCKING: Block status change FROM "Done" unless admin
+    if (updates.status && currentStatus === 'done' && updates.status !== 'done' && !isAdmin) {
+      console.error('Cannot change status after task is marked as Done. Contact admin to revert.');
+      return;
+    }
+
+    // TIMER TRACKING: Set started_at when changing TO "Working on It"
+    if (updates.status === 'working' && currentStatus !== 'working') {
+      // We'll set started_at in the mutation if not already set
+      updates._checkStartedAt = true;
+    }
+
+    // TIMER TRACKING: Set completed_at when changing TO "Done"
+    if (updates.status === 'done') {
+      updates.completed_at = new Date().toISOString();
+    }
+
     // If status is changing to 'done', trigger phase progression
     if (updates.status === 'done' && groupId) {
       updateTaskMutation.mutate({ taskId, updates }, {
@@ -346,6 +363,10 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                     tituloAprobadoEspanol: t.titulo_aprobado_espanol,
                     workOrderNumber: t.work_order_number,
                     fase: t.fase,
+                    startedAt: t.started_at || undefined,
+                    completedAt: t.completed_at || undefined,
+                    guestDueDate: t.guest_due_date || undefined,
+                    deliveryComment: t.delivery_comment || undefined,
                     lastUpdated: t.last_updated ? new Date(t.last_updated) : undefined,
                     aorComplete: t.aor_complete,
                     director: getTeamMember(t.director_id),
@@ -380,6 +401,11 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                     // Auto-set date_delivered when status is 'done'
                     if (updates.status === 'done') {
                       dbUpdates.date_delivered = new Date().toISOString().split('T')[0];
+                      dbUpdates.completed_at = new Date().toISOString();
+                    }
+                    // Auto-set started_at when status is 'working'
+                    if (updates.status === 'working' && !rawTask?.started_at) {
+                      dbUpdates.started_at = new Date().toISOString();
                     }
                   }
                   if (updates.dateAssigned !== undefined) dbUpdates.date_assigned = updates.dateAssigned;
@@ -415,6 +441,8 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                   if (updates.hq !== undefined) dbUpdates.hq = updates.hq;
                   if (updates.linkToColHQ !== undefined) dbUpdates.link_to_col_hq = updates.linkToColHQ;
                   if (updates.rateInfo !== undefined) dbUpdates.rate_info = updates.rateInfo;
+                  if (updates.guestDueDate !== undefined) dbUpdates.guest_due_date = updates.guestDueDate;
+                  if (updates.deliveryComment !== undefined) dbUpdates.delivery_comment = updates.deliveryComment;
                   // Person fields - save just the ID
                   if (updates.projectManager !== undefined) dbUpdates.project_manager_id = updates.projectManager?.id || null;
                   if (updates.director !== undefined) dbUpdates.director_id = updates.director?.id || null;
@@ -437,7 +465,7 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                   if (Object.keys(dbUpdates).length > 0) {
                     // Use task's real group_id for phase progression (important for HQ view)
                     const realGroupId = rawTask?.group_id || group.id;
-                    updateTask(taskId, dbUpdates, realGroupId, rawTask?.prueba_de_voz);
+                    updateTask(taskId, dbUpdates, realGroupId, rawTask?.prueba_de_voz, rawTask?.status);
                   }
                 }}
                 onDeleteTask={deleteTask}

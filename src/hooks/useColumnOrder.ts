@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ColumnConfig, COLUMNS, COLUMNS_COLOMBIA } from '@/types/board';
+import { usePermissions } from './usePermissions';
 
 interface ColumnOrderState {
   order: string[]; // Array of column IDs in order
@@ -13,6 +14,8 @@ function getStorageKey(boardId: string): string {
 }
 
 export function useColumnOrder(boardId: string, workspaceName: string) {
+  const { isAdmin } = usePermissions();
+  
   // Get default columns based on workspace
   const defaultColumns = workspaceName === 'Colombia' ? COLUMNS_COLOMBIA : COLUMNS;
   const defaultOrder = defaultColumns.map(col => col.id);
@@ -83,10 +86,17 @@ export function useColumnOrder(boardId: string, workspaceName: string) {
     }
   }, [boardId, state]);
 
-  // Get ordered columns
-  const orderedColumns: ColumnConfig[] = state.order
-    .map(id => defaultColumns.find(col => col.id === id))
-    .filter((col): col is ColumnConfig => col !== undefined);
+  // Get ordered columns, filtering out admin-only columns for non-admins
+  const orderedColumns: ColumnConfig[] = useMemo(() => {
+    return state.order
+      .map(id => defaultColumns.find(col => col.id === id))
+      .filter((col): col is ColumnConfig => {
+        if (col === undefined) return false;
+        // Filter out admin-only columns for non-admins
+        if (col.adminOnly && !isAdmin) return false;
+        return true;
+      });
+  }, [state.order, defaultColumns, isAdmin]);
 
   // Reorder columns
   const reorderColumns = useCallback((activeId: string, overId: string) => {

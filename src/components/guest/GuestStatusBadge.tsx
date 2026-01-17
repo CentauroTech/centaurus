@@ -46,9 +46,6 @@ export function GuestStatusBadge({
   // If status is done, disable dropdown
   const isDisabled = disabled || normalizedStatus === 'done';
 
-  // Available statuses for dropdown (exclude 'done' - requires validation)
-  const availableStatuses: GuestStatus[] = ['default', 'working'];
-
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild disabled={isDisabled}>
@@ -57,42 +54,46 @@ export function GuestStatusBadge({
             "flex items-center justify-between gap-2 px-3 py-1.5 rounded-md text-sm font-medium min-w-[130px]",
             "transition-all duration-200",
             isDisabled ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:opacity-90",
-            isDelayed && normalizedStatus !== 'done' 
-              ? "bg-red-500 text-white" 
-              : config.className
+            isDelayed ? "bg-red-500 text-white" : config.className
           )}
         >
           <span className="flex items-center gap-1.5">
-            {isDelayed && normalizedStatus !== 'done' && (
-              <AlertTriangle className="w-3.5 h-3.5" />
-            )}
-            {isDelayed && normalizedStatus !== 'done' ? 'Delayed' : config.label}
+            {isDelayed && <AlertTriangle className="w-3.5 h-3.5" />}
+            {isDelayed ? 'Delayed' : config.label}
           </span>
           {!isDisabled && <ChevronDown className="w-3.5 h-3.5" />}
           {normalizedStatus === 'done' && <Check className="w-3.5 h-3.5" />}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[180px]">
-        {availableStatuses.map((statusKey) => {
-          const statusConfig = STATUS_CONFIG[statusKey];
-          return (
-            <DropdownMenuItem
-              key={statusKey}
-              onClick={() => {
-                onChange(statusKey);
-                setIsOpen(false);
-              }}
-              className={cn(
-                "flex items-center gap-2 cursor-pointer",
-                normalizedStatus === statusKey && "bg-accent"
-              )}
-            >
-              <div className={cn("w-3 h-3 rounded-full", statusConfig.className)} />
-              <span>{statusConfig.label}</span>
-              {normalizedStatus === statusKey && <Check className="w-4 h-4 ml-auto" />}
-            </DropdownMenuItem>
-          );
-        })}
+        <DropdownMenuItem
+          onClick={() => {
+            onChange('default');
+            setIsOpen(false);
+          }}
+          className={cn(
+            "flex items-center gap-2 cursor-pointer",
+            normalizedStatus === 'default' && "bg-accent"
+          )}
+        >
+          <div className="w-3 h-3 rounded-full bg-gray-500" />
+          <span>Not Started</span>
+          {normalizedStatus === 'default' && <Check className="w-4 h-4 ml-auto" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => {
+            onChange('working');
+            setIsOpen(false);
+          }}
+          className={cn(
+            "flex items-center gap-2 cursor-pointer",
+            normalizedStatus === 'working' && "bg-accent"
+          )}
+        >
+          <div className="w-3 h-3 rounded-full bg-amber-500" />
+          <span>Working on it</span>
+          {normalizedStatus === 'working' && <Check className="w-4 h-4 ml-auto" />}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

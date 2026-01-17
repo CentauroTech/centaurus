@@ -19,6 +19,7 @@ import { LastUpdatedCell } from './cells/LastUpdatedCell';
 import { PrivacyCell, RoleAssignment } from './cells/PrivacyCell';
 import { MultiSelectCell } from './cells/MultiSelectCell';
 import { ProjectManagerCell } from './cells/ProjectManagerCell';
+import { TimeTrackedCell } from './cells/TimeTrackedCell';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 import { useBulkEdit } from '@/contexts/BulkEditContext';
@@ -86,6 +87,10 @@ const FIELD_TO_DB_COLUMN: Record<string, string> = {
   people: 'people',
   currentPhase: 'currentPhase', // This is a computed field, not from DB
   lastUpdated: 'last_updated',
+  startedAt: 'started_at',
+  completedAt: 'completed_at',
+  guestDueDate: 'guest_due_date',
+  deliveryComment: 'delivery_comment',
 };
 
 // Helper function to get task value using the mapping
@@ -204,6 +209,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, workspac
             onViewersChange={handleViewersChange}
             onRoleAssignments={handleRoleAssignments}
             onMakePublic={handleMakePublic}
+            onGuestDueDateChange={(date) => handleUpdate('guestDueDate', date)}
             currentViewerIds={viewerIds}
           />
         );
@@ -367,6 +373,14 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, workspac
             onChange={(val) => handleUpdate(column.field, val)}
             options={column.options || []}
             placeholder="Select..."
+            isPrivate={isPrivate}
+          />
+        );
+      case 'time-tracked':
+        return (
+          <TimeTrackedCell
+            startedAt={getTaskValue(task, 'startedAt') as string}
+            completedAt={getTaskValue(task, 'completedAt') as string}
             isPrivate={isPrivate}
           />
         );

@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
+import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
 
@@ -18,9 +19,10 @@ interface AppHeaderProps {
 
 export function AppHeader({ boardName }: AppHeaderProps) {
   const { user, signOut } = useAuth();
+  const { data: currentTeamMember } = useCurrentTeamMember();
   const [settingsOpen, setSettingsOpen] = useState(false);
   
-  const userInitials = user?.email?.substring(0, 2).toUpperCase() || 'U';
+  const userInitials = currentTeamMember?.initials || user?.email?.substring(0, 2).toUpperCase() || 'U';
 
   return (
     <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4">

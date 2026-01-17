@@ -66,10 +66,10 @@ export function PeopleCell({ people = [], onChange }: PeopleCellProps) {
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-2 z-[9999]" align="start">
+      <PopoverContent className="w-56 p-2 z-[9999] bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" align="start">
         <div className="space-y-1">
           {users.length === 0 ? (
-            <div className="px-2 py-1.5 text-sm text-muted-foreground">
+            <div className="px-2 py-1.5 text-sm text-slate-500 dark:text-slate-400">
               No team members found
             </div>
           ) : (
@@ -80,8 +80,8 @@ export function PeopleCell({ people = [], onChange }: PeopleCellProps) {
                   key={user.id}
                   onClick={() => togglePerson(user)}
                   className={cn(
-                    "w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-accent transition-smooth",
-                    isSelected && "bg-accent"
+                    "w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-smooth",
+                    isSelected && "bg-slate-100 dark:bg-slate-800"
                   )}
                 >
                   <Avatar className="h-6 w-6">
@@ -95,7 +95,7 @@ export function PeopleCell({ people = [], onChange }: PeopleCellProps) {
                   <span className="flex-1 text-left truncate">{user.name}</span>
                   {isSelected && (
                     <X 
-                      className="w-4 h-4 text-muted-foreground hover:text-foreground" 
+                      className="w-4 h-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" 
                       onClick={(e) => removePerson(user.id, e)}
                     />
                   )}

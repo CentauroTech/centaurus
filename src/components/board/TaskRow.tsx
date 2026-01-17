@@ -429,10 +429,11 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, workspac
             <td 
               key={column.id} 
               className={cn(
-                "py-2 px-3", 
+                "py-2 px-3 border-r border-border/50", 
                 column.width,
                 isSticky && cn("sticky z-20", stickyBg),
-                index === 2 && "border-r-2 border-slate-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                index === 2 && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]",
+                isPrivate && index !== 2 && "border-r-slate-600"
               )}
               style={isSticky ? { left: leftOffset } : undefined}
             >

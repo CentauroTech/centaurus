@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useComments, useAddComment } from '@/hooks/useComments';
 import { useTeamMembers } from '@/hooks/useWorkspaces';
+import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useActivityLog, ActivityLogEntry } from '@/hooks/useActivityLog';
 import { toast } from 'sonner';
 
@@ -30,23 +31,47 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: Task
   const { data: comments, isLoading: commentsLoading } = useComments(task.id, isOpen);
   const { data: activityLogs, isLoading: activityLoading } = useActivityLog(task.id, isOpen);
   const { data: teamMembers } = useTeamMembers();
+  const { data: currentTeamMember } = useCurrentTeamMember();
   const addCommentMutation = useAddComment(task.id, boardId || '');
 
   const handleSendComment = async () => {
     if (!newComment.trim()) return;
     
-    // Use the first team member as the current user (in a real app, this would be the logged-in user)
-    const currentUserId = teamMembers?.[0]?.id;
+    // Use the currently logged-in team member
+    const currentUserId = currentTeamMember?.id;
     
     if (!currentUserId) {
-      toast.error('No user available to post comment');
+      toast.error('You must be logged in to post comments');
       return;
+    }
+
+    // Parse mentions from the comment content
+    const mentionPattern = /@(\w+(?:\s\w+)?)/g;
+    const mentionedNames: string[] = [];
+    let match;
+    while ((match = mentionPattern.exec(newComment)) !== null) {
+      mentionedNames.push(match[1]);
+    }
+
+    // Find mentioned user IDs
+    const mentionedUserIds: string[] = [];
+    if (teamMembers && mentionedNames.length > 0) {
+      for (const name of mentionedNames) {
+        const member = teamMembers.find(m => 
+          m.name.toLowerCase() === name.toLowerCase() ||
+          m.name.toLowerCase().replace(/\s+/g, '') === name.toLowerCase().replace(/\s+/g, '')
+        );
+        if (member) {
+          mentionedUserIds.push(member.id);
+        }
+      }
     }
 
     try {
       await addCommentMutation.mutateAsync({
         content: newComment.trim(),
         userId: currentUserId,
+        mentionedUserIds,
       });
       setNewComment('');
       toast.success('Comment added');

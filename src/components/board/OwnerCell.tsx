@@ -67,9 +67,9 @@ export function OwnerCell({ owner, onOwnerChange }: OwnerCellProps) {
       )}
 
       {isOpen && (
-        <div className="absolute z-[9999] mt-1 left-0 bg-card rounded-lg shadow-dropdown border border-border py-1 min-w-[180px] animate-fade-in">
+        <div className="absolute z-[9999] mt-1 left-0 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg shadow-dropdown border border-border py-1 min-w-[180px] animate-fade-in">
           {users.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-muted-foreground">
+            <div className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">
               No team members found
             </div>
           ) : (
@@ -81,8 +81,8 @@ export function OwnerCell({ owner, onOwnerChange }: OwnerCellProps) {
                   setIsOpen(false);
                 }}
                 className={cn(
-                  "w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-muted transition-smooth",
-                  owner?.id === user.id && "bg-muted"
+                  "w-full px-3 py-2 text-left flex items-center gap-2 text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-smooth",
+                  owner?.id === user.id && "bg-slate-100 dark:bg-slate-800"
                 )}
               >
                 <div
@@ -103,7 +103,7 @@ export function OwnerCell({ owner, onOwnerChange }: OwnerCellProps) {
                   onOwnerChange(undefined);
                   setIsOpen(false);
                 }}
-                className="w-full px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted transition-smooth"
+                className="w-full px-3 py-2 text-left text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-smooth"
               >
                 Remove assignee
               </button>

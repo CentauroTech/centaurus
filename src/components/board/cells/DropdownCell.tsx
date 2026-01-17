@@ -71,7 +71,7 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
     <div 
       ref={dropdownRef}
       id={portalId}
-      className="fixed bg-popover text-popover-foreground rounded-lg shadow-lg border border-border py-1 max-h-60 overflow-y-auto"
+      className="fixed bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg shadow-lg border border-border py-1 max-h-60 overflow-y-auto"
       style={{ 
         top: position.top, 
         left: position.left, 
@@ -84,8 +84,8 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
           key={option}
           onClick={() => handleSelect(option)}
           className={cn(
-            "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-accent transition-colors",
-            value === option && "bg-accent"
+            "w-full px-3 py-2 text-left text-sm flex items-center justify-between text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors",
+            value === option && "bg-slate-100 dark:bg-slate-800"
           )}
         >
           <span>{option}</span>

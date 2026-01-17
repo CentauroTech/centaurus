@@ -242,7 +242,7 @@ export const VOICE_TEST_OPTIONS = ['Yes', 'No', 'Voice Bank'];
 export const COLUMNS: ColumnConfig[] = [
   { id: 'isPrivate', label: '', type: 'privacy', width: 'w-8', field: 'isPrivate' },
   { id: 'name', label: 'Project Name', type: 'text', width: 'w-56', field: 'name' },
-  { id: 'projectManager', label: 'PM', type: 'person', width: 'w-28', field: 'projectManager' },
+  { id: 'projectManager', label: 'Project Manager', type: 'person', width: 'w-32', field: 'projectManager' },
   { id: 'clientName', label: 'Client', type: 'combobox', width: 'w-32', field: 'clientName', options: CLIENT_OPTIONS },
   { id: 'cantidadEpisodios', label: 'Episodes', type: 'number', width: 'w-20', field: 'cantidadEpisodios' },
   { id: 'entregaCliente', label: 'Client Due Date', type: 'date', width: 'w-28', field: 'entregaCliente' },

@@ -137,7 +137,7 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
     <div 
       ref={dropdownRef}
       id={portalId}
-      className="fixed bg-popover text-popover-foreground rounded-lg shadow-lg border border-border py-1 overflow-y-auto overflow-x-hidden"
+      className="fixed bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg shadow-lg border border-border py-1 overflow-y-auto overflow-x-hidden"
       style={{ 
         top: position.top, 
         left: position.left, 
@@ -159,8 +159,8 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
               handleSelect(option);
             }}
             className={cn(
-              "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-accent transition-colors",
-              value === option && "bg-accent"
+              "w-full px-3 py-2 text-left text-sm flex items-center justify-between text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors",
+              value === option && "bg-slate-100 dark:bg-slate-800"
             )}
           >
             <span className="truncate">{option}</span>
@@ -174,12 +174,12 @@ export function ComboboxCell({ value, onChange, options, placeholder = 'Select..
             e.preventDefault();
             handleSelect(inputValue);
           }}
-          className="w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors text-muted-foreground"
+          className="w-full px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500 dark:text-slate-400"
         >
           Add "{inputValue}"
         </button>
       ) : (
-        <div className="px-3 py-2 text-sm text-muted-foreground">No options available</div>
+        <div className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">No options available</div>
       )}
     </div>,
     document.body

@@ -50,12 +50,22 @@ export function useComments(taskId: string, enabled: boolean = true) {
   });
 }
 
-export function useAddComment(taskId: string, boardId: string, isGuestVisible: boolean = false) {
+export function useAddComment(taskId: string, boardId: string) {
   const queryClient = useQueryClient();
   const { role } = usePermissions();
 
   return useMutation({
-    mutationFn: async ({ content, userId, mentionedUserIds = [] }: { content: string; userId: string; mentionedUserIds?: string[] }) => {
+    mutationFn: async ({ 
+      content, 
+      userId, 
+      mentionedUserIds = [],
+      isGuestVisible = false 
+    }: { 
+      content: string; 
+      userId: string; 
+      mentionedUserIds?: string[];
+      isGuestVisible?: boolean;
+    }) => {
       // Insert the comment
       // Comments from guests are always guest-visible
       // Comments from team members use the isGuestVisible flag

@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { X, Send, Paperclip, Smile, AtSign, FileText, Image, File, Clock, User as UserIcon, MessageSquare } from 'lucide-react';
+import { useState, useRef, useMemo } from 'react';
+import { X, Send, Paperclip, Smile, AtSign, FileText, Image, File, Clock, User as UserIcon, MessageSquare, Users } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -8,10 +8,15 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Task, Comment, TaskFile, ActivityItem, User } from '@/types/board';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
-import { useComments, useAddComment } from '@/hooks/useComments';
+import { useComments, useAddComment, CommentWithUser } from '@/hooks/useComments';
 import { useTeamMembers } from '@/hooks/useWorkspaces';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useActivityLog, ActivityLogEntry } from '@/hooks/useActivityLog';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useTaskFiles, useUploadTaskFile, useToggleFileAccessibility, useDeleteTaskFile, FILE_CATEGORIES, FileCategory } from '@/hooks/useTaskFiles';
+import { FileCategorySection } from './files/FileCategorySection';
+import { FileUploadButton } from './files/FileUploadButton';
+import { CommentSection } from './comments/CommentSection';
 import { toast } from 'sonner';
 
 interface TaskDetailsPanelProps {
@@ -20,14 +25,19 @@ interface TaskDetailsPanelProps {
   onClose: () => void;
   users: User[];
   boardId?: string;
+  currentPhase?: string;
 }
 
-export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: TaskDetailsPanelProps) {
+export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId, currentPhase }: TaskDetailsPanelProps) {
   const [newComment, setNewComment] = useState('');
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
   const [mentionCursorPosition, setMentionCursorPosition] = useState(0);
+  const [activeUpdateTab, setActiveUpdateTab] = useState<'team' | 'guest'>('team');
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  
+  const { role, isAdmin } = usePermissions();
+  const isGuest = role === 'guest';
   
   // Only fetch comments and activity when panel is open
   const { data: comments, isLoading: commentsLoading } = useComments(task.id, isOpen);
@@ -35,6 +45,32 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: Task
   const { data: teamMembers } = useTeamMembers();
   const { data: currentTeamMember } = useCurrentTeamMember();
   const addCommentMutation = useAddComment(task.id, boardId || '');
+  
+  // File hooks
+  const { data: taskFiles, isLoading: filesLoading } = useTaskFiles(task.id, isOpen);
+  const uploadFile = useUploadTaskFile(task.id);
+  const toggleFileAccess = useToggleFileAccessibility(task.id);
+  const deleteFile = useDeleteTaskFile(task.id);
+
+  // Separate comments by visibility
+  const { teamComments, guestComments } = useMemo(() => {
+    if (!comments) return { teamComments: [], guestComments: [] };
+    return {
+      teamComments: comments.filter(c => !c.is_guest_visible),
+      guestComments: comments.filter(c => c.is_guest_visible),
+    };
+  }, [comments]);
+
+  // Group files by category
+  const filesByCategory = useMemo(() => {
+    if (!taskFiles) return {};
+    return taskFiles.reduce((acc, file) => {
+      const category = file.file_category || 'general';
+      if (!acc[category]) acc[category] = [];
+      acc[category].push(file);
+      return acc;
+    }, {} as Record<string, typeof taskFiles>);
+  }, [taskFiles]);
 
   // Filter team members based on mention search
   const filteredMentionUsers = teamMembers?.filter(member => 
@@ -107,6 +143,28 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: Task
     }
   };
 
+  // Handler for the new CommentSection component
+  const handleSendToSection = async (content: string, mentionedUserIds: string[], isGuestVisible: boolean) => {
+    const currentUserId = currentTeamMember?.id;
+    
+    if (!currentUserId) {
+      toast.error('You must be logged in to post comments');
+      return;
+    }
+
+    try {
+      await addCommentMutation.mutateAsync({
+        content,
+        userId: currentUserId,
+        mentionedUserIds,
+        isGuestVisible,
+      });
+      toast.success('Comment added');
+    } catch (error) {
+      toast.error('Failed to add comment');
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && !showMentions) {
       e.preventDefault();
@@ -173,112 +231,121 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: Task
 
           {/* Updates Tab */}
           <TabsContent value="updates" className="flex-1 flex flex-col m-0 overflow-hidden">
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
-                {commentsLoading ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <p className="text-sm">Loading comments...</p>
-                  </div>
-                ) : comments && comments.length > 0 ? (
-                  comments.map((comment) => (
-                    <DatabaseCommentItem key={comment.id} comment={comment} />
-                  ))
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-40" />
-                    <p className="text-sm">No updates yet</p>
-                    <p className="text-xs mt-1">Be the first to add an update</p>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-
-            {/* Comment Input */}
-            <div className="p-4 border-t border-border bg-card">
-              <div className="relative">
-                <textarea
-                  ref={inputRef}
-                  value={newComment}
-                  onChange={handleCommentChange}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Write an update... Use @ to mention someone"
-                  className="w-full min-h-[80px] p-3 pr-24 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-                <div className="absolute bottom-3 right-3 flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => {
-                      setShowMentions(!showMentions);
-                      setMentionSearch('');
-                      setMentionCursorPosition(newComment.length);
-                      if (!showMentions) {
-                        setNewComment(prev => prev + '@');
-                        inputRef.current?.focus();
-                      }
-                    }}
+            {isGuest ? (
+              // Guests only see guest-visible comments in a single section
+              <CommentSection
+                title="Updates"
+                icon="guest"
+                comments={guestComments}
+                isLoading={commentsLoading}
+                onSendComment={handleSendToSection}
+                teamMembers={teamMembers || []}
+                isGuestVisible={true}
+                emptyMessage="No updates yet"
+              />
+            ) : (
+              // Team members see both sections
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <div className="flex border-b border-border bg-muted/20">
+                  <button
+                    onClick={() => setActiveUpdateTab('team')}
+                    className={cn(
+                      "flex-1 px-4 py-2 text-sm font-medium transition-colors",
+                      activeUpdateTab === 'team' 
+                        ? "border-b-2 border-primary text-foreground" 
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
                   >
-                    <AtSign className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
-                    <Smile className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
-                    <Paperclip className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={handleSendComment}
-                    disabled={!newComment.trim()}
+                    <Users className="w-4 h-4 inline mr-2" />
+                    Team Updates
+                  </button>
+                  <button
+                    onClick={() => setActiveUpdateTab('guest')}
+                    className={cn(
+                      "flex-1 px-4 py-2 text-sm font-medium transition-colors",
+                      activeUpdateTab === 'guest' 
+                        ? "border-b-2 border-primary text-foreground" 
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
                   >
-                    <Send className="w-4 h-4" />
-                  </Button>
+                    <UserIcon className="w-4 h-4 inline mr-2" />
+                    Guest Communication
+                  </button>
                 </div>
-
-                {/* Mention Autocomplete Dropdown */}
-                {showMentions && filteredMentionUsers.length > 0 && (
-                  <div className="absolute bottom-full mb-2 left-0 w-64 bg-popover border border-border rounded-lg shadow-lg overflow-hidden z-50">
-                    <div className="p-2 text-xs text-muted-foreground border-b border-border">
-                      {mentionSearch ? `Matching "${mentionSearch}"` : 'Select a person to mention'}
-                    </div>
-                    <div className="max-h-48 overflow-y-auto">
-                      {filteredMentionUsers.map((member) => (
-                        <button
-                          key={member.id}
-                          onClick={() => insertMention(member)}
-                          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-accent text-sm text-left transition-colors"
-                        >
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback style={{ backgroundColor: member.color }} className="text-xs text-white">
-                              {member.initials}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium">{member.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                
+                {activeUpdateTab === 'team' ? (
+                  <CommentSection
+                    title="Internal Team Updates"
+                    icon="team"
+                    comments={teamComments}
+                    isLoading={commentsLoading}
+                    onSendComment={handleSendToSection}
+                    teamMembers={teamMembers || []}
+                    isGuestVisible={false}
+                    emptyMessage="No team updates yet"
+                  />
+                ) : (
+                  <CommentSection
+                    title="Guest Communication"
+                    icon="guest"
+                    comments={guestComments}
+                    isLoading={commentsLoading}
+                    onSendComment={handleSendToSection}
+                    teamMembers={teamMembers || []}
+                    isGuestVisible={true}
+                    emptyMessage="No guest communication yet"
+                  />
                 )}
               </div>
-            </div>
+            )}
           </TabsContent>
 
           {/* Files Tab */}
-          <TabsContent value="files" className="flex-1 m-0 overflow-hidden">
-            <ScrollArea className="h-full p-4">
-              {task.files && task.files.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {task.files.map((file) => (
-                    <FileItem key={file.id} file={file} />
+          <TabsContent value="files" className="flex-1 m-0 overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-border flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">
+                {taskFiles?.length || 0} file{(taskFiles?.length || 0) !== 1 ? 's' : ''}
+              </span>
+              {!isGuest && (
+                <FileUploadButton
+                  onUpload={async (file, category) => {
+                    await uploadFile.mutateAsync({ 
+                      file, 
+                      category,
+                      phase: currentPhase,
+                      isGuestAccessible: false 
+                    });
+                  }}
+                  isUploading={uploadFile.isPending}
+                  currentPhase={currentPhase}
+                />
+              )}
+            </div>
+            <ScrollArea className="flex-1 p-4">
+              {filesLoading ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p className="text-sm">Loading files...</p>
+                </div>
+              ) : taskFiles && taskFiles.length > 0 ? (
+                <div className="space-y-6">
+                  {FILE_CATEGORIES.map(cat => (
+                    <FileCategorySection
+                      key={cat.value}
+                      title={cat.label}
+                      files={filesByCategory[cat.value] || []}
+                      isGuest={isGuest}
+                      onToggleAccess={(fileId, isAccessible) => 
+                        toggleFileAccess.mutate({ fileId, isGuestAccessible: isAccessible })
+                      }
+                      onDelete={(fileId) => deleteFile.mutate(fileId)}
+                    />
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted-foreground">
                   <FileText className="w-12 h-12 mx-auto mb-3 opacity-40" />
                   <p className="text-sm">No files yet</p>
-                  <p className="text-xs mt-1">Files shared in updates will appear here</p>
+                  <p className="text-xs mt-1">Upload files to share with the team</p>
                 </div>
               )}
             </ScrollArea>

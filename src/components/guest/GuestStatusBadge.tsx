@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { Check, ChevronDown, AlertTriangle } from 'lucide-react';
+import { Check, ChevronDown, AlertTriangle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-type GuestStatus = 'default' | 'working' | 'done';
+export type GuestStatus = 'default' | 'working' | 'done';
 
 interface GuestStatusBadgeProps {
   status: string;
@@ -93,6 +94,17 @@ export function GuestStatusBadge({
           <div className="w-3 h-3 rounded-full bg-amber-500" />
           <span>Working on it</span>
           {normalizedStatus === 'working' && <Check className="w-4 h-4 ml-auto" />}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => {
+            onChange('done');
+            setIsOpen(false);
+          }}
+          className="flex items-center gap-2 cursor-pointer text-green-600 font-medium"
+        >
+          <CheckCircle className="w-4 h-4 text-green-500" />
+          <span>Mark as Done</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

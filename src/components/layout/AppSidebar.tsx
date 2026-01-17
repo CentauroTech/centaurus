@@ -37,7 +37,10 @@ export function AppSidebar({ workspaces, selectedBoardId, onSelectBoard }: AppSi
             alt="Centaurus Logo" 
             className="w-10 h-10 rounded-full object-cover"
           />
-          <span className="font-display font-semibold text-lg">Centaurus</span>
+          <div className="flex flex-col">
+            <span className="font-display font-semibold text-lg">Centaurus</span>
+            <span className="text-xs text-white/50">v1.0.3</span>
+          </div>
         </div>
       </div>
 

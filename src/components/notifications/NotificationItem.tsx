@@ -74,9 +74,17 @@ export function NotificationItem({
           </p>
         </div>
         {notification.message && (
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">
+          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
             {notification.message}
           </p>
+        )}
+        {/* Board name badge */}
+        {notification.board_name && (
+          <div className="flex items-center gap-1 mt-1">
+            <span className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+              {notification.board_name}
+            </span>
+          </div>
         )}
         <p className="text-xs text-muted-foreground/70 mt-1">
           {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}

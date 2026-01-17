@@ -25,6 +25,8 @@ interface TaskDetailsPanelProps {
 export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: TaskDetailsPanelProps) {
   const [newComment, setNewComment] = useState('');
   const [showMentions, setShowMentions] = useState(false);
+  const [mentionSearch, setMentionSearch] = useState('');
+  const [mentionCursorPosition, setMentionCursorPosition] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
   // Only fetch comments and activity when panel is open
@@ -33,6 +35,30 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: Task
   const { data: teamMembers } = useTeamMembers();
   const { data: currentTeamMember } = useCurrentTeamMember();
   const addCommentMutation = useAddComment(task.id, boardId || '');
+
+  // Filter team members based on mention search
+  const filteredMentionUsers = teamMembers?.filter(member => 
+    mentionSearch === '' || member.name.toLowerCase().includes(mentionSearch.toLowerCase())
+  ).slice(0, 6) || [];
+
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    setNewComment(value);
+
+    // Check if we're typing a mention
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
+    
+    if (mentionMatch) {
+      setShowMentions(true);
+      setMentionSearch(mentionMatch[1]);
+      setMentionCursorPosition(cursorPos - mentionMatch[0].length);
+    } else {
+      setShowMentions(false);
+      setMentionSearch('');
+    }
+  };
 
   const handleSendComment = async () => {
     if (!newComment.trim()) return;
@@ -45,8 +71,8 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: Task
       return;
     }
 
-    // Parse mentions from the comment content
-    const mentionPattern = /@(\w+(?:\s\w+)?)/g;
+    // Parse mentions from the comment content - match @Name or @FirstName LastName
+    const mentionPattern = /@([\w]+(?:\s[\w]+)?)/g;
     const mentionedNames: string[] = [];
     let match;
     while ((match = mentionPattern.exec(newComment)) !== null) {
@@ -74,6 +100,7 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: Task
         mentionedUserIds,
       });
       setNewComment('');
+      setShowMentions(false);
       toast.success('Comment added');
     } catch (error) {
       toast.error('Failed to add comment');
@@ -81,16 +108,31 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: Task
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !showMentions) {
       e.preventDefault();
       handleSendComment();
     }
+    if (e.key === 'Escape') {
+      setShowMentions(false);
+    }
   };
 
-  const insertMention = (user: User) => {
-    setNewComment(prev => prev + `@${user.name} `);
+  const insertMention = (user: { id: string; name: string }) => {
+    const textBeforeMention = newComment.substring(0, mentionCursorPosition);
+    const textAfterCursor = newComment.substring(inputRef.current?.selectionStart || newComment.length);
+    // Remove any partial @mention from after text
+    const cleanAfterText = textAfterCursor.replace(/^@?\w*/, '');
+    
+    setNewComment(`${textBeforeMention}@${user.name} ${cleanAfterText}`);
     setShowMentions(false);
-    inputRef.current?.focus();
+    setMentionSearch('');
+    
+    // Focus back on input
+    setTimeout(() => {
+      inputRef.current?.focus();
+      const newCursorPos = textBeforeMention.length + user.name.length + 2;
+      inputRef.current?.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
   };
 
   return (
@@ -157,9 +199,9 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: Task
                 <textarea
                   ref={inputRef}
                   value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  onChange={handleCommentChange}
                   onKeyDown={handleKeyDown}
-                  placeholder="Write an update..."
+                  placeholder="Write an update... Use @ to mention someone"
                   className="w-full min-h-[80px] p-3 pr-24 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
                 />
                 <div className="absolute bottom-3 right-3 flex items-center gap-1">
@@ -167,7 +209,15 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: Task
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7"
-                    onClick={() => setShowMentions(!showMentions)}
+                    onClick={() => {
+                      setShowMentions(!showMentions);
+                      setMentionSearch('');
+                      setMentionCursorPosition(newComment.length);
+                      if (!showMentions) {
+                        setNewComment(prev => prev + '@');
+                        inputRef.current?.focus();
+                      }
+                    }}
                   >
                     <AtSign className="w-4 h-4" />
                   </Button>
@@ -187,23 +237,28 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: Task
                   </Button>
                 </div>
 
-                {/* Mentions Dropdown */}
-                {showMentions && (
-                  <div className="absolute bottom-full mb-2 left-0 w-48 bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
-                    {users.map((user) => (
-                      <button
-                        key={user.id}
-                        onClick={() => insertMention(user)}
-                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-accent text-sm text-left"
-                      >
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback style={{ backgroundColor: user.color }} className="text-xs text-white">
-                            {user.initials}
-                          </AvatarFallback>
-                        </Avatar>
-                        {user.name}
-                      </button>
-                    ))}
+                {/* Mention Autocomplete Dropdown */}
+                {showMentions && filteredMentionUsers.length > 0 && (
+                  <div className="absolute bottom-full mb-2 left-0 w-64 bg-popover border border-border rounded-lg shadow-lg overflow-hidden z-50">
+                    <div className="p-2 text-xs text-muted-foreground border-b border-border">
+                      {mentionSearch ? `Matching "${mentionSearch}"` : 'Select a person to mention'}
+                    </div>
+                    <div className="max-h-48 overflow-y-auto">
+                      {filteredMentionUsers.map((member) => (
+                        <button
+                          key={member.id}
+                          onClick={() => insertMention(member)}
+                          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-accent text-sm text-left transition-colors"
+                        >
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback style={{ backgroundColor: member.color }} className="text-xs text-white">
+                              {member.initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{member.name}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -257,6 +312,23 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId }: Task
   );
 }
 
+// Helper to render comment content with styled mentions
+function renderCommentWithMentions(content: string): React.ReactNode {
+  // Match @Name or @FirstName LastName patterns
+  const parts = content.split(/(@[\w]+(?:\s[\w]+)?)/g);
+  
+  return parts.map((part, index) => {
+    if (part.startsWith('@')) {
+      return (
+        <span key={index} className="text-primary font-medium bg-primary/10 px-1 rounded">
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
 function DatabaseCommentItem({ comment }: { comment: { id: string; content: string; created_at: string; user: { id: string; name: string; initials: string; color: string } | null } }) {
   const user = comment.user || { name: 'Unknown', initials: '?', color: 'hsl(0, 0%, 50%)' };
   
@@ -275,7 +347,7 @@ function DatabaseCommentItem({ comment }: { comment: { id: string; content: stri
           </span>
         </div>
         <div className="text-sm text-foreground/90 whitespace-pre-wrap break-words">
-          {comment.content}
+          {renderCommentWithMentions(comment.content)}
         </div>
       </div>
     </div>

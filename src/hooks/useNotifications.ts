@@ -23,7 +23,18 @@ export interface Notification {
   task?: {
     id: string;
     name: string;
+    group?: {
+      id: string;
+      name: string;
+      board?: {
+        id: string;
+        name: string;
+      } | null;
+    } | null;
   } | null;
+  // For mention notifications - the comment content preview
+  comment_preview?: string | null;
+  board_name?: string | null;
 }
 
 export function useNotifications() {
@@ -40,14 +51,29 @@ export function useNotifications() {
         .select(`
           *,
           triggered_by:team_members!notifications_triggered_by_id_fkey(id, name, initials, color),
-          task:tasks!notifications_task_id_fkey(id, name)
+          task:tasks!notifications_task_id_fkey(
+            id, 
+            name,
+            group:task_groups!tasks_group_id_fkey(
+              id,
+              name,
+              board:boards!task_groups_board_id_fkey(id, name)
+            )
+          )
         `)
         .eq('user_id', currentMember.id)
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) throw error;
-      return data as Notification[];
+      
+      // Transform to include board_name for easier access
+      const transformedData = (data || []).map(notification => ({
+        ...notification,
+        board_name: notification.task?.group?.board?.name || null,
+      }));
+      
+      return transformedData as Notification[];
     },
     enabled: !!currentMember?.id,
   });

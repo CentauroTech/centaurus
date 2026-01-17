@@ -104,6 +104,12 @@ export interface Task {
   rateInfo?: string;
   premixRetakeList?: string;
   mixRetakeList?: string;
+  // Timer tracking fields
+  startedAt?: Date | string;
+  completedAt?: Date | string;
+  // Guest-specific fields
+  guestDueDate?: Date | string;
+  deliveryComment?: string;
   createdAt: Date;
   comments?: Comment[];
   files?: TaskFile[];
@@ -152,10 +158,11 @@ export const PHASE_CONFIG: Record<Phase, { label: string; className: string }> =
 export interface ColumnConfig {
   id: string;
   label: string;
-  type: 'text' | 'date' | 'person' | 'status' | 'phase' | 'current-phase' | 'number' | 'boolean' | 'link' | 'people' | 'combobox' | 'dropdown' | 'file' | 'auto' | 'last-updated' | 'privacy' | 'multi-select';
+  type: 'text' | 'date' | 'person' | 'status' | 'phase' | 'current-phase' | 'number' | 'boolean' | 'link' | 'people' | 'combobox' | 'dropdown' | 'file' | 'auto' | 'last-updated' | 'privacy' | 'multi-select' | 'time-tracked';
   width: string;
   field: keyof Task;
   options?: string[];
+  adminOnly?: boolean; // If true, only admins can see this column
 }
 
 // Dropdown options for various fields
@@ -259,6 +266,7 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'dateAssigned', label: 'Assigned', type: 'date', width: 'w-28', field: 'dateAssigned' },
   { id: 'dateDelivered', label: 'Delivered', type: 'date', width: 'w-28', field: 'dateDelivered' },
   { id: 'status', label: 'Status', type: 'status', width: 'w-28', field: 'status' },
+  { id: 'timeTracked', label: 'Time', type: 'time-tracked', width: 'w-24', field: 'startedAt', adminOnly: true },
   { id: 'lastUpdated', label: 'Updated', type: 'last-updated', width: 'w-28', field: 'lastUpdated' },
   { id: 'premixRetakeList', label: 'Premix Retakes', type: 'file', width: 'w-28', field: 'premixRetakeList' },
   { id: 'mixRetakeList', label: 'Mix Retakes', type: 'file', width: 'w-28', field: 'mixRetakeList' },
@@ -299,6 +307,7 @@ export const COLUMNS_COLOMBIA: ColumnConfig[] = [
   { id: 'people', label: 'People', type: 'people', width: 'w-32', field: 'people' },
   { id: 'currentPhase', label: 'Fase', type: 'current-phase', width: 'w-24', field: 'currentPhase' },
   { id: 'status', label: 'Status', type: 'status', width: 'w-28', field: 'status' },
+  { id: 'timeTracked', label: 'Time', type: 'time-tracked', width: 'w-24', field: 'startedAt', adminOnly: true },
   { id: 'studio', label: 'Studio', type: 'dropdown', width: 'w-28', field: 'studio', options: STUDIO_OPTIONS },
   { id: 'director', label: 'Director', type: 'person', width: 'w-28', field: 'director' },
   { id: 'tecnico', label: 'Tecnico', type: 'person', width: 'w-28', field: 'tecnico' },

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { usePermissions } from './usePermissions';
 
 export interface CommentWithUser {
   id: string;
@@ -8,6 +9,7 @@ export interface CommentWithUser {
   content: string;
   created_at: string;
   updated_at: string;
+  is_guest_visible?: boolean;
   user: {
     id: string;
     name: string;
@@ -17,9 +19,15 @@ export interface CommentWithUser {
 }
 
 export function useComments(taskId: string, enabled: boolean = true) {
+  const { role } = usePermissions();
+  const isGuest = role === 'guest';
+
   return useQuery({
-    queryKey: ['comments', taskId],
+    queryKey: ['comments', taskId, isGuest],
     queryFn: async (): Promise<CommentWithUser[]> => {
+      // Build query based on user role
+      // Guests only see guest-visible comments (RLS also enforces this)
+      // Team members see all comments
       const { data, error } = await supabase
         .from('comments')
         .select(`
@@ -42,18 +50,24 @@ export function useComments(taskId: string, enabled: boolean = true) {
   });
 }
 
-export function useAddComment(taskId: string, boardId: string) {
+export function useAddComment(taskId: string, boardId: string, isGuestVisible: boolean = false) {
   const queryClient = useQueryClient();
+  const { role } = usePermissions();
 
   return useMutation({
     mutationFn: async ({ content, userId, mentionedUserIds = [] }: { content: string; userId: string; mentionedUserIds?: string[] }) => {
       // Insert the comment
+      // Comments from guests are always guest-visible
+      // Comments from team members use the isGuestVisible flag
+      const shouldBeGuestVisible = role === 'guest' || isGuestVisible;
+      
       const { data: comment, error } = await supabase
         .from('comments')
         .insert({
           task_id: taskId,
           user_id: userId,
           content,
+          is_guest_visible: shouldBeGuestVisible,
         })
         .select()
         .single();

@@ -34,6 +34,7 @@ interface PrivacyCellProps {
   onViewersChange?: (viewerIds: string[]) => void;
   onRoleAssignments?: (assignments: RoleAssignment[]) => void;
   onMakePublic?: () => void;
+  onGuestDueDateChange?: (date: string) => void;
   currentViewerIds?: string[];
 }
 
@@ -73,6 +74,7 @@ export function PrivacyCell({
   onViewersChange,
   onRoleAssignments,
   onMakePublic,
+  onGuestDueDateChange,
   currentViewerIds = []
 }: PrivacyCellProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -137,6 +139,18 @@ export function PrivacyCell({
     }
     if (onRoleAssignments && roleAssignments.length > 0) {
       onRoleAssignments(roleAssignments);
+    }
+    // Set guest_due_date to +1 business day when guest is assigned
+    if (onGuestDueDateChange && selectedViewers.length > 0) {
+      const tomorrow = new Date();
+      let daysToAdd = 1;
+      // Skip weekends
+      tomorrow.setDate(tomorrow.getDate() + daysToAdd);
+      while (tomorrow.getDay() === 0 || tomorrow.getDay() === 6) {
+        tomorrow.setDate(tomorrow.getDate() + 1);
+      }
+      const dueDateStr = tomorrow.toISOString().split('T')[0];
+      onGuestDueDateChange(dueDateStr);
     }
     setDialogOpen(false);
   };

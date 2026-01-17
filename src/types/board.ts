@@ -239,6 +239,8 @@ export const TARGET_LANGUAGE_OPTIONS = ['English', 'Spanish (Latin America)', 'S
 
 export const VOICE_TEST_OPTIONS = ['Yes', 'No', 'Voice Bank'];
 
+export const STUDIO_OPTIONS = ['Studio A', 'Studio B', 'Studio C', 'External'];
+
 export const COLUMNS: ColumnConfig[] = [
   { id: 'isPrivate', label: '', type: 'privacy', width: 'w-8', field: 'isPrivate' },
   { id: 'workOrderNumber', label: 'WO#', type: 'text', width: 'w-32', field: 'workOrderNumber' },
@@ -248,6 +250,8 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'cantidadEpisodios', label: 'Episodes', type: 'number', width: 'w-20', field: 'cantidadEpisodios' },
   { id: 'entregaCliente', label: 'Client Due Date', type: 'date', width: 'w-28', field: 'entregaCliente' },
   { id: 'entregaMiamiEnd', label: 'Miami Due Date', type: 'date', width: 'w-28', field: 'entregaMiamiEnd' },
+  { id: 'entregaSesiones', label: 'Entrega Sesiones', type: 'date', width: 'w-28', field: 'entregaSesiones' },
+  { id: 'entregaMixRetakes', label: 'Entrega Mix Retakes', type: 'date', width: 'w-32', field: 'entregaMixRetakes' },
   { id: 'lockedRuntime', label: 'Runtime', type: 'text', width: 'w-20', field: 'lockedRuntime' },
   { id: 'people', label: 'People', type: 'people', width: 'w-32', field: 'people' },
   { id: 'currentPhase', label: 'Phase', type: 'current-phase', width: 'w-24', field: 'currentPhase' },
@@ -258,7 +262,7 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'lastUpdated', label: 'Updated', type: 'last-updated', width: 'w-28', field: 'lastUpdated' },
   { id: 'premixRetakeList', label: 'Premix Retakes', type: 'file', width: 'w-28', field: 'premixRetakeList' },
   { id: 'mixRetakeList', label: 'Mix Retakes', type: 'file', width: 'w-28', field: 'mixRetakeList' },
-  { id: 'aorNeeded', label: 'AOR', type: 'boolean', width: 'w-16', field: 'aorNeeded' },
+  { id: 'aorNeeded', label: 'Aor', type: 'boolean', width: 'w-16', field: 'aorNeeded' },
   { id: 'pruebaDeVoz', label: 'Voice Test', type: 'dropdown', width: 'w-24', field: 'pruebaDeVoz', options: VOICE_TEST_OPTIONS },
   { id: 'traductor', label: 'Translator', type: 'person', width: 'w-28', field: 'traductor' },
   { id: 'adaptador', label: 'Adapter', type: 'person', width: 'w-28', field: 'adaptador' },
@@ -274,6 +278,46 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'formato', label: 'Format', type: 'multi-select', width: 'w-44', field: 'formato', options: FORMATO_OPTIONS },
   { id: 'branch', label: 'Branch', type: 'dropdown', width: 'w-24', field: 'branch', options: BRANCH_OPTIONS },
   { id: 'genre', label: 'Genre', type: 'dropdown', width: 'w-24', field: 'genre', options: GENRE_OPTIONS },
+  { id: 'studio', label: 'Studio', type: 'dropdown', width: 'w-28', field: 'studio', options: STUDIO_OPTIONS },
+  { id: 'director', label: 'Director', type: 'person', width: 'w-28', field: 'director' },
+  { id: 'tecnico', label: 'Tecnico', type: 'person', width: 'w-28', field: 'tecnico' },
+  { id: 'finalRuntime', label: 'Final Runtime', type: 'text', width: 'w-24', field: 'finalRuntime' },
   { id: 'entregaFinalScriptItems', label: 'Entrega Script/Dubcard', type: 'multi-select', width: 'w-80', field: 'entregaFinalScriptItems', options: ENTREGA_FINAL_SCRIPT_OPTIONS },
   { id: 'entregaFinalDubAudioItems', label: 'Entrega Dub Audio', type: 'multi-select', width: 'w-80', field: 'entregaFinalDubAudioItems', options: ENTREGA_FINAL_DUB_AUDIO_OPTIONS },
+];
+
+// Colombia-specific column order for COL-HQ boards
+export const COLUMNS_COLOMBIA: ColumnConfig[] = [
+  { id: 'isPrivate', label: '', type: 'privacy', width: 'w-8', field: 'isPrivate' },
+  { id: 'workOrderNumber', label: 'WO#', type: 'text', width: 'w-32', field: 'workOrderNumber' },
+  { id: 'name', label: 'Project Name', type: 'text', width: 'w-56', field: 'name' },
+  { id: 'projectManager', label: 'Project Manager', type: 'person', width: 'w-32', field: 'projectManager' },
+  { id: 'clientName', label: 'Cliente', type: 'combobox', width: 'w-32', field: 'clientName', options: CLIENT_OPTIONS },
+  { id: 'entregaCliente', label: 'Entrega Cliente', type: 'date', width: 'w-28', field: 'entregaCliente' },
+  { id: 'entregaMiamiEnd', label: 'Entrega Miami', type: 'date', width: 'w-28', field: 'entregaMiamiEnd' },
+  { id: 'entregaSesiones', label: 'Entrega Sesiones', type: 'date', width: 'w-28', field: 'entregaSesiones' },
+  { id: 'entregaMixRetakes', label: 'Entrega Mix Retakes', type: 'date', width: 'w-32', field: 'entregaMixRetakes' },
+  { id: 'people', label: 'People', type: 'people', width: 'w-32', field: 'people' },
+  { id: 'currentPhase', label: 'Fase', type: 'current-phase', width: 'w-24', field: 'currentPhase' },
+  { id: 'status', label: 'Status', type: 'status', width: 'w-28', field: 'status' },
+  { id: 'studio', label: 'Studio', type: 'dropdown', width: 'w-28', field: 'studio', options: STUDIO_OPTIONS },
+  { id: 'director', label: 'Director', type: 'person', width: 'w-28', field: 'director' },
+  { id: 'tecnico', label: 'Tecnico', type: 'person', width: 'w-28', field: 'tecnico' },
+  { id: 'lockedRuntime', label: 'Locked Runtime', type: 'text', width: 'w-28', field: 'lockedRuntime' },
+  { id: 'finalRuntime', label: 'Final Runtime', type: 'text', width: 'w-24', field: 'finalRuntime' },
+  { id: 'pruebaDeVoz', label: 'Prueba de Voz', type: 'dropdown', width: 'w-24', field: 'pruebaDeVoz', options: VOICE_TEST_OPTIONS },
+  { id: 'aorNeeded', label: 'Aor', type: 'boolean', width: 'w-16', field: 'aorNeeded' },
+  { id: 'tituloAprobadoEspanol', label: 'Titulo Aprobado Espanol', type: 'text', width: 'w-40', field: 'tituloAprobadoEspanol' },
+  { id: 'branch', label: 'Sede', type: 'dropdown', width: 'w-24', field: 'branch', options: BRANCH_OPTIONS },
+  { id: 'genre', label: 'Genero', type: 'dropdown', width: 'w-24', field: 'genre', options: GENRE_OPTIONS },
+  { id: 'formato', label: 'Formato', type: 'multi-select', width: 'w-44', field: 'formato', options: FORMATO_OPTIONS },
+  { id: 'servicios', label: 'Servicios', type: 'multi-select', width: 'w-56', field: 'servicios', options: SERVICIOS_OPTIONS },
+  { id: 'cantidadEpisodios', label: 'Cantidad Episodios', type: 'number', width: 'w-28', field: 'cantidadEpisodios' },
+  { id: 'entregaFinalScriptItems', label: 'Entrega Final - Script y Dubcard', type: 'multi-select', width: 'w-80', field: 'entregaFinalScriptItems', options: ENTREGA_FINAL_SCRIPT_OPTIONS },
+  { id: 'entregaFinalDubAudioItems', label: 'Entrega Final - Dub Audio', type: 'multi-select', width: 'w-80', field: 'entregaFinalDubAudioItems', options: ENTREGA_FINAL_DUB_AUDIO_OPTIONS },
+  { id: 'traductor', label: 'Traductor', type: 'person', width: 'w-28', field: 'traductor' },
+  { id: 'adaptador', label: 'Adaptador', type: 'person', width: 'w-28', field: 'adaptador' },
+  { id: 'mixerBogota', label: 'Mixer Bogota', type: 'person', width: 'w-28', field: 'mixerBogota' },
+  { id: 'mixerMiami', label: 'Mixer Miami', type: 'person', width: 'w-28', field: 'mixerMiami' },
+  { id: 'qcMix', label: 'QC Mix', type: 'person', width: 'w-28', field: 'qcMix' },
 ];

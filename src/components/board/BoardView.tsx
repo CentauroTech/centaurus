@@ -41,6 +41,7 @@ interface BoardGroup {
 interface BoardData {
   id: string;
   workspace_id: string;
+  workspaceName?: string;
   name: string;
   is_hq: boolean;
   groups: BoardGroup[];
@@ -53,6 +54,7 @@ interface BoardViewProps {
 }
 
 function BoardViewContent({ board, boardId }: BoardViewProps) {
+  const workspaceName = board.workspaceName || '';
   const { data: currentTeamMember } = useCurrentTeamMember();
   const currentUserId = currentTeamMember?.id || null;
   const queryClient = useQueryClient();
@@ -400,6 +402,7 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                 onSendToPhase={handleSendTaskToPhase}
                 boardId={boardId}
                 boardName={board.name}
+                workspaceName={workspaceName}
               />
             );
           })}

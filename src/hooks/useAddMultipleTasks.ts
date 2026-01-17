@@ -50,6 +50,7 @@ export function useAddMultipleTasks(boardId: string) {
         rate_info: template.rate_info || null,
         rates: template.rates || null,
         studio: template.studio || null,
+        aor_needed: template.aor_needed ?? null,
         entrega_final_script_items: template.entrega_final_script_items || null,
         entrega_final_dub_audio_items: template.entrega_final_dub_audio_items || null,
         // Delivery dates

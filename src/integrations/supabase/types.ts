@@ -138,6 +138,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          is_guest_visible: boolean
           task_id: string
           updated_at: string
           user_id: string
@@ -146,6 +147,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          is_guest_visible?: boolean
           task_id: string
           updated_at?: string
           user_id: string
@@ -154,6 +156,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          is_guest_visible?: boolean
           task_id?: string
           updated_at?: string
           user_id?: string
@@ -279,8 +282,11 @@ export type Database = {
       }
       task_files: {
         Row: {
+          file_category: string
           id: string
+          is_guest_accessible: boolean
           name: string
+          phase: string | null
           size: number
           task_id: string
           type: string
@@ -289,8 +295,11 @@ export type Database = {
           url: string
         }
         Insert: {
+          file_category?: string
           id?: string
+          is_guest_accessible?: boolean
           name: string
+          phase?: string | null
           size?: number
           task_id: string
           type?: string
@@ -299,8 +308,11 @@ export type Database = {
           url: string
         }
         Update: {
+          file_category?: string
           id?: string
+          is_guest_accessible?: boolean
           name?: string
+          phase?: string | null
           size?: number
           task_id?: string
           type?: string
@@ -443,9 +455,11 @@ export type Database = {
           branch: string
           cantidad_episodios: number | null
           client_name: string | null
+          completed_at: string | null
           created_at: string
           date_assigned: string | null
           date_delivered: string | null
+          delivery_comment: string | null
           director_id: string | null
           dont_use_end: string | null
           dont_use_start: string | null
@@ -463,6 +477,7 @@ export type Database = {
           formato: string[] | null
           genre: string | null
           group_id: string
+          guest_due_date: string | null
           hq: string | null
           id: string
           is_private: boolean
@@ -484,6 +499,7 @@ export type Database = {
           servicios: string[] | null
           show_guide: string | null
           sort_order: number
+          started_at: string | null
           status: string
           studio: string | null
           target_language: string | null
@@ -499,9 +515,11 @@ export type Database = {
           branch: string
           cantidad_episodios?: number | null
           client_name?: string | null
+          completed_at?: string | null
           created_at?: string
           date_assigned?: string | null
           date_delivered?: string | null
+          delivery_comment?: string | null
           director_id?: string | null
           dont_use_end?: string | null
           dont_use_start?: string | null
@@ -519,6 +537,7 @@ export type Database = {
           formato?: string[] | null
           genre?: string | null
           group_id: string
+          guest_due_date?: string | null
           hq?: string | null
           id?: string
           is_private?: boolean
@@ -540,6 +559,7 @@ export type Database = {
           servicios?: string[] | null
           show_guide?: string | null
           sort_order?: number
+          started_at?: string | null
           status?: string
           studio?: string | null
           target_language?: string | null
@@ -555,9 +575,11 @@ export type Database = {
           branch?: string
           cantidad_episodios?: number | null
           client_name?: string | null
+          completed_at?: string | null
           created_at?: string
           date_assigned?: string | null
           date_delivered?: string | null
+          delivery_comment?: string | null
           director_id?: string | null
           dont_use_end?: string | null
           dont_use_start?: string | null
@@ -575,6 +597,7 @@ export type Database = {
           formato?: string[] | null
           genre?: string | null
           group_id?: string
+          guest_due_date?: string | null
           hq?: string | null
           id?: string
           is_private?: boolean
@@ -596,6 +619,7 @@ export type Database = {
           servicios?: string[] | null
           show_guide?: string | null
           sort_order?: number
+          started_at?: string | null
           status?: string
           studio?: string | null
           target_language?: string | null
@@ -648,18 +672,21 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_system_workspace: boolean
           name: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
+          is_system_workspace?: boolean
           name: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
+          is_system_workspace?: boolean
           name?: string
           updated_at?: string
         }

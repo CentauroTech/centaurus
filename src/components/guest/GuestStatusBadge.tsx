@@ -37,15 +37,17 @@ export function GuestStatusBadge({
     status === 'done' ? 'done' : 
     status === 'working' ? 'working' : 'default';
 
+  const isDone = normalizedStatus === 'done';
+
   // Check if delayed (past due date and not done)
   const isDelayed = guestDueDate && 
-    normalizedStatus !== 'done' && 
+    !isDone && 
     new Date(guestDueDate) < new Date();
 
   const config = STATUS_CONFIG[normalizedStatus];
 
   // If status is done, disable dropdown
-  const isDisabled = disabled || normalizedStatus === 'done';
+  const isDisabled = disabled || isDone;
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -63,7 +65,7 @@ export function GuestStatusBadge({
             {isDelayed ? 'Delayed' : config.label}
           </span>
           {!isDisabled && <ChevronDown className="w-3.5 h-3.5" />}
-          {normalizedStatus === 'done' && <Check className="w-3.5 h-3.5" />}
+          {isDone && <Check className="w-3.5 h-3.5" />}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[180px]">

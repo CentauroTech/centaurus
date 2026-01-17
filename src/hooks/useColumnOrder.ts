@@ -97,10 +97,16 @@ export function useColumnOrder(boardId: string, workspaceName: string) {
       const newIndex = prev.order.indexOf(overId);
       
       if (oldIndex === -1 || newIndex === -1) return prev;
+      if (oldIndex === newIndex) return prev;
+      
+      // First 3 columns (indices 0, 1, 2 in order) are sticky and shouldn't be moved
+      if (oldIndex <= 2 || newIndex <= 2) return prev;
       
       const newOrder = [...prev.order];
       newOrder.splice(oldIndex, 1);
       newOrder.splice(newIndex, 0, activeId);
+      
+      console.log('Column reorder:', { activeId, overId, oldIndex, newIndex, newOrder });
       
       return { ...prev, order: newOrder };
     });

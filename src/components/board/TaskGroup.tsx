@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, MoreHorizontal } from 'lucide-react';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { horizontalListSortingStrategy, SortableContext } from '@dnd-kit/sortable';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragOverlay } from '@dnd-kit/core';
+import { horizontalListSortingStrategy, SortableContext, arrayMove } from '@dnd-kit/sortable';
+import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
 import { cn } from '@/lib/utils';
 import { TaskGroup as TaskGroupType, Task, ColumnConfig } from '@/types/board';
 import { TaskRow } from './TaskRow';
@@ -53,6 +54,7 @@ export function TaskGroup({
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    console.log('Drag end event:', { active: active?.id, over: over?.id });
     if (over && active.id !== over.id) {
       onReorderColumns(active.id as string, over.id as string);
     }
@@ -123,6 +125,7 @@ export function TaskGroup({
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
+            modifiers={[restrictToHorizontalAxis]}
           >
             <table className="w-full">
               <thead className="sticky top-0 z-30">

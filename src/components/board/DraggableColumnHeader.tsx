@@ -3,6 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 import { GripVertical } from 'lucide-react';
 import { ColumnConfig } from '@/types/board';
+import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
 
 interface DraggableColumnHeaderProps {
   column: ColumnConfig;

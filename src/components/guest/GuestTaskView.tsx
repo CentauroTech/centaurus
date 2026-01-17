@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Send, Clock, Calendar, FileText, Upload, MessageSquare, CheckCircle } from 'lucide-react';
+import { Send, Clock, Calendar, FileText, MessageSquare, CheckCircle, Download, ExternalLink } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +13,7 @@ import { useUpdateGuestTask, useCompleteGuestTask } from '@/hooks/useGuestTasks'
 import { useComments, useAddComment } from '@/hooks/useComments';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useTeamMembers } from '@/hooks/useWorkspaces';
+import { useTaskFiles, FILE_CATEGORIES } from '@/hooks/useTaskFiles';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -31,9 +32,21 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
   const { data: currentMember } = useCurrentTeamMember();
   const { data: teamMembers } = useTeamMembers();
   const { data: comments, isLoading: commentsLoading } = useComments(task.id, isOpen);
+  const { data: taskFiles, isLoading: filesLoading } = useTaskFiles(task.id, isOpen);
   const updateTask = useUpdateGuestTask();
   const completeTask = useCompleteGuestTask();
   const addComment = useAddComment(task.id, '');
+
+  // Filter to only guest-accessible files
+  const guestFiles = taskFiles?.filter(f => f.is_guest_accessible) || [];
+  
+  // Group files by category
+  const filesByCategory = guestFiles.reduce((acc, file) => {
+    const category = file.file_category || 'general';
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(file);
+    return acc;
+  }, {} as Record<string, typeof guestFiles>);
 
   const handleStatusChange = async (status: 'default' | 'working' | 'done') => {
     if (status === 'done') {
@@ -306,11 +319,68 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
 
           <TabsContent value="files" className="flex-1 m-0 overflow-hidden">
             <ScrollArea className="h-full p-4">
-              <div className="text-center py-8 text-muted-foreground">
-                <FileText className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                <p className="text-sm">No files available</p>
-                <p className="text-xs mt-1">Files shared by the team will appear here</p>
-              </div>
+              {filesLoading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Loading files...
+                </div>
+              ) : guestFiles.length > 0 ? (
+                <div className="space-y-6">
+                  {FILE_CATEGORIES.map(cat => {
+                    const categoryFiles = filesByCategory[cat.value];
+                    if (!categoryFiles?.length) return null;
+                    
+                    return (
+                      <div key={cat.value}>
+                        <h4 className="text-sm font-medium mb-2 text-muted-foreground">{cat.label}</h4>
+                        <div className="space-y-2">
+                          {categoryFiles.map(file => (
+                            <div 
+                              key={file.id}
+                              className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/50"
+                            >
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium truncate">{file.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {(file.size / 1024).toFixed(1)} KB
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => window.open(file.url, '_blank')}
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  asChild
+                                >
+                                  <a href={file.url} download={file.name}>
+                                    <Download className="w-4 h-4" />
+                                  </a>
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                  <p className="text-sm">No files available</p>
+                  <p className="text-xs mt-1">Files shared by the team will appear here</p>
+                </div>
+              )}
             </ScrollArea>
           </TabsContent>
         </Tabs>

@@ -24,6 +24,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 import { useBulkEdit } from '@/contexts/BulkEditContext';
 import { useTaskViewers, useUpdateTaskViewers } from '@/hooks/useTaskViewers';
+import { useSendGuestAssignmentNotification } from '@/hooks/useGuestNotifications';
 import { mockUsers } from '@/data/mockData';
 
 interface TaskRowProps {
@@ -109,12 +110,26 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, workspac
   // Task viewers for privacy feature
   const { data: viewerIds = [] } = useTaskViewers(task.id);
   const updateViewersMutation = useUpdateTaskViewers(boardId || '');
+  const sendGuestNotification = useSendGuestAssignmentNotification();
 
   const commentCount = task.commentCount || 0;
   const isTaskSelected = isSelected(task.id);
   
   const handleViewersChange = (newViewerIds: string[]) => {
+    // Find newly added viewers (not in current viewerIds)
+    const addedViewerIds = newViewerIds.filter(id => !viewerIds.includes(id));
+    
+    // Update viewers
     updateViewersMutation.mutate({ taskId: task.id, viewerIds: newViewerIds });
+    
+    // Send notifications to newly added guests
+    if (addedViewerIds.length > 0) {
+      sendGuestNotification.mutate({
+        taskId: task.id,
+        taskName: task.name || 'Untitled Task',
+        guestIds: addedViewerIds,
+      });
+    }
   };
 
   const handleRoleAssignments = (assignments: RoleAssignment[]) => {

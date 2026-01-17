@@ -365,14 +365,21 @@ export function MultipleWODialog({
     }
   };
 
+  // Only these people can be assigned as Project Manager
+  const APPROVED_PM_NAMES = ['ana otto', 'william rozo', 'jill martinez', 'julio neri', 'cristiano ronaldo'];
+  
   const fetchProjectManagers = async () => {
     const { data } = await supabase
       .from('team_members')
       .select('id, name, initials, color, role')
-      .eq('role', 'project_manager');
+      .order('name');
 
     if (data) {
-      setProjectManagers(data);
+      // Filter to only approved PMs
+      const approvedPMs = data.filter(m => 
+        APPROVED_PM_NAMES.includes(m.name.toLowerCase())
+      );
+      setProjectManagers(approvedPMs);
     }
   };
 

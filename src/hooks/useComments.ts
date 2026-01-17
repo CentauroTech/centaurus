@@ -46,8 +46,9 @@ export function useAddComment(taskId: string, boardId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ content, userId }: { content: string; userId: string }) => {
-      const { data, error } = await supabase
+    mutationFn: async ({ content, userId, mentionedUserIds = [] }: { content: string; userId: string; mentionedUserIds?: string[] }) => {
+      // Insert the comment
+      const { data: comment, error } = await supabase
         .from('comments')
         .insert({
           task_id: taskId,
@@ -58,7 +59,25 @@ export function useAddComment(taskId: string, boardId: string) {
         .single();
 
       if (error) throw error;
-      return data;
+
+      // Insert mentions to trigger notifications
+      if (mentionedUserIds.length > 0) {
+        const mentionInserts = mentionedUserIds.map(mentionedUserId => ({
+          comment_id: comment.id,
+          mentioned_user_id: mentionedUserId,
+        }));
+
+        const { error: mentionError } = await supabase
+          .from('comment_mentions')
+          .insert(mentionInserts);
+
+        if (mentionError) {
+          console.error('Failed to insert mentions:', mentionError);
+          // Don't throw - comment was still created successfully
+        }
+      }
+
+      return comment;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', taskId] });

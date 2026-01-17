@@ -65,6 +65,7 @@ export interface TaskTemplate {
   rate_info?: string;
   rates?: number;
   studio?: string;
+  aor_needed?: boolean;
   entrega_final_script_items?: string[];
   entrega_final_dub_audio_items?: string[];
   // Delivery dates
@@ -95,6 +96,7 @@ const FIELD_TO_TEMPLATE_KEY: Record<string, keyof TaskTemplate> = {
   rateInfo: 'rate_info',
   rates: 'rates',
   studio: 'studio',
+  aorNeeded: 'aor_needed',
   entregaFinalScriptItems: 'entrega_final_script_items',
   entregaFinalDubAudioItems: 'entrega_final_dub_audio_items',
   // Delivery dates
@@ -126,7 +128,7 @@ const getOptionsForField = (fieldId: string): string[] => {
 
 // Columns that can be set as template fields (exclude system/auto fields)
 const TEMPLATE_COLUMNS = COLUMNS.filter(col => 
-  !['isPrivate', 'name', 'status', 'lastUpdated', 'currentPhase', 'people', 'dateAssigned', 'dateDelivered', 'phaseDueDate', 'premixRetakeList', 'mixRetakeList', 'projectManager', 'director', 'tecnico', 'qc1', 'qcRetakes', 'mixerBogota', 'mixerMiami', 'qcMix', 'traductor', 'adaptador', 'aorNeeded', 'aorComplete', 'dontUseStart', 'dontUseEnd', 'linkToColHQ', 'hq', 'workOrderNumber', 'cantidadEpisodios'].includes(col.id)
+  !['isPrivate', 'name', 'status', 'lastUpdated', 'currentPhase', 'people', 'dateAssigned', 'dateDelivered', 'phaseDueDate', 'premixRetakeList', 'mixRetakeList', 'projectManager', 'director', 'tecnico', 'qc1', 'qcRetakes', 'mixerBogota', 'mixerMiami', 'qcMix', 'traductor', 'adaptador', 'aorComplete', 'dontUseStart', 'dontUseEnd', 'linkToColHQ', 'hq', 'workOrderNumber', 'cantidadEpisodios'].includes(col.id)
 );
 
 // Group template columns by category
@@ -141,7 +143,7 @@ const COLUMN_CATEGORIES = {
   },
   production: {
     label: 'Production Details',
-    columns: TEMPLATE_COLUMNS.filter(c => ['servicios', 'formato', 'studio', 'pruebaDeVoz'].includes(c.id)),
+    columns: TEMPLATE_COLUMNS.filter(c => ['servicios', 'formato', 'studio', 'pruebaDeVoz', 'aorNeeded'].includes(c.id)),
   },
   content: {
     label: 'Content Info',
@@ -400,17 +402,17 @@ export function MultipleWODialog({
     }
   };
 
-  const updateTemplate = (fieldId: string, value: string | string[] | number | undefined) => {
+  const updateTemplate = (fieldId: string, value: string | string[] | number | boolean | undefined) => {
     const templateKey = FIELD_TO_TEMPLATE_KEY[fieldId];
     if (templateKey) {
       setTemplate(prev => ({ ...prev, [templateKey]: value }));
     }
   };
 
-  const getTemplateValue = (fieldId: string): string | string[] | number | undefined => {
+  const getTemplateValue = (fieldId: string): string | string[] | number | boolean | undefined => {
     const templateKey = FIELD_TO_TEMPLATE_KEY[fieldId];
     if (templateKey) {
-      return template[templateKey];
+      return template[templateKey] as string | string[] | number | boolean | undefined;
     }
     return undefined;
   };
@@ -478,6 +480,22 @@ export function MultipleWODialog({
             onChange={(e) => updateTemplate(column.id, e.target.value || undefined)}
             className="h-8 text-xs"
           />
+        );
+
+      case 'boolean':
+        return (
+          <Select 
+            value={value === true ? 'yes' : value === false ? 'no' : ''} 
+            onValueChange={(val) => updateTemplate(column.id, val === 'yes' ? true : val === 'no' ? false : undefined)}
+          >
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Select..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="yes">Yes</SelectItem>
+              <SelectItem value="no">No</SelectItem>
+            </SelectContent>
+          </Select>
         );
 
       case 'text':

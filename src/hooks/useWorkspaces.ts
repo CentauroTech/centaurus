@@ -64,6 +64,16 @@ export function useBoard(boardId: string | null) {
       if (boardError) throw boardError;
       if (!board) return null;
 
+      // Fetch workspace name
+      const { data: workspace, error: wsError } = await supabase
+        .from('workspaces')
+        .select('name')
+        .eq('id', board.workspace_id)
+        .maybeSingle();
+      
+      if (wsError) throw wsError;
+      const workspaceName = workspace?.name || '';
+
       // Fetch team members to map person fields
       const { data: teamMembers, error: teamError } = await supabase
         .from('team_members')
@@ -178,6 +188,7 @@ export function useBoard(boardId: string | null) {
 
         return {
           ...board,
+          workspaceName,
           teamMemberMap,
           groups: virtualGroups,
           isHqView: true,
@@ -235,6 +246,7 @@ export function useBoard(boardId: string | null) {
 
       return {
         ...board,
+        workspaceName,
         teamMemberMap,
         groups: groups.map((g) => ({
           ...g,

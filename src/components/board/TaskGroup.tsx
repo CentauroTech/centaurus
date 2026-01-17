@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { TaskGroup as TaskGroupType, Task, COLUMNS } from '@/types/board';
+import { TaskGroup as TaskGroupType, Task, COLUMNS, COLUMNS_COLOMBIA, ColumnConfig } from '@/types/board';
 import { TaskRow } from './TaskRow';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
@@ -15,6 +15,7 @@ interface TaskGroupProps {
   onSendToPhase?: (taskId: string, phase: string) => void;
   boardId?: string;
   boardName?: string;
+  workspaceName?: string;
 }
 
 export function TaskGroup({ 
@@ -26,10 +27,14 @@ export function TaskGroup({
   onSendToPhase,
   boardId,
   boardName,
+  workspaceName,
 }: TaskGroupProps) {
   const [isCollapsed, setIsCollapsed] = useState(group.isCollapsed ?? false);
   const [groupName, setGroupName] = useState(group.name);
   const { selectedTaskIds, selectAll, clearSelection } = useTaskSelection();
+  
+  // Select columns based on workspace
+  const columns: ColumnConfig[] = workspaceName === 'Colombia' ? COLUMNS_COLOMBIA : COLUMNS;
 
   const handleNameBlur = () => {
     if (groupName !== group.name) {
@@ -104,13 +109,15 @@ export function TaskGroup({
                   />
                 </th>
                 <th className="w-8 sticky left-8 bg-slate-100 z-40" />
-                {COLUMNS.map((column, index) => {
-                  // Make privacy (index 0) and name (index 1) columns sticky
-                  const isSticky = index <= 1;
+                {columns.map((column, index) => {
+                  // Make privacy (index 0), WO# (index 1), and name (index 2) columns sticky
+                  const isSticky = index <= 2;
                   const leftOffset = isSticky 
                     ? index === 0 
                       ? 64  // after checkbox + drag
-                      : 96  // after checkbox + drag + privacy
+                      : index === 1
+                        ? 96  // after checkbox + drag + privacy (64 + 32)
+                        : 224  // after checkbox + drag + privacy + WO# (64 + 32 + 128)
                     : undefined;
                   
                   return (
@@ -120,7 +127,7 @@ export function TaskGroup({
                         "py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap bg-slate-100",
                         column.width,
                         isSticky && "sticky z-40",
-                        index === 1 && "border-r-2 border-slate-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                        index === 2 && "border-r-2 border-slate-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
                       )}
                       style={isSticky ? { left: leftOffset } : undefined}
                     >
@@ -140,6 +147,7 @@ export function TaskGroup({
                   onDelete={() => onDeleteTask(task.id)}
                   boardId={boardId}
                   boardName={boardName}
+                  workspaceName={workspaceName}
                   onSendToPhase={onSendToPhase ? (phase) => onSendToPhase(task.id, phase) : undefined}
                 />
               ))}

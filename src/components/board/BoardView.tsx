@@ -25,6 +25,7 @@ import {
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useAddMultipleTasks } from '@/hooks/useAddMultipleTasks';
 import { useColumnOrder } from '@/hooks/useColumnOrder';
+import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { User } from '@/types/board';
@@ -61,6 +62,9 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
   const currentUserId = currentTeamMember?.id || null;
   const queryClient = useQueryClient();
   const [isMultipleWODialogOpen, setIsMultipleWODialogOpen] = useState(false);
+  
+  // Permissions
+  const { isAdmin, canReorderColumns, canCreateGroups, canDeleteTasks } = usePermissions();
   
   // Column order management
   const { columns, isLocked, reorderColumns, toggleLock, resetOrder } = useColumnOrder(boardId, workspaceName);
@@ -211,38 +215,42 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Column Lock/Unlock */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                onClick={toggleLock} 
-                size="sm" 
-                variant={isLocked ? "default" : "outline"}
-                className="gap-2"
-              >
-                {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-                {isLocked ? 'Locked' : 'Unlocked'}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {isLocked ? 'Click to unlock column reordering' : 'Click to lock column order'}
-            </TooltipContent>
-          </Tooltip>
-          
-          {!isLocked && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  onClick={resetOrder} 
-                  size="sm" 
-                  variant="ghost"
-                  className="gap-2"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Reset to default column order</TooltipContent>
-            </Tooltip>
+          {/* Column Lock/Unlock - Admin only */}
+          {isAdmin && (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    onClick={toggleLock} 
+                    size="sm" 
+                    variant={isLocked ? "default" : "outline"}
+                    className="gap-2"
+                  >
+                    {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                    {isLocked ? 'Locked' : 'Unlocked'}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isLocked ? 'Click to unlock column reordering' : 'Click to lock column order'}
+                </TooltipContent>
+              </Tooltip>
+              
+              {!isLocked && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={resetOrder} 
+                      size="sm" 
+                      variant="ghost"
+                      className="gap-2"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reset to default column order</TooltipContent>
+                </Tooltip>
+              )}
+            </>
           )}
 
           {isKickoffBoard && (
@@ -256,10 +264,12 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
               Multiple WO
             </Button>
           )}
-          <Button onClick={addGroup} size="sm" className="gap-2" disabled={addTaskGroupMutation.isPending}>
-            <Plus className="w-4 h-4" />
-            New Group
-          </Button>
+          {canCreateGroups && (
+            <Button onClick={addGroup} size="sm" className="gap-2" disabled={addTaskGroupMutation.isPending}>
+              <Plus className="w-4 h-4" />
+              New Group
+            </Button>
+          )}
         </div>
       </div>
 
@@ -444,8 +454,9 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                 boardName={board.name}
                 workspaceName={workspaceName}
                 columns={columns}
-                isLocked={isLocked}
-                onReorderColumns={reorderColumns}
+                isLocked={isLocked || !canReorderColumns}
+                onReorderColumns={canReorderColumns ? reorderColumns : () => {}}
+                canDeleteTasks={canDeleteTasks}
               />
             );
           })}

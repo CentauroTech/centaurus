@@ -23,6 +23,7 @@ interface TaskGroupProps {
   columns: ColumnConfig[];
   isLocked: boolean;
   onReorderColumns: (activeId: string, overId: string) => void;
+  canDeleteTasks?: boolean;
 }
 
 export function TaskGroup({ 
@@ -38,6 +39,7 @@ export function TaskGroup({
   columns,
   isLocked,
   onReorderColumns,
+  canDeleteTasks = true,
 }: TaskGroupProps) {
   const [isCollapsed, setIsCollapsed] = useState(group.isCollapsed ?? false);
   const [groupName, setGroupName] = useState(group.name);
@@ -161,7 +163,7 @@ export function TaskGroup({
                     key={task.id}
                     task={task}
                     onUpdate={(updates) => onUpdateTask(task.id, updates)}
-                    onDelete={() => onDeleteTask(task.id)}
+                    onDelete={canDeleteTasks ? () => onDeleteTask(task.id) : undefined}
                     boardId={boardId}
                     boardName={boardName}
                     workspaceName={workspaceName}

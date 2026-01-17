@@ -27,7 +27,7 @@ import { mockUsers } from '@/data/mockData';
 interface TaskRowProps {
   task: Task;
   onUpdate: (updates: Partial<Task>) => void;
-  onDelete: () => void;
+  onDelete?: () => void;
   boardId?: string;
   boardName?: string;
   workspaceName?: string;
@@ -444,12 +444,14 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, workspac
 
         {/* Actions */}
         <td className="py-0.5 px-1.5 w-10">
-          <button
-            onClick={onDelete}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 transition-smooth"
-          >
-            <Trash2 className="w-4 h-4 text-destructive" />
-          </button>
+          {onDelete && (
+            <button
+              onClick={onDelete}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 transition-smooth"
+            >
+              <Trash2 className="w-4 h-4 text-destructive" />
+            </button>
+          )}
         </td>
       </tr>
 

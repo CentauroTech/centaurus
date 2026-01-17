@@ -413,16 +413,16 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, workspac
 
         {/* Dynamic Columns */}
         {columns.map((column, index) => {
-          // Make privacy (index 0), WO# (index 1), and name (index 2) columns sticky
+          // Make privacy (index 0), name (index 1), and WO# (index 2) columns sticky
           const isSticky = index <= 2;
           // Calculate left offset: checkbox (32px) + drag handle (32px) + previous sticky columns
-          // privacy (w-8 = 32px), WO# (w-32 = 128px), name (w-56 = 224px)
+          // privacy (w-8 = 32px), name (w-56 = 224px), WO# (w-32 = 128px)
           const leftOffset = isSticky 
             ? index === 0 
               ? 64  // after checkbox + drag
               : index === 1
                 ? 96  // after checkbox + drag + privacy (64 + 32)
-                : 224  // after checkbox + drag + privacy + WO# (64 + 32 + 128)
+                : 320  // after checkbox + drag + privacy + name (64 + 32 + 224)
             : undefined;
           
           return (

@@ -29,14 +29,14 @@ export function DraggableColumnHeader({ column, index, isLocked }: DraggableColu
     transition,
   };
 
-  // Make first 3 columns (privacy, WO#, name) sticky
+  // Make first 3 columns (privacy, name, WO#) sticky
   const isSticky = index <= 2;
   const leftOffset = isSticky 
     ? index === 0 
       ? 64  // after checkbox + drag
       : index === 1
         ? 96  // after checkbox + drag + privacy (64 + 32)
-        : 224  // after checkbox + drag + privacy + WO# (64 + 32 + 128)
+        : 320  // after checkbox + drag + privacy + name (64 + 32 + 224)
     : undefined;
 
   return (

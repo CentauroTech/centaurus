@@ -683,6 +683,7 @@ export type Database = {
         Returns: string
       }
       current_team_member_id: { Args: never; Returns: string }
+      is_centauro_member: { Args: never; Returns: boolean }
       is_guest: { Args: never; Returns: boolean }
       is_project_manager: { Args: never; Returns: boolean }
       is_team_member: { Args: never; Returns: boolean }

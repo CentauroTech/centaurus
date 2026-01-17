@@ -145,7 +145,7 @@ serve(async (req) => {
     console.log("Sending email to:", recipient.email);
 
     const { data: emailResult, error: emailError } = await resend.emails.send({
-      from: "Centaurus <onboarding@resend.dev>",
+      from: "Centaurus <notifications@inshakafilms.com>",
       to: [recipient.email],
       subject,
       html: htmlContent,

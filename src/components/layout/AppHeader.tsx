@@ -1,13 +1,16 @@
-import { Bell, Search, ChevronDown, LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { Search, ChevronDown, LogOut, Settings } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { NotificationSettings } from '@/components/notifications/NotificationSettings';
 
 interface AppHeaderProps {
   boardName: string;
@@ -15,6 +18,7 @@ interface AppHeaderProps {
 
 export function AppHeader({ boardName }: AppHeaderProps) {
   const { user, signOut } = useAuth();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   
   const userInitials = user?.email?.substring(0, 2).toUpperCase() || 'U';
 
@@ -40,9 +44,7 @@ export function AppHeader({ boardName }: AppHeaderProps) {
           />
         </div>
         
-        <Button variant="ghost" size="icon" className="text-muted-foreground">
-          <Bell className="w-5 h-5" />
-        </Button>
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -54,12 +56,20 @@ export function AppHeader({ boardName }: AppHeaderProps) {
             <DropdownMenuItem className="text-xs text-muted-foreground cursor-default">
               {user?.email}
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+              <Settings className="mr-2 h-4 w-4" />
+              Notification Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <NotificationSettings open={settingsOpen} onOpenChange={setSettingsOpen} />
       </div>
     </header>
   );

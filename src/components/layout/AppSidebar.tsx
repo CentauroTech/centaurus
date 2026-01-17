@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Home, Search, Plus, Settings, HelpCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronDown, ChevronRight, Home, Search, Plus, Settings, HelpCircle, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkspaceWithBoards } from '@/hooks/useWorkspaces';
+import { useUnreadNotificationCount } from '@/hooks/useNotifications';
 import centaurusLogo from '@/assets/centaurus-logo.jpeg';
 
 interface AppSidebarProps {
@@ -11,6 +13,8 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ workspaces, selectedBoardId, onSelectBoard }: AppSidebarProps) {
+  const navigate = useNavigate();
+  const unreadCount = useUnreadNotificationCount();
   const [expandedWorkspaces, setExpandedWorkspaces] = useState<string[]>(() => 
     workspaces.length > 0 ? [workspaces[0].id] : []
   );
@@ -49,6 +53,12 @@ export function AppSidebar({ workspaces, selectedBoardId, onSelectBoard }: AppSi
       <nav className="flex-1 overflow-y-auto custom-scrollbar px-2">
         <div className="space-y-1 mb-4">
           <SidebarItem icon={<Home className="w-4 h-4" />} label="Home" />
+          <SidebarItem 
+            icon={<Inbox className="w-4 h-4" />} 
+            label="Inbox" 
+            badge={unreadCount > 0 ? unreadCount : undefined}
+            onClick={() => navigate('/notifications')}
+          />
           <SidebarItem icon={<Plus className="w-4 h-4" />} label="New Board" />
         </div>
 
@@ -83,11 +93,13 @@ function SidebarItem({
   icon, 
   label, 
   isActive = false,
+  badge,
   onClick 
 }: { 
   icon: React.ReactNode; 
   label: string; 
   isActive?: boolean;
+  badge?: number;
   onClick?: () => void;
 }) {
   return (
@@ -101,7 +113,12 @@ function SidebarItem({
       )}
     >
       {icon}
-      <span>{label}</span>
+      <span className="flex-1 text-left">{label}</span>
+      {badge !== undefined && badge > 0 && (
+        <span className="min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-medium">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
     </button>
   );
 }

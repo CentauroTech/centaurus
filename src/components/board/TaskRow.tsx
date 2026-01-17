@@ -18,6 +18,7 @@ import { FileUploadCell } from './cells/FileUploadCell';
 import { LastUpdatedCell } from './cells/LastUpdatedCell';
 import { PrivacyCell, RoleAssignment } from './cells/PrivacyCell';
 import { MultiSelectCell } from './cells/MultiSelectCell';
+import { ProjectManagerCell } from './cells/ProjectManagerCell';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 import { useBulkEdit } from '@/contexts/BulkEditContext';
@@ -239,6 +240,16 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, workspac
           />
         );
       case 'person':
+        // Use ProjectManagerCell for project manager field
+        if (column.field === 'projectManager') {
+          return (
+            <ProjectManagerCell
+              owner={value as User}
+              onOwnerChange={(val) => handleUpdate(column.field, val)}
+            />
+          );
+        }
+        // Use regular OwnerCell for other person fields
         return (
           <OwnerCell
             owner={value as User}

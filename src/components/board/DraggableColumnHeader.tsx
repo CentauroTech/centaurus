@@ -47,10 +47,10 @@ export function DraggableColumnHeader({ column, index, isLocked }: DraggableColu
         left: isSticky ? leftOffset : undefined,
       }}
       className={cn(
-        "py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap bg-slate-100 group/header",
+        "py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap bg-slate-100 group/header border-r border-border/50",
         column.width,
         isSticky && "sticky z-40",
-        index === 2 && "border-r-2 border-slate-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]",
+        index === 2 && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]",
         isDragging && "opacity-50 bg-slate-200",
         !isLocked && !isSticky && "cursor-grab active:cursor-grabbing"
       )}

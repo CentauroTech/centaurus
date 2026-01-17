@@ -74,6 +74,34 @@ export function useAddComment(taskId: string, boardId: string) {
         if (mentionError) {
           console.error('Failed to insert mentions:', mentionError);
           // Don't throw - comment was still created successfully
+        } else {
+          // Manually trigger email notifications for each mention
+          // since pg_net isn't available on this project
+          for (const mentionedUserId of mentionedUserIds) {
+            try {
+              // Get task info for the notification
+              const { data: task } = await supabase
+                .from('tasks')
+                .select('id, name')
+                .eq('id', taskId)
+                .single();
+
+              await supabase.functions.invoke('send-notification-email', {
+                body: {
+                  notification_id: null, // We don't have the notification ID yet
+                  user_id: mentionedUserId,
+                  type: 'mention',
+                  task_id: taskId,
+                  triggered_by_id: userId,
+                  title: 'You were mentioned in a comment',
+                  message: `"${content.substring(0, 100)}${content.length > 100 ? '...' : ''}"`,
+                },
+              });
+            } catch (emailError) {
+              console.error('Failed to send notification email:', emailError);
+              // Don't throw - comment and mention were still created
+            }
+          }
         }
       }
 

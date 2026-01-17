@@ -59,11 +59,11 @@ const CATEGORY_TO_FIELD: Record<FilterCategory, string | null> = {
 
 const FILTER_CATEGORIES: { key: FilterCategory; label: string; names: string[] }[] = [
   { key: 'all', label: 'All', names: [] },
-  { key: 'translators', label: 'Translators', names: ['Marina', 'Leandra', 'Zana', 'Fabio', 'Natalia', 'William', 'Pequerrecho'] },
-  { key: 'adapters', label: 'Adapters', names: ['Ethan', 'John', 'Jennyfer', 'Marina', 'Leandra', 'Zana', 'Pequerrecho', 'Fabio', 'Natalia', 'William'] },
-  { key: 'mixers', label: 'Mixers', names: ['Brazil', 'Edgar', 'Edwin', 'Fabio', 'Gonzalo', 'Joao', 'Julian', 'Chris'] },
-  { key: 'qc_premix', label: 'QC Premix', names: ['Chris'] },
-  { key: 'qc_mix', label: 'QC Mix', names: ['Brazil', 'Chris', 'Edwin', 'Joao', 'Julian', 'Willy'] },
+  { key: 'translators', label: 'Translators', names: ['Marina', 'Leandra', 'Zana', 'Fabio', 'Natalia', 'William', 'Pequerrecho', 'Cristiano'] },
+  { key: 'adapters', label: 'Adapters', names: ['Ethan', 'John', 'Jennyfer', 'Marina', 'Leandra', 'Zana', 'Pequerrecho', 'Fabio', 'Natalia', 'William', 'Cristiano'] },
+  { key: 'mixers', label: 'Mixers', names: ['Brazil', 'Edgar', 'Edwin', 'Fabio', 'Gonzalo', 'Joao', 'Julian', 'Chris', 'Cristiano'] },
+  { key: 'qc_premix', label: 'QC Premix', names: ['Chris', 'Cristiano'] },
+  { key: 'qc_mix', label: 'QC Mix', names: ['Brazil', 'Chris', 'Edwin', 'Joao', 'Julian', 'Willy', 'Cristiano'] },
 ];
 
 export function PrivacyCell({ 

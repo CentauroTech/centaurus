@@ -13,6 +13,7 @@ import {
   useMarkNotificationRead,
   useMarkAllNotificationsRead,
 } from '@/hooks/useNotifications';
+import { usePermissions } from '@/hooks/usePermissions';
 import { NotificationItem } from './NotificationItem';
 import { cn } from '@/lib/utils';
 
@@ -22,12 +23,22 @@ export function NotificationBell() {
   const unreadCount = useUnreadNotificationCount();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
+  const { role } = usePermissions();
 
   const recentNotifications = notifications?.slice(0, 10) ?? [];
 
-  const handleNotificationClick = (notification: { task_id: string | null }) => {
-    // For now, just mark as read. Later we can navigate to the task.
-    // If we have task_id, we could navigate to /?task=taskId or open the panel
+  const handleNotificationClick = (notification: { task_id: string | null; id: string }) => {
+    // Mark as read
+    markRead.mutate(notification.id);
+    
+    // Navigate based on user role
+    if (notification.task_id) {
+      if (role === 'guest') {
+        navigate(`/guest-dashboard?task=${notification.task_id}`);
+      } else {
+        navigate(`/?task=${notification.task_id}`);
+      }
+    }
   };
 
   return (

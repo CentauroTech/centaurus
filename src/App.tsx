@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Notifications from "./pages/Notifications";
+import GuestDashboard from "./pages/GuestDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,11 @@ const App = () => (
             <Route path="/" element={
               <ProtectedRoute>
                 <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="/guest-dashboard" element={
+              <ProtectedRoute>
+                <GuestDashboard />
               </ProtectedRoute>
             } />
             <Route path="/notifications" element={

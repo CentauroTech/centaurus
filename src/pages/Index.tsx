@@ -1,13 +1,28 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { BoardView } from '@/components/board/BoardView';
 import { useWorkspaces, useBoard } from '@/hooks/useWorkspaces';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const Index = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
   const { data: workspaces, isLoading: workspacesLoading } = useWorkspaces();
   const { data: currentBoard, isLoading: boardLoading } = useBoard(selectedBoardId);
+  const { role, isLoading: permissionsLoading } = usePermissions();
+
+  // Redirect guests to guest dashboard
+  useEffect(() => {
+    if (!permissionsLoading && role === 'guest') {
+      // Preserve any task query param for deep linking
+      const taskId = searchParams.get('task');
+      const redirectUrl = taskId ? `/guest-dashboard?task=${taskId}` : '/guest-dashboard';
+      navigate(redirectUrl, { replace: true });
+    }
+  }, [role, permissionsLoading, navigate, searchParams]);
 
   // Auto-select first board when workspaces load
   useEffect(() => {
@@ -19,10 +34,19 @@ const Index = () => {
     }
   }, [workspaces, selectedBoardId]);
 
-  if (workspacesLoading) {
+  if (workspacesLoading || permissionsLoading) {
     return (
       <div className="flex h-screen bg-background items-center justify-center">
         <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  // Don't render main app for guests (they'll be redirected)
+  if (role === 'guest') {
+    return (
+      <div className="flex h-screen bg-background items-center justify-center">
+        <div className="text-muted-foreground">Redirecting...</div>
       </div>
     );
   }

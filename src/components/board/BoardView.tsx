@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Filter, Users, Calendar, ListPlus } from 'lucide-react';
+import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TaskGroup } from './TaskGroup';
 import { BulkActionsToolbar } from './BulkActionsToolbar';
@@ -24,9 +24,11 @@ import {
 } from '@/hooks/useBulkTaskActions';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useAddMultipleTasks } from '@/hooks/useAddMultipleTasks';
+import { useColumnOrder } from '@/hooks/useColumnOrder';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { User } from '@/types/board';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface BoardGroup {
   id: string;
@@ -60,6 +62,9 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
   const queryClient = useQueryClient();
   const [isMultipleWODialogOpen, setIsMultipleWODialogOpen] = useState(false);
   
+  // Column order management
+  const { columns, isLocked, reorderColumns, toggleLock, resetOrder } = useColumnOrder(boardId, workspaceName);
+  
   const addTaskGroupMutation = useAddTaskGroup(boardId);
   const updateTaskGroupMutation = useUpdateTaskGroup(boardId);
   const addTaskMutation = useAddTask(boardId);
@@ -72,6 +77,7 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
   const bulkMoveMutation = useBulkMoveToPhase(boardId, currentUserId);
   const bulkUpdateFieldMutation = useBulkUpdateField(boardId, currentUserId);
   const addMultipleTasksMutation = useAddMultipleTasks(boardId);
+
 
   // Check if this is a Kickoff board
   const isKickoffBoard = board.name.toLowerCase().includes('kickoff');
@@ -205,6 +211,40 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Column Lock/Unlock */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                onClick={toggleLock} 
+                size="sm" 
+                variant={isLocked ? "default" : "outline"}
+                className="gap-2"
+              >
+                {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                {isLocked ? 'Locked' : 'Unlocked'}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isLocked ? 'Click to unlock column reordering' : 'Click to lock column order'}
+            </TooltipContent>
+          </Tooltip>
+          
+          {!isLocked && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  onClick={resetOrder} 
+                  size="sm" 
+                  variant="ghost"
+                  className="gap-2"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Reset to default column order</TooltipContent>
+            </Tooltip>
+          )}
+
           {isKickoffBoard && (
             <Button 
               onClick={() => setIsMultipleWODialogOpen(true)} 
@@ -403,6 +443,9 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                 boardId={boardId}
                 boardName={board.name}
                 workspaceName={workspaceName}
+                columns={columns}
+                isLocked={isLocked}
+                onReorderColumns={reorderColumns}
               />
             );
           })}

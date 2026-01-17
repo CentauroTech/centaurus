@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, MoreHorizontal } from 'lucide-react';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { horizontalListSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
-import { TaskGroup as TaskGroupType, Task, COLUMNS, COLUMNS_COLOMBIA, ColumnConfig } from '@/types/board';
+import { TaskGroup as TaskGroupType, Task, ColumnConfig } from '@/types/board';
 import { TaskRow } from './TaskRow';
+import { DraggableColumnHeader } from './DraggableColumnHeader';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 
@@ -16,6 +19,9 @@ interface TaskGroupProps {
   boardId?: string;
   boardName?: string;
   workspaceName?: string;
+  columns: ColumnConfig[];
+  isLocked: boolean;
+  onReorderColumns: (activeId: string, overId: string) => void;
 }
 
 export function TaskGroup({ 
@@ -28,13 +34,29 @@ export function TaskGroup({
   boardId,
   boardName,
   workspaceName,
+  columns,
+  isLocked,
+  onReorderColumns,
 }: TaskGroupProps) {
   const [isCollapsed, setIsCollapsed] = useState(group.isCollapsed ?? false);
   const [groupName, setGroupName] = useState(group.name);
   const { selectedTaskIds, selectAll, clearSelection } = useTaskSelection();
-  
-  // Select columns based on workspace
-  const columns: ColumnConfig[] = workspaceName === 'Colombia' ? COLUMNS_COLOMBIA : COLUMNS;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor)
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      onReorderColumns(active.id as string, over.id as string);
+    }
+  };
 
   const handleNameBlur = () => {
     if (groupName !== group.name) {
@@ -53,6 +75,9 @@ export function TaskGroup({
       selectAll(groupTaskIds);
     }
   };
+
+  // Column IDs for sortable context
+  const columnIds = columns.map(col => col.id);
 
   return (
     <div className="mb-6">
@@ -94,65 +119,56 @@ export function TaskGroup({
       {/* Tasks Table */}
       {!isCollapsed && (
         <div className="bg-card rounded-lg border border-border shadow-board overflow-visible animate-fade-in">
-          <table className="w-full">
-            <thead className="sticky top-0 z-30">
-              <tr className="bg-slate-100 border-b border-border shadow-sm">
-                {/* Select All Checkbox */}
-                <th className="w-8 px-2 sticky left-0 bg-slate-100 z-40">
-                  <Checkbox
-                    checked={allSelected}
-                    onCheckedChange={handleSelectAll}
-                    className={cn(
-                      "transition-smooth",
-                      someSelected && "data-[state=unchecked]:bg-primary/30"
-                    )}
-                  />
-                </th>
-                <th className="w-8 sticky left-8 bg-slate-100 z-40" />
-                {columns.map((column, index) => {
-                  // Make privacy (index 0), WO# (index 1), and name (index 2) columns sticky
-                  const isSticky = index <= 2;
-                  const leftOffset = isSticky 
-                    ? index === 0 
-                      ? 64  // after checkbox + drag
-                      : index === 1
-                        ? 96  // after checkbox + drag + privacy (64 + 32)
-                        : 224  // after checkbox + drag + privacy + WO# (64 + 32 + 128)
-                    : undefined;
-                  
-                  return (
-                    <th 
-                      key={column.id}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <table className="w-full">
+              <thead className="sticky top-0 z-30">
+                <tr className="bg-slate-100 border-b border-border shadow-sm">
+                  {/* Select All Checkbox */}
+                  <th className="w-8 px-2 sticky left-0 bg-slate-100 z-40">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={handleSelectAll}
                       className={cn(
-                        "py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap bg-slate-100",
-                        column.width,
-                        isSticky && "sticky z-40",
-                        index === 2 && "border-r-2 border-slate-200 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                        "transition-smooth",
+                        someSelected && "data-[state=unchecked]:bg-primary/30"
                       )}
-                      style={isSticky ? { left: leftOffset } : undefined}
-                    >
-                      {column.label}
-                    </th>
-                  );
-                })}
-                <th className="w-12" />
-              </tr>
-            </thead>
-            <tbody>
-              {group.tasks.map((task) => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  onUpdate={(updates) => onUpdateTask(task.id, updates)}
-                  onDelete={() => onDeleteTask(task.id)}
-                  boardId={boardId}
-                  boardName={boardName}
-                  workspaceName={workspaceName}
-                  onSendToPhase={onSendToPhase ? (phase) => onSendToPhase(task.id, phase) : undefined}
-                />
-              ))}
-            </tbody>
-          </table>
+                    />
+                  </th>
+                  <th className="w-8 sticky left-8 bg-slate-100 z-40" />
+                  <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
+                    {columns.map((column, index) => (
+                      <DraggableColumnHeader
+                        key={column.id}
+                        column={column}
+                        index={index}
+                        isLocked={isLocked}
+                      />
+                    ))}
+                  </SortableContext>
+                  <th className="w-12" />
+                </tr>
+              </thead>
+              <tbody>
+                {group.tasks.map((task) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    onUpdate={(updates) => onUpdateTask(task.id, updates)}
+                    onDelete={() => onDeleteTask(task.id)}
+                    boardId={boardId}
+                    boardName={boardName}
+                    workspaceName={workspaceName}
+                    columns={columns}
+                    onSendToPhase={onSendToPhase ? (phase) => onSendToPhase(task.id, phase) : undefined}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </DndContext>
 
           {/* Add Task Row */}
           <button

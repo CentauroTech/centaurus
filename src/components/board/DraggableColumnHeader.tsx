@@ -33,10 +33,10 @@ export function DraggableColumnHeader({ column, index, isLocked }: DraggableColu
   const isSticky = index <= 2;
   const leftOffset = isSticky 
     ? index === 0 
-      ? 64  // after checkbox + drag
+      ? 48  // after checkbox + drag
       : index === 1
-        ? 96  // after checkbox + drag + privacy (64 + 32)
-        : 320  // after checkbox + drag + privacy + name (64 + 32 + 224)
+        ? 72  // after checkbox + drag + privacy (48 + 24)
+        : 296  // after checkbox + drag + privacy + name (48 + 24 + 224)
     : undefined;
 
   return (
@@ -47,7 +47,7 @@ export function DraggableColumnHeader({ column, index, isLocked }: DraggableColu
         left: isSticky ? leftOffset : undefined,
       }}
       className={cn(
-        "py-2 px-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap bg-slate-100 group/header border-r border-border/50",
+        "py-1 px-1.5 text-left text-[10px] font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap bg-slate-100 group/header border-r border-border/50",
         column.width,
         isSticky && "sticky z-40",
         index === 2 && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]",

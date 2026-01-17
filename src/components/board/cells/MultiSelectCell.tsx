@@ -81,7 +81,7 @@ export function MultiSelectCell({
       <span
         key={item}
         className={cn(
-          "inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs rounded whitespace-nowrap font-medium",
+          "inline-flex items-center gap-0.5 px-1 py-0 text-[10px] rounded whitespace-nowrap font-medium leading-tight",
           isPrivate 
             ? "bg-white text-slate-800 border border-slate-200" 
             : "bg-amber-100 text-amber-800 border border-amber-300"
@@ -91,11 +91,11 @@ export function MultiSelectCell({
         <button
           onClick={(e) => handleRemove(item, e)}
           className={cn(
-            "rounded p-0.5 flex-shrink-0",
+            "rounded p-0 flex-shrink-0",
             isPrivate ? "hover:bg-slate-200 text-slate-600" : "hover:bg-amber-200 text-amber-700"
           )}
         >
-          <X className="w-2.5 h-2.5" />
+          <X className="w-2 h-2" />
         </button>
       </span>
     ))
@@ -105,19 +105,19 @@ export function MultiSelectCell({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={toggleOpen}
-        className="flex items-center gap-1 w-full text-left min-h-[28px]"
+        className="flex items-center gap-0.5 w-full text-left min-h-[20px]"
       >
         {value.length > 0 ? (
-          <div className="flex flex-wrap gap-1 flex-1 min-w-0">
+          <div className="flex flex-nowrap gap-0.5 flex-1 min-w-0 overflow-hidden">
             {selectedBadges}
           </div>
         ) : (
-          <span className="text-sm truncate flex-1 text-inherit opacity-60">
+          <span className="text-xs truncate flex-1 text-inherit opacity-60">
             {placeholder}
           </span>
         )}
         <ChevronDown className={cn(
-          "w-3 h-3 flex-shrink-0 text-inherit opacity-60",
+          "w-2.5 h-2.5 flex-shrink-0 text-inherit opacity-60",
           isOpen && "rotate-180"
         )} />
       </button>

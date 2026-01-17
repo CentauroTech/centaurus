@@ -131,17 +131,17 @@ export function TaskGroup({
               <thead className="sticky top-0 z-30">
                 <tr className="bg-slate-100 border-b border-border shadow-sm">
                   {/* Select All Checkbox */}
-                  <th className="w-8 px-2 sticky left-0 bg-slate-100 z-40">
+                  <th className="w-6 px-1 sticky left-0 bg-slate-100 z-40">
                     <Checkbox
                       checked={allSelected}
                       onCheckedChange={handleSelectAll}
                       className={cn(
-                        "transition-smooth",
+                        "transition-smooth h-3.5 w-3.5",
                         someSelected && "data-[state=unchecked]:bg-primary/30"
                       )}
                     />
                   </th>
-                  <th className="w-8 sticky left-8 bg-slate-100 z-40" />
+                  <th className="w-6 sticky left-6 bg-slate-100 z-40" />
                   <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
                     {columns.map((column, index) => (
                       <DraggableColumnHeader
@@ -152,7 +152,7 @@ export function TaskGroup({
                       />
                     ))}
                   </SortableContext>
-                  <th className="w-12" />
+                  <th className="w-10" />
                 </tr>
               </thead>
               <tbody>

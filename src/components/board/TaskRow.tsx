@@ -396,18 +396,18 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, workspac
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Checkbox */}
-        <td className={cn("w-8 px-1 sticky left-0 z-20", stickyBg)}>
+        <td className={cn("w-6 px-1 sticky left-0 z-20", stickyBg)}>
           <Checkbox
             checked={isTaskSelected}
             onCheckedChange={() => toggleTaskSelection(task.id)}
-            className="opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100 transition-smooth"
+            className="opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100 transition-smooth h-3.5 w-3.5"
           />
         </td>
 
         {/* Drag Handle */}
-        <td className={cn("w-8 px-1 sticky left-8 z-20", stickyBg)}>
+        <td className={cn("w-6 px-0.5 sticky left-6 z-20", stickyBg)}>
           <div className="opacity-0 group-hover:opacity-100 transition-smooth cursor-grab">
-            <GripVertical className="w-4 h-4 text-muted-foreground" />
+            <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
           </div>
         </td>
 
@@ -415,21 +415,21 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, workspac
         {columns.map((column, index) => {
           // Make privacy (index 0), name (index 1), and WO# (index 2) columns sticky
           const isSticky = index <= 2;
-          // Calculate left offset: checkbox (32px) + drag handle (32px) + previous sticky columns
-          // privacy (w-8 = 32px), name (w-56 = 224px), WO# (w-32 = 128px)
+          // Calculate left offset: checkbox (24px) + drag handle (24px) + previous sticky columns
+          // privacy (w-6 = 24px), name (w-56 = 224px), WO# (w-32 = 128px)
           const leftOffset = isSticky 
             ? index === 0 
-              ? 64  // after checkbox + drag
+              ? 48  // after checkbox + drag
               : index === 1
-                ? 96  // after checkbox + drag + privacy (64 + 32)
-                : 320  // after checkbox + drag + privacy + name (64 + 32 + 224)
+                ? 72  // after checkbox + drag + privacy (48 + 24)
+                : 296  // after checkbox + drag + privacy + name (48 + 24 + 224)
             : undefined;
           
           return (
             <td 
               key={column.id} 
               className={cn(
-                "py-1 px-2 border-r border-border/50", 
+                "py-0.5 px-1.5 border-r border-border/50", 
                 column.width,
                 isSticky && cn("sticky z-20", stickyBg),
                 index === 2 && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]",
@@ -443,7 +443,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, workspac
         })}
 
         {/* Actions */}
-        <td className="py-1 px-2 w-12">
+        <td className="py-0.5 px-1.5 w-10">
           <button
             onClick={onDelete}
             className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 transition-smooth"

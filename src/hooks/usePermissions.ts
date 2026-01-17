@@ -39,9 +39,18 @@ export function usePermissions(): Permissions {
     enabled: !!user?.email,
   });
 
-  const role = (teamMember?.role as UserRole) || null;
-  const isAdmin = role === 'admin';
-  const isProjectManager = role === 'project_manager' || isAdmin;
+  // Check if user has @centauro.com email - only they are full team members
+  const isCentauroEmail = user?.email?.toLowerCase().endsWith('@centauro.com') ?? false;
+  
+  // Non-centauro emails are always treated as guests, regardless of role column
+  const isGuest = !isCentauroEmail;
+  
+  const dbRole = (teamMember?.role as UserRole) || null;
+  // Override role to 'guest' if not a centauro email
+  const role: UserRole | null = isGuest ? 'guest' : dbRole;
+  
+  const isAdmin = !isGuest && dbRole === 'admin';
+  const isProjectManager = !isGuest && (dbRole === 'project_manager' || isAdmin);
 
   return {
     isAdmin,
@@ -56,8 +65,8 @@ export function usePermissions(): Permissions {
     canManageTeamMembers: isAdmin,
     // Project manager + admin actions
     canDeleteTasks: isProjectManager,
-    // All team members can do these
-    canEditTasks: true,
-    canMoveTasks: true,
+    // Only centauro members can freely edit/move tasks
+    canEditTasks: !isGuest,
+    canMoveTasks: !isGuest,
   };
 }

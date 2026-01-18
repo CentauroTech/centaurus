@@ -123,7 +123,7 @@ export function CommentSection({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-muted/30">
         {icon === 'team' ? (
           <Users className="w-4 h-4 text-muted-foreground" />

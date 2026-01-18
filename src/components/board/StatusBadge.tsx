@@ -52,18 +52,18 @@ export function StatusBadge({ status, onStatusChange, isKickoffPhase = false, on
   }, []);
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative h-full w-full" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "px-3 py-1.5 rounded text-xs font-medium min-w-[100px] text-center transition-smooth",
+          "h-full w-full px-2 py-1 text-xs font-medium text-center transition-smooth",
           "flex items-center justify-center gap-1",
           config.className,
           "hover:opacity-90"
         )}
       >
-        <span>{config.label}</span>
-        <ChevronDown className="w-3 h-3" />
+        <span className="truncate">{config.label}</span>
+        <ChevronDown className="w-3 h-3 flex-shrink-0" />
       </button>
 
       {isOpen && (

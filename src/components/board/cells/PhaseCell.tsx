@@ -19,7 +19,7 @@ export function PhaseCell({ phase, onPhaseChange }: PhaseCellProps) {
       <PopoverTrigger asChild>
         <button
           className={cn(
-            "px-2 py-1 rounded text-xs font-medium transition-smooth w-full text-center truncate",
+            "h-full w-full px-2 py-1 text-xs font-medium transition-smooth text-center truncate",
             config?.className || "bg-muted text-muted-foreground"
           )}
         >

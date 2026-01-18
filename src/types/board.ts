@@ -110,6 +110,8 @@ export interface Task {
   // Guest-specific fields
   guestDueDate?: Date | string;
   deliveryComment?: string;
+  // Kickoff brief
+  kickoff_brief?: string;
   createdAt: Date;
   comments?: Comment[];
   files?: TaskFile[];

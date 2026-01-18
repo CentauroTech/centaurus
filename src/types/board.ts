@@ -1,6 +1,6 @@
 export type Status = 'done' | 'launch' | 'working' | 'delayed' | 'default';
 export type Priority = 'high' | 'medium' | 'low';
-export type Phase = 'on_hold' | 'kickoff' | 'assets' | 'translation' | 'adapting' | 'casting' | 'recording' | 'premix' | 'qc_premix' | 'retakes' | 'qc_retakes' | 'mix' | 'qc_mix' | 'mix_retakes' | 'final_delivery';
+export type Phase = 'on_hold' | 'kickoff' | 'assets' | 'translation' | 'adapting' | 'casting' | 'recording' | 'premix' | 'qc_premix' | 'retakes' | 'qc_retakes' | 'client_retakes' | 'mix' | 'qc_mix' | 'mix_retakes' | 'final_delivery';
 
 export interface User {
   id: string;
@@ -157,8 +157,9 @@ export const PHASE_CONFIG: Record<Phase, { label: string; className: string }> =
   qc_premix: { label: 'QC-Premix', className: 'bg-purple-200 text-purple-800' },
   retakes: { label: 'Retakes', className: 'bg-purple-600 text-white' },
   qc_retakes: { label: 'QC-Retakes', className: 'bg-amber-200 text-amber-800' },
+  client_retakes: { label: 'Client Retakes', className: 'bg-amber-700 text-white' },
   mix: { label: 'Mix', className: 'bg-blue-300 text-blue-900' },
-  qc_mix: { label: 'QC-Mix', className: 'bg-violet-200 text-violet-800' },
+  qc_mix: { label: 'QC-Mix', className: 'bg-purple-300 text-purple-900' },
   mix_retakes: { label: 'Mix Retakes', className: 'bg-pink-500 text-white' },
   final_delivery: { label: 'Final Delivery', className: 'bg-green-500 text-white' },
 };

@@ -66,6 +66,8 @@ export default function Settings() {
   const { canManageTeamMembers, isGod, isAdmin, isProjectManager } = usePermissions();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBranch, setFilterBranch] = useState<Branch | 'all'>('all');
+  const [filterRole, setFilterRole] = useState<RoleType | 'all'>('all');
+  const [filterType, setFilterType] = useState<MemberType | 'all'>('all');
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
 
   // Fetch team members
@@ -143,9 +145,18 @@ export default function Settings() {
       const matchesBranch = 
         filterBranch === 'all' || memberBranches.includes(filterBranch);
       
-      return matchesSearch && matchesBranch;
+      // Role filter
+      const memberRoles = rolesMap.get(member.id) || [];
+      const matchesRole = 
+        filterRole === 'all' || memberRoles.includes(filterRole);
+      
+      // Type filter
+      const matchesType = 
+        filterType === 'all' || member.role === filterType;
+      
+      return matchesSearch && matchesBranch && matchesRole && matchesType;
     });
-  }, [teamMembers, searchQuery, filterBranch, branchesMap]);
+  }, [teamMembers, searchQuery, filterBranch, filterRole, filterType, branchesMap, rolesMap]);
 
   // Selection handlers
   const handleSelectMember = (memberId: string, checked: boolean) => {
@@ -463,8 +474,9 @@ export default function Settings() {
 
           <TabsContent value="directory" className="space-y-6">
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
+            <div className="flex flex-col gap-4">
+              {/* Search */}
+              <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by name or email..."
@@ -473,24 +485,92 @@ export default function Settings() {
                   className="pl-9"
                 />
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant={filterBranch === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFilterBranch('all')}
-                >
-                  All
-                </Button>
-                {BRANCHES.map((branch) => (
-                  <Button
-                    key={branch}
-                    variant={filterBranch === branch ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilterBranch(branch)}
+              
+              {/* Filter Row */}
+              <div className="flex flex-wrap gap-4">
+                {/* Branch Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-muted-foreground">Branch:</span>
+                  <div className="flex gap-1">
+                    <Button
+                      variant={filterBranch === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setFilterBranch('all')}
+                    >
+                      All
+                    </Button>
+                    {BRANCHES.map((branch) => (
+                      <Button
+                        key={branch}
+                        variant={filterBranch === branch ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setFilterBranch(branch)}
+                      >
+                        {branch}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Role Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-muted-foreground">Role:</span>
+                  <Select 
+                    value={filterRole} 
+                    onValueChange={(value) => setFilterRole(value as RoleType | 'all')}
                   >
-                    {branch}
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue placeholder="All Roles" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Roles</SelectItem>
+                      {ROLE_TYPES.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {ROLE_LABELS[role]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Type Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-muted-foreground">Type:</span>
+                  <Select 
+                    value={filterType} 
+                    onValueChange={(value) => setFilterType(value as MemberType | 'all')}
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      {MEMBER_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {MEMBER_TYPE_LABELS[type]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Clear Filters */}
+                {(filterBranch !== 'all' || filterRole !== 'all' || filterType !== 'all' || searchQuery) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setFilterBranch('all');
+                      setFilterRole('all');
+                      setFilterType('all');
+                    }}
+                    className="text-muted-foreground"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Clear filters
                   </Button>
-                ))}
+                )}
               </div>
             </div>
 

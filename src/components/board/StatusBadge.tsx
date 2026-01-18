@@ -56,7 +56,7 @@ export function StatusBadge({ status, onStatusChange, isKickoffPhase = false, on
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "px-3 py-1 rounded-md text-xs font-medium text-center transition-smooth",
+          "w-full px-3 py-1 rounded-md text-xs font-medium text-center transition-smooth",
           "flex items-center justify-center gap-1",
           config.className,
           "hover:opacity-90"

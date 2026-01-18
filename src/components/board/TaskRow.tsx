@@ -330,27 +330,27 @@ export function TaskRow({
         if (isPhaseColumn) {
           const phaseValue = getTaskValue(task, column.field) as string || '';
           const phaseColors: Record<string, string> = {
-            'On Hold': 'bg-[#c0c0c0] text-[#666666]',
-            'Kickoff': 'bg-[#444444] text-white',
-            'Assets': 'bg-[#ffcce0] text-[#cc6699]',
-            'Translation': 'bg-[#d0d0d0] text-[#666666]',
-            'Adapting': 'bg-[#f5c842] text-[#996600]',
-            'Casting': 'bg-[#2dc5cd] text-white',
-            'VoiceTests': 'bg-[#ff69b4] text-white',
-            'Recording': 'bg-[#df2f8d] text-white',
-            'Premix': 'bg-[#f9b4d6] text-[#cc3399]',
-            'QC Premix': 'bg-[#f9b4d6] text-[#cc3399]',
-            'QC-Premix': 'bg-[#f9b4d6] text-[#cc3399]',
-            'Retakes': 'bg-[#9b2b77] text-white',
-            'QC Retakes': 'bg-[#f9b4d6] text-[#cc3399]',
-            'QC-Retakes': 'bg-[#f9b4d6] text-[#cc3399]',
-            'Mix': 'bg-[#7ecef4] text-[#1a6699]',
-            'QC Mix': 'bg-[#c4a5de] text-[#7733aa]',
-            'QC-Mix': 'bg-[#c4a5de] text-[#7733aa]',
-            'MixRetakes': 'bg-[#a358ba] text-white',
-            'Mix Retakes': 'bg-[#a358ba] text-white',
-            'Deliveries': 'bg-[#00c875] text-white',
-            'Final Delivery': 'bg-[#00c875] text-white'
+            'On Hold': 'bg-gray-400 text-gray-800',
+            'Kickoff': 'bg-gray-900 text-white',
+            'Assets': 'bg-cyan-200 text-cyan-800',
+            'Translation': 'bg-blue-200 text-blue-800',
+            'Adapting': 'bg-teal-500 text-white',
+            'Casting': 'bg-yellow-400 text-yellow-900',
+            'VoiceTests': 'bg-pink-400 text-white',
+            'Recording': 'bg-red-800 text-white',
+            'Premix': 'bg-pink-200 text-pink-800',
+            'QC Premix': 'bg-purple-200 text-purple-800',
+            'QC-Premix': 'bg-purple-200 text-purple-800',
+            'Retakes': 'bg-purple-600 text-white',
+            'QC Retakes': 'bg-amber-200 text-amber-800',
+            'QC-Retakes': 'bg-amber-200 text-amber-800',
+            'Mix': 'bg-blue-300 text-blue-900',
+            'QC Mix': 'bg-violet-200 text-violet-800',
+            'QC-Mix': 'bg-violet-200 text-violet-800',
+            'MixRetakes': 'bg-pink-500 text-white',
+            'Mix Retakes': 'bg-pink-500 text-white',
+            'Deliveries': 'bg-green-500 text-white',
+            'Final Delivery': 'bg-green-500 text-white'
           };
           const phaseClass = phaseColors[phaseValue] || 'bg-muted text-muted-foreground';
           

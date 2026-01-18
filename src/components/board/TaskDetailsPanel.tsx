@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { X, Send, Paperclip, Smile, AtSign, FileText, Image, File, Clock, User as UserIcon, MessageSquare, Users, Rocket } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -45,6 +45,11 @@ export function TaskDetailsPanel({
   const [isEditingKickoff, setIsEditingKickoff] = useState(false);
   const [isSavingKickoff, setIsSavingKickoff] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Sync kickoffBrief state when task changes
+  useEffect(() => {
+    setKickoffBrief(task.kickoff_brief || '');
+  }, [task.id, task.kickoff_brief]);
   const {
     role,
     isAdmin

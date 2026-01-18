@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, MoreHorizontal } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { ChevronDown, ChevronRight, Plus, MoreHorizontal, ChevronUp } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragOverlay } from '@dnd-kit/core';
 import { horizontalListSortingStrategy, SortableContext, arrayMove } from '@dnd-kit/sortable';
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
@@ -8,7 +8,12 @@ import { TaskGroup as TaskGroupType, Task, ColumnConfig } from '@/types/board';
 import { TaskRow } from './TaskRow';
 import { DraggableColumnHeader } from './DraggableColumnHeader';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
+
+// Pagination settings
+const INITIAL_TASKS = 25;
+const LOAD_MORE_COUNT = 25;
 
 interface TaskGroupProps {
   group: TaskGroupType;
@@ -43,6 +48,7 @@ export function TaskGroup({
 }: TaskGroupProps) {
   const [isCollapsed, setIsCollapsed] = useState(group.isCollapsed ?? false);
   const [groupName, setGroupName] = useState(group.name);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_TASKS);
   const { selectedTaskIds, selectAll, clearSelection } = useTaskSelection();
 
   const sensors = useSensors(
@@ -54,34 +60,49 @@ export function TaskGroup({
     useSensor(KeyboardSensor)
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
-    console.log('Drag end event:', { active: active?.id, over: over?.id });
     if (over && active.id !== over.id) {
       onReorderColumns(active.id as string, over.id as string);
     }
-  };
+  }, [onReorderColumns]);
 
-  const handleNameBlur = () => {
+  const handleNameBlur = useCallback(() => {
     if (groupName !== group.name) {
       onUpdateGroup({ name: groupName });
     }
-  };
+  }, [groupName, group.name, onUpdateGroup]);
 
-  const groupTaskIds = group.tasks.map(t => t.id);
+  const groupTaskIds = useMemo(() => group.tasks.map(t => t.id), [group.tasks]);
   const allSelected = groupTaskIds.length > 0 && groupTaskIds.every(id => selectedTaskIds.has(id));
   const someSelected = groupTaskIds.some(id => selectedTaskIds.has(id)) && !allSelected;
 
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     if (allSelected) {
       clearSelection();
     } else {
       selectAll(groupTaskIds);
     }
-  };
+  }, [allSelected, clearSelection, selectAll, groupTaskIds]);
+
+  // Paginated tasks - only render visible tasks
+  const visibleTasks = useMemo(() => {
+    return group.tasks.slice(0, visibleCount);
+  }, [group.tasks, visibleCount]);
+
+  const hasMore = visibleCount < group.tasks.length;
+  const remainingCount = group.tasks.length - visibleCount;
+
+  const loadMore = useCallback(() => {
+    setVisibleCount(prev => Math.min(prev + LOAD_MORE_COUNT, group.tasks.length));
+  }, [group.tasks.length]);
+
+  const showLess = useCallback(() => {
+    setVisibleCount(INITIAL_TASKS);
+  }, []);
 
   // Column IDs for sortable context
-  const columnIds = columns.map(col => col.id);
+  const columnIds = useMemo(() => columns.map(col => col.id), [columns]);
 
   return (
     <div className="mb-6">
@@ -113,6 +134,7 @@ export function TaskGroup({
         
         <span className="text-sm text-muted-foreground">
           {group.tasks.length} {group.tasks.length === 1 ? 'task' : 'tasks'}
+          {hasMore && ` (showing ${visibleCount})`}
         </span>
 
         <button className="p-1 rounded hover:bg-muted transition-smooth opacity-0 group-hover:opacity-100">
@@ -158,7 +180,7 @@ export function TaskGroup({
                 </tr>
               </thead>
               <tbody>
-                {group.tasks.map((task) => (
+                {visibleTasks.map((task) => (
                   <TaskRow
                     key={task.id}
                     task={task}
@@ -174,6 +196,34 @@ export function TaskGroup({
               </tbody>
             </table>
           </DndContext>
+
+          {/* Load More / Show Less Controls */}
+          {(hasMore || visibleCount > INITIAL_TASKS) && (
+            <div className="flex items-center justify-center gap-2 py-2 border-t border-border bg-muted/30">
+              {hasMore && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={loadMore}
+                  className="gap-2 text-primary"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                  Load {Math.min(LOAD_MORE_COUNT, remainingCount)} more ({remainingCount} remaining)
+                </Button>
+              )}
+              {visibleCount > INITIAL_TASKS && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={showLess}
+                  className="gap-2 text-muted-foreground"
+                >
+                  <ChevronUp className="w-4 h-4" />
+                  Show less
+                </Button>
+              )}
+            </div>
+          )}
 
           {/* Add Task Row */}
           <button

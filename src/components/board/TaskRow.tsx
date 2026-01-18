@@ -304,29 +304,36 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, workspac
           />
         );
       case 'current-phase':
-        // Read-only phase badge showing current board/phase with phase-specific colors
+        // Read-only phase cell showing current board/phase with full-cell background
         const phaseValue = value as string || '';
         const phaseColors: Record<string, string> = {
-          'Kickoff': 'bg-black text-white',
-          'Assets': 'bg-orange-500 text-white',
-          'Translation': 'bg-violet-500 text-white',
-          'Adapting': 'bg-purple-500 text-white',
-          'VoiceTests': 'bg-pink-500 text-white',
-          'Recording': 'bg-emerald-500 text-white',
-          'Premix': 'bg-cyan-500 text-white',
-          'QC Premix': 'bg-yellow-500 text-foreground',
-          'Retakes': 'bg-red-500 text-white',
-          'QC Retakes': 'bg-amber-500 text-foreground',
-          'Mix': 'bg-blue-500 text-white',
-          'QC Mix': 'bg-sky-500 text-white',
-          'MixRetakes': 'bg-rose-500 text-white',
-          'Deliveries': 'bg-green-500 text-white',
+          'On Hold': 'bg-[#c0c0c0] text-[#666666]',
+          'Kickoff': 'bg-[#444444] text-white',
+          'Assets': 'bg-[#ffcce0] text-[#cc6699]',
+          'Translation': 'bg-[#d0d0d0] text-[#666666]',
+          'Adapting': 'bg-[#f5c842] text-[#996600]',
+          'Casting': 'bg-[#2dc5cd] text-white',
+          'VoiceTests': 'bg-[#ff69b4] text-white',
+          'Recording': 'bg-[#df2f8d] text-white',
+          'Premix': 'bg-[#f9b4d6] text-[#cc3399]',
+          'QC Premix': 'bg-[#f9b4d6] text-[#cc3399]',
+          'QC-Premix': 'bg-[#f9b4d6] text-[#cc3399]',
+          'Retakes': 'bg-[#9b2b77] text-white',
+          'QC Retakes': 'bg-[#f9b4d6] text-[#cc3399]',
+          'QC-Retakes': 'bg-[#f9b4d6] text-[#cc3399]',
+          'Mix': 'bg-[#7ecef4] text-[#1a6699]',
+          'QC Mix': 'bg-[#c4a5de] text-[#7733aa]',
+          'QC-Mix': 'bg-[#c4a5de] text-[#7733aa]',
+          'MixRetakes': 'bg-[#a358ba] text-white',
+          'Mix Retakes': 'bg-[#a358ba] text-white',
+          'Deliveries': 'bg-[#00c875] text-white',
+          'Final Delivery': 'bg-[#00c875] text-white',
         };
-        const phaseClass = phaseColors[phaseValue] || 'bg-primary/10 text-primary';
+        const phaseClass = phaseColors[phaseValue] || 'bg-muted text-muted-foreground';
         return (
-          <span className={cn("inline-flex items-center px-2 py-1 rounded text-xs font-medium", phaseClass)}>
+          <div className={cn("w-full h-full flex items-center justify-center text-xs font-medium -mx-1.5 -my-0.5 px-1.5 py-0.5", phaseClass)}>
             {phaseValue || '-'}
-          </span>
+          </div>
         );
       case 'boolean':
         return (

@@ -150,21 +150,27 @@
     @apply transition-smooth hover:bg-muted/50;
   }
 
-  /* Scrollbar styling */
+  /* Scrollbar styling - more visible horizontal scrollbar */
   .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 14px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
-    @apply bg-transparent;
+    @apply bg-muted/30 rounded-full;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/20 rounded-full;
+    @apply bg-muted-foreground/40 rounded-full border-2 border-solid;
+    border-color: transparent;
+    background-clip: padding-box;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/40;
+    @apply bg-muted-foreground/60;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-corner {
+    @apply bg-transparent;
   }
 }

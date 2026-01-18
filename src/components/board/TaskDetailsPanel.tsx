@@ -370,76 +370,77 @@ const [activeUpdateTab, setActiveUpdateTab] = useState<'team' | 'guest'>('team')
           </TabsContent>
 
           {/* Kickoff Tab */}
-          <TabsContent value="kickoff" className="flex-1 m-0 overflow-hidden flex flex-col">
-            <div className="flex-1 overflow-auto p-4">
-              {isEditingKickoff && !isGuest ? (
-                <div className="h-full flex flex-col">
-                  <RichTextEditor
-                    content={kickoffBrief}
-                    onChange={setKickoffBrief}
-                    placeholder="Enter the full brief/kickoff information..."
-                    className="flex-1"
-                  />
-                  <div className="flex justify-end gap-2 mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setKickoffBrief(task.kickoff_brief || '');
-                        setIsEditingKickoff(false);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      size="sm"
-                      disabled={isSavingKickoff}
-                      onClick={async () => {
-                        setIsSavingKickoff(true);
-                        try {
-                          const { error } = await supabase
-                            .from('tasks')
-                            .update({ kickoff_brief: kickoffBrief } as any)
-                            .eq('id', task.id);
-                          
-                          if (error) throw error;
-                          toast.success('Kickoff brief saved');
+          <TabsContent value="kickoff" className="flex-1 m-0 overflow-hidden">
+            <ScrollArea className="h-full">
+              <div className="p-4">
+                {isEditingKickoff && !isGuest ? (
+                  <div className="space-y-4">
+                    <RichTextEditor
+                      content={kickoffBrief}
+                      onChange={setKickoffBrief}
+                      placeholder="Enter the full brief/kickoff information..."
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setKickoffBrief(task.kickoff_brief || '');
                           setIsEditingKickoff(false);
-                        } catch (error) {
-                          toast.error('Failed to save kickoff brief');
-                        } finally {
-                          setIsSavingKickoff(false);
-                        }
-                      }}
-                    >
-                      {isSavingKickoff ? 'Saving...' : 'Save'}
-                    </Button>
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={isSavingKickoff}
+                        onClick={async () => {
+                          setIsSavingKickoff(true);
+                          try {
+                            const { error } = await supabase
+                              .from('tasks')
+                              .update({ kickoff_brief: kickoffBrief } as any)
+                              .eq('id', task.id);
+                            
+                            if (error) throw error;
+                            toast.success('Kickoff brief saved');
+                            setIsEditingKickoff(false);
+                          } catch (error) {
+                            toast.error('Failed to save kickoff brief');
+                          } finally {
+                            setIsSavingKickoff(false);
+                          }
+                        }}
+                      >
+                        {isSavingKickoff ? 'Saving...' : 'Save'}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="h-full">
-                  {kickoffBrief ? (
-                    <div 
-                      className="cursor-pointer"
-                      onClick={() => !isGuest && setIsEditingKickoff(true)}
-                    >
-                      <RichTextDisplay content={kickoffBrief} />
-                    </div>
-                  ) : (
-                    <div 
-                      className="text-center py-12 text-muted-foreground cursor-pointer"
-                      onClick={() => !isGuest && setIsEditingKickoff(true)}
-                    >
-                      <Rocket className="w-12 h-12 mx-auto mb-3 opacity-40" />
-                      <p className="text-sm">No kickoff brief yet</p>
-                      {!isGuest && (
-                        <p className="text-xs mt-1">Click to add the full brief</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                ) : (
+                  <>
+                    {kickoffBrief ? (
+                      <div 
+                        className="cursor-pointer"
+                        onClick={() => !isGuest && setIsEditingKickoff(true)}
+                      >
+                        <RichTextDisplay content={kickoffBrief} />
+                      </div>
+                    ) : (
+                      <div 
+                        className="text-center py-12 text-muted-foreground cursor-pointer"
+                        onClick={() => !isGuest && setIsEditingKickoff(true)}
+                      >
+                        <Rocket className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                        <p className="text-sm">No kickoff brief yet</p>
+                        {!isGuest && (
+                          <p className="text-xs mt-1">Click to add the full brief</p>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </ScrollArea>
           </TabsContent>
 
           {/* Activity Tab */}

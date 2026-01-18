@@ -96,15 +96,36 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
     document.body
   ) : null;
 
+  // Check if this is a Yes/No/Voice Bank style dropdown (badge style)
+  const isBadgeStyle = options.includes('Yes') && options.includes('No');
+
+  const getBadgeClass = (val?: string) => {
+    if (!val) return "bg-muted text-muted-foreground";
+    if (val === 'Yes') return "bg-status-done text-white";
+    if (val === 'No') return "bg-muted text-muted-foreground";
+    // Voice Bank or other values
+    return "bg-amber-500 text-white";
+  };
+
   return (
     <>
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 w-full text-left"
+        className={cn(
+          "flex items-center gap-1 text-left",
+          isBadgeStyle ? "justify-center" : "w-full"
+        )}
         type="button"
       >
-        {value && isPrivate ? (
+        {isBadgeStyle ? (
+          <span className={cn(
+            "px-3 py-1 rounded text-xs font-medium transition-smooth",
+            getBadgeClass(value)
+          )}>
+            {value || 'No'}
+          </span>
+        ) : value && isPrivate ? (
           <span className="px-2 py-0.5 rounded text-xs font-medium truncate bg-white text-slate-800">
             {value}
           </span>
@@ -113,7 +134,9 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
             {value || placeholder}
           </span>
         )}
-        <ChevronDown className={cn("w-3 h-3 opacity-60 transition-transform flex-shrink-0", isOpen && "rotate-180")} />
+        {!isBadgeStyle && (
+          <ChevronDown className={cn("w-3 h-3 opacity-60 transition-transform flex-shrink-0", isOpen && "rotate-180")} />
+        )}
       </button>
       {dropdown}
     </>

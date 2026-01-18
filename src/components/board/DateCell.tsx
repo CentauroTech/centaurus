@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { format, isToday, isTomorrow, isPast, isValid } from 'date-fns';
+import { format, isToday, isTomorrow, isValid } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -44,7 +44,7 @@ export function DateCell({ date, onDateChange }: DateCellProps) {
     return format(d, 'MMM d');
   };
 
-  const isOverdue = isValidDate && isPast(dateObj) && !isToday(dateObj);
+  
 
   const handleSelect = (selectedDate: Date | undefined) => {
     // Convert to YYYY-MM-DD string to avoid timezone issues
@@ -59,8 +59,7 @@ export function DateCell({ date, onDateChange }: DateCellProps) {
         <button
           className={cn(
             "flex items-center gap-2 px-2 py-1 rounded text-sm transition-smooth hover:bg-muted/50 w-full",
-            isValidDate ? "text-inherit" : "text-slate-400",
-            isOverdue && "text-red-400"
+            isValidDate ? "text-foreground" : "text-slate-400"
           )}
         >
           <CalendarIcon className="w-4 h-4 flex-shrink-0" />

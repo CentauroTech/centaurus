@@ -7,7 +7,7 @@ import { BulkActionsToolbar } from './BulkActionsToolbar';
 import { MultipleWODialog } from './MultipleWODialog';
 import { TaskSelectionProvider } from '@/contexts/TaskSelectionContext';
 import { BulkEditProvider, BulkUpdateParams } from '@/contexts/BulkEditContext';
-import { useAddTaskGroup, useUpdateTaskGroup, useAddTask, useUpdateTask, useDeleteTask } from '@/hooks/useWorkspaces';
+import { useAddTaskGroup, useUpdateTaskGroup, useDeleteTaskGroup, useAddTask, useUpdateTask, useDeleteTask } from '@/hooks/useWorkspaces';
 import { useMoveToNextPhase } from '@/hooks/usePhaseProgression';
 import { useBulkDuplicate, useBulkDelete, useBulkMoveToPhase, useMoveTaskToPhase, useBulkUpdateField, AVAILABLE_PHASES } from '@/hooks/useBulkTaskActions';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
@@ -70,6 +70,7 @@ function BoardViewContent({
   } = useColumnOrder(boardId, workspaceName);
   const addTaskGroupMutation = useAddTaskGroup(boardId);
   const updateTaskGroupMutation = useUpdateTaskGroup(boardId);
+  const deleteTaskGroupMutation = useDeleteTaskGroup(boardId);
   const addTaskMutation = useAddTask(boardId);
   const updateTaskMutation = useUpdateTask(boardId, currentUserId);
   const deleteTaskMutation = useDeleteTask(boardId);
@@ -343,6 +344,9 @@ function BoardViewContent({
       updates
     });
   };
+  const deleteGroup = (groupId: string) => {
+    deleteTaskGroupMutation.mutate(groupId);
+  };
   const addGroup = () => {
     const colors = ['hsl(209, 100%, 46%)', 'hsl(154, 64%, 45%)', 'hsl(270, 50%, 60%)', 'hsl(25, 95%, 53%)', 'hsl(0, 72%, 51%)'];
     addTaskGroupMutation.mutate({
@@ -448,7 +452,7 @@ function BoardViewContent({
       <div className="flex-1 overflow-auto custom-scrollbar">
       {/* Task Groups */}
         <div className="space-y-6 min-w-max">
-          {transformedGroups.map(group => <TaskGroup key={group.id} group={group} onUpdateTask={handleUpdateTask} onDeleteTask={deleteTask} onAddTask={() => addTask(group.id)} onUpdateGroup={updates => updateGroup(group.id, updates)} onSendToPhase={handleSendTaskToPhase} boardId={boardId} boardName={board.name} workspaceName={workspaceName} columns={columns} isLocked={isLocked || !canReorderColumns} onReorderColumns={reorderColumns} canDeleteTasks={canDeleteTasks} />)}
+          {transformedGroups.map(group => <TaskGroup key={group.id} group={group} onUpdateTask={handleUpdateTask} onDeleteTask={deleteTask} onAddTask={() => addTask(group.id)} onUpdateGroup={updates => updateGroup(group.id, updates)} onDeleteGroup={() => deleteGroup(group.id)} onSendToPhase={handleSendTaskToPhase} boardId={boardId} boardName={board.name} workspaceName={workspaceName} columns={columns} isLocked={isLocked || !canReorderColumns} onReorderColumns={reorderColumns} canDeleteTasks={canDeleteTasks} canDeleteGroups={canDeleteTasks} />)}
         </div>
 
         {/* Empty State */}

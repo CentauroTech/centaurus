@@ -358,15 +358,13 @@ export function TaskRow({
             <td 
               key={column.id} 
               className={cn(
-                "border-r border-border/50 text-center text-sm font-medium",
+                "border-r border-border/50 text-center text-sm font-medium px-2 py-1",
                 phaseClass,
                 column.width,
                 isPrivate && "border-r-slate-600"
               )}
             >
-              <div className="flex items-center justify-center h-full w-full py-1">
-                {phaseValue || '-'}
-              </div>
+              {phaseValue || '-'}
             </td>
           );
         }

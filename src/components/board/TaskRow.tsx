@@ -284,9 +284,13 @@ export function TaskRow({
           'Final Delivery': 'bg-[#00c875] text-white'
         };
         const phaseClass = phaseColors[phaseValue] || 'bg-muted text-muted-foreground';
-        return <div className={cn("w-full h-full flex items-center justify-center text-xs font-medium -mx-1.5 -my-0.5 px-1.5 py-0.5", phaseClass)}>
-            {phaseValue || '-'}
-          </div>;
+        return (
+          <div className="relative h-full w-full">
+            <div className={cn("absolute inset-0 flex items-center justify-center text-sm font-medium", phaseClass)}>
+              {phaseValue || '-'}
+            </div>
+          </div>
+        );
       case 'boolean':
         return <BooleanCell value={value as boolean} onChange={val => handleUpdate(column.field, val)} />;
       case 'link':
@@ -351,7 +355,9 @@ export function TaskRow({
         : index === 1 ? 72 // after checkbox + drag + privacy (48 + 24)
         : 296 // after checkbox + drag + privacy + name (48 + 24 + 224)
         : undefined;
-        return <td key={column.id} className={cn("border-r border-border/50 px-0 py-0", column.width, isSticky && cn("sticky z-20", stickyBg), index === 2 && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]", isPrivate && index !== 2 && "border-r-slate-600")} style={isSticky ? {
+        // Apply p-0 specifically for current-phase column
+        const isPhaseColumn = column.type === 'current-phase';
+        return <td key={column.id} className={cn("border-r border-border/50", isPhaseColumn ? "p-0 relative" : "px-0 py-0", column.width, isSticky && cn("sticky z-20", stickyBg), index === 2 && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]", isPrivate && index !== 2 && "border-r-slate-600")} style={isSticky ? {
           left: leftOffset
         } : undefined}>
               {renderCell(column)}

@@ -5,34 +5,20 @@ import { cn } from '@/lib/utils';
 
 interface ExpandableCommentProps {
   children: React.ReactNode;
-  maxLines?: number;
+  maxHeight?: number;
 }
 
-export function ExpandableComment({ children, maxLines = 20 }: ExpandableCommentProps) {
+export function ExpandableComment({ children, maxHeight = 600 }: ExpandableCommentProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [needsExpand, setNeedsExpand] = useState(false);
-  const [collapsedHeight, setCollapsedHeight] = useState<number | undefined>(undefined);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (contentRef.current) {
-      // Get computed line height
-      const computedStyle = window.getComputedStyle(contentRef.current);
-      const lineHeight = parseFloat(computedStyle.lineHeight) || 20;
-      
-      // Calculate max height based on lines
-      const maxHeight = lineHeight * maxLines;
       const scrollHeight = contentRef.current.scrollHeight;
-      
-      if (scrollHeight > maxHeight) {
-        setNeedsExpand(true);
-        setCollapsedHeight(maxHeight);
-      } else {
-        setNeedsExpand(false);
-        setCollapsedHeight(undefined);
-      }
+      setNeedsExpand(scrollHeight > maxHeight);
     }
-  }, [children, maxLines]);
+  }, [children, maxHeight]);
 
   return (
     <div className="relative">
@@ -43,7 +29,7 @@ export function ExpandableComment({ children, maxLines = 20 }: ExpandableComment
           !isExpanded && needsExpand && "overflow-hidden"
         )}
         style={{
-          maxHeight: !isExpanded && needsExpand && collapsedHeight ? `${collapsedHeight}px` : undefined,
+          maxHeight: !isExpanded && needsExpand ? `${maxHeight}px` : undefined,
         }}
       >
         {children}

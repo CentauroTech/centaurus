@@ -277,7 +277,7 @@ export function TaskRow({
           'Deliveries': 'bg-green-500 text-white'
         };
         const phaseClass = phaseColors[phaseValue] || 'bg-primary/10 text-primary';
-        return <span className={cn("inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-destructive-foreground", phaseClass)}>
+        return <span className={cn("inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-[#f86363]", phaseClass)}>
             {phaseValue || '-'}
           </span>;
       case 'boolean':

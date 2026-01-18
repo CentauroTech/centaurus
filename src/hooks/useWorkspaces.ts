@@ -496,3 +496,21 @@ export function useDeleteTask(boardId: string) {
     },
   });
 }
+
+export function useDeleteTaskGroup(boardId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (groupId: string) => {
+      const { error } = await supabase
+        .from('task_groups')
+        .delete()
+        .eq('id', groupId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['board', boardId] });
+    },
+  });
+}

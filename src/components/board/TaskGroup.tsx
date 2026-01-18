@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { ChevronDown, ChevronRight, Plus, MoreHorizontal, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, MoreHorizontal, ChevronUp, Trash2 } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragOverlay } from '@dnd-kit/core';
 import { horizontalListSortingStrategy, SortableContext, arrayMove } from '@dnd-kit/sortable';
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
@@ -10,6 +10,22 @@ import { DraggableColumnHeader } from './DraggableColumnHeader';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Pagination settings
 const INITIAL_TASKS = 25;
@@ -20,6 +36,7 @@ interface TaskGroupProps {
   onDeleteTask: (taskId: string) => void;
   onAddTask: () => void;
   onUpdateGroup: (updates: Partial<TaskGroupType>) => void;
+  onDeleteGroup?: () => void;
   onSendToPhase?: (taskId: string, phase: string) => void;
   boardId?: string;
   boardName?: string;
@@ -28,6 +45,7 @@ interface TaskGroupProps {
   isLocked: boolean;
   onReorderColumns: (activeId: string, overId: string) => void;
   canDeleteTasks?: boolean;
+  canDeleteGroups?: boolean;
 }
 export function TaskGroup({
   group,
@@ -35,6 +53,7 @@ export function TaskGroup({
   onDeleteTask,
   onAddTask,
   onUpdateGroup,
+  onDeleteGroup,
   onSendToPhase,
   boardId,
   boardName,
@@ -42,11 +61,13 @@ export function TaskGroup({
   columns,
   isLocked,
   onReorderColumns,
-  canDeleteTasks = true
+  canDeleteTasks = true,
+  canDeleteGroups = false
 }: TaskGroupProps) {
   const [isCollapsed, setIsCollapsed] = useState(group.isCollapsed ?? false);
   const [groupName, setGroupName] = useState(group.name);
   const [visibleCount, setVisibleCount] = useState(INITIAL_TASKS);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const {
     selectedTaskIds,
     selectAll,
@@ -117,10 +138,52 @@ export function TaskGroup({
           {hasMore && ` (showing ${visibleCount})`}
         </span>
 
-        <button className="p-1 rounded hover:bg-muted transition-smooth opacity-0 group-hover:opacity-100">
-          <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-1 rounded hover:bg-muted transition-smooth">
+              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {canDeleteGroups && onDeleteGroup && (
+              <DropdownMenuItem
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Group
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{group.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {group.tasks.length > 0 
+                ? `This will permanently delete this group and all ${group.tasks.length} task(s) inside it. This action cannot be undone.`
+                : 'This will permanently delete this empty group. This action cannot be undone.'
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                onDeleteGroup?.();
+                setShowDeleteDialog(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Tasks Table */}
       {!isCollapsed && <div className="bg-card rounded-lg border border-border shadow-board overflow-visible animate-fade-in">

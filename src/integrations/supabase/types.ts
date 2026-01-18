@@ -508,6 +508,7 @@ export type Database = {
           hq: string | null
           id: string
           is_private: boolean
+          kickoff_brief: string | null
           last_updated: string | null
           lenguaje_original: string | null
           link_to_col_hq: string | null
@@ -568,6 +569,7 @@ export type Database = {
           hq?: string | null
           id?: string
           is_private?: boolean
+          kickoff_brief?: string | null
           last_updated?: string | null
           lenguaje_original?: string | null
           link_to_col_hq?: string | null
@@ -628,6 +630,7 @@ export type Database = {
           hq?: string | null
           id?: string
           is_private?: boolean
+          kickoff_brief?: string | null
           last_updated?: string | null
           lenguaje_original?: string | null
           link_to_col_hq?: string | null

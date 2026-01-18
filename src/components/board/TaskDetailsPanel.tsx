@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from 'react';
-import { X, Send, Paperclip, Smile, AtSign, FileText, Image, File, Clock, User as UserIcon, MessageSquare, Users } from 'lucide-react';
+import { X, Send, Paperclip, Smile, AtSign, FileText, Image, File, Clock, User as UserIcon, MessageSquare, Users, Rocket } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,9 @@ import { useTaskFiles, useUploadTaskFile, useToggleFileAccessibility, useDeleteT
 import { FileCategorySection } from './files/FileCategorySection';
 import { FileUploadButton } from './files/FileUploadButton';
 import { CommentSection } from './comments/CommentSection';
+import { RichTextEditor, RichTextDisplay } from './comments/RichTextEditor';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TaskDetailsPanelProps {
   task: Task;
@@ -33,7 +35,10 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId, curren
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
   const [mentionCursorPosition, setMentionCursorPosition] = useState(0);
-  const [activeUpdateTab, setActiveUpdateTab] = useState<'team' | 'guest'>('team');
+const [activeUpdateTab, setActiveUpdateTab] = useState<'team' | 'guest'>('team');
+  const [kickoffBrief, setKickoffBrief] = useState(task.kickoff_brief || '');
+  const [isEditingKickoff, setIsEditingKickoff] = useState(false);
+  const [isSavingKickoff, setIsSavingKickoff] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
   const { role, isAdmin } = usePermissions();
@@ -220,6 +225,13 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId, curren
               <FileText className="w-4 h-4 mr-2" />
               Files
             </TabsTrigger>
+<TabsTrigger 
+              value="kickoff"
+              className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none"
+            >
+              <Rocket className="w-4 h-4 mr-2" />
+              Kickoff
+            </TabsTrigger>
             <TabsTrigger 
               value="activity"
               className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none"
@@ -355,6 +367,79 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId, curren
                 </div>
               )}
             </ScrollArea>
+          </TabsContent>
+
+          {/* Kickoff Tab */}
+          <TabsContent value="kickoff" className="flex-1 m-0 overflow-hidden flex flex-col">
+            <div className="flex-1 overflow-auto p-4">
+              {isEditingKickoff && !isGuest ? (
+                <div className="h-full flex flex-col">
+                  <RichTextEditor
+                    content={kickoffBrief}
+                    onChange={setKickoffBrief}
+                    placeholder="Enter the full brief/kickoff information..."
+                    className="flex-1"
+                  />
+                  <div className="flex justify-end gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setKickoffBrief(task.kickoff_brief || '');
+                        setIsEditingKickoff(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={isSavingKickoff}
+                      onClick={async () => {
+                        setIsSavingKickoff(true);
+                        try {
+                          const { error } = await supabase
+                            .from('tasks')
+                            .update({ kickoff_brief: kickoffBrief } as any)
+                            .eq('id', task.id);
+                          
+                          if (error) throw error;
+                          toast.success('Kickoff brief saved');
+                          setIsEditingKickoff(false);
+                        } catch (error) {
+                          toast.error('Failed to save kickoff brief');
+                        } finally {
+                          setIsSavingKickoff(false);
+                        }
+                      }}
+                    >
+                      {isSavingKickoff ? 'Saving...' : 'Save'}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full">
+                  {kickoffBrief ? (
+                    <div 
+                      className="cursor-pointer"
+                      onClick={() => !isGuest && setIsEditingKickoff(true)}
+                    >
+                      <RichTextDisplay content={kickoffBrief} />
+                    </div>
+                  ) : (
+                    <div 
+                      className="text-center py-12 text-muted-foreground cursor-pointer"
+                      onClick={() => !isGuest && setIsEditingKickoff(true)}
+                    >
+                      <Rocket className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                      <p className="text-sm">No kickoff brief yet</p>
+                      {!isGuest && (
+                        <p className="text-xs mt-1">Click to add the full brief</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           {/* Activity Tab */}

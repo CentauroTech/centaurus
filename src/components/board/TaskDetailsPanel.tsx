@@ -370,9 +370,8 @@ const [activeUpdateTab, setActiveUpdateTab] = useState<'team' | 'guest'>('team')
           </TabsContent>
 
           {/* Kickoff Tab */}
-          <TabsContent value="kickoff" className="flex-1 m-0 overflow-hidden">
-            <ScrollArea className="h-full">
-              <div className="p-4">
+          <TabsContent value="kickoff" className="m-0 overflow-auto max-h-[calc(100vh-200px)]">
+            <div className="p-4">
                 {isEditingKickoff && !isGuest ? (
                   <div className="space-y-4">
                     <RichTextEditor
@@ -439,8 +438,7 @@ const [activeUpdateTab, setActiveUpdateTab] = useState<'team' | 'guest'>('team')
                     )}
                   </>
                 )}
-              </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
 
           {/* Activity Tab */}

@@ -30,6 +30,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { mockUsers } from '@/data/mockData';
 import { RoleType } from '@/hooks/useTeamMemberRoles';
+import { toast } from 'sonner';
 interface TaskRowProps {
   task: Task;
   onUpdate: (updates: Partial<Task>) => void;
@@ -204,6 +205,32 @@ export function TaskRow({
 
   // Handle update with bulk edit support
   const handleUpdate = useCallback((field: string, value: any) => {
+    // Validate Miami Due Date cannot be later than Client Due Date
+    if (field === 'entregaMiamiEnd' && value) {
+      const clientDueDate = getTaskValue(task, 'entregaCliente');
+      if (clientDueDate) {
+        const miamiDate = new Date(value);
+        const clientDate = new Date(clientDueDate as string);
+        if (miamiDate > clientDate) {
+          toast.error('Miami Due Date cannot be later than Client Due Date');
+          return;
+        }
+      }
+    }
+    
+    // Validate Client Due Date - if Miami Due Date exists, it must be >= Miami
+    if (field === 'entregaCliente' && value) {
+      const miamiDueDate = getTaskValue(task, 'entregaMiamiEnd');
+      if (miamiDueDate) {
+        const clientDate = new Date(value);
+        const miamiDate = new Date(miamiDueDate as string);
+        if (clientDate < miamiDate) {
+          toast.error('Client Due Date cannot be earlier than Miami Due Date');
+          return;
+        }
+      }
+    }
+
     // Check if this task is part of a multi-selection
     if (shouldApplyBulkEdit(task.id) && onBulkUpdate) {
       const selectedIds = getSelectedTaskIds();
@@ -226,7 +253,7 @@ export function TaskRow({
         [field]: value
       });
     }
-  }, [task.id, shouldApplyBulkEdit, getSelectedTaskIds, onBulkUpdate, onUpdate]);
+  }, [task, shouldApplyBulkEdit, getSelectedTaskIds, onBulkUpdate, onUpdate]);
   const renderCell = (column: ColumnConfig) => {
     const value = getTaskValue(task, column.field);
     const disabled = !isColumnEditable(column.id);

@@ -230,10 +230,16 @@ export function RichTextEditor({
 
 // Read-only display component for rich text content
 export function RichTextDisplay({ content, className }: { content: string; className?: string }) {
-  // Render HTML content with proper styling
+  // Render HTML content with proper styling - no height restrictions
   return (
     <div 
-      className={cn("prose prose-sm max-w-none text-foreground/90", className)}
+      className={cn(
+        "prose prose-sm max-w-none text-foreground/90",
+        "[&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_h2]:my-2 [&_h3]:my-1.5",
+        "[&_li]:my-0.5",
+        "break-words",
+        className
+      )}
       dangerouslySetInnerHTML={{ __html: content }}
     />
   );

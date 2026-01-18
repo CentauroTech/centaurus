@@ -233,16 +233,18 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId, curren
           <TabsContent value="updates" className="flex-1 flex flex-col m-0 overflow-hidden">
             {isGuest ? (
               // Guests only see guest-visible comments in a single section
-              <CommentSection
-                title="Updates"
-                icon="guest"
-                comments={guestComments}
-                isLoading={commentsLoading}
-                onSendComment={handleSendToSection}
-                teamMembers={teamMembers || []}
-                isGuestVisible={true}
-                emptyMessage="No updates yet"
-              />
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                <CommentSection
+                  title="Updates"
+                  icon="guest"
+                  comments={guestComments}
+                  isLoading={commentsLoading}
+                  onSendComment={handleSendToSection}
+                  teamMembers={teamMembers || []}
+                  isGuestVisible={true}
+                  emptyMessage="No updates yet"
+                />
+              </div>
             ) : (
               // Team members see both sections
               <div className="flex-1 flex flex-col overflow-hidden">
@@ -274,27 +276,31 @@ export function TaskDetailsPanel({ task, isOpen, onClose, users, boardId, curren
                 </div>
                 
                 {activeUpdateTab === 'team' ? (
-                  <CommentSection
-                    title="Internal Team Updates"
-                    icon="team"
-                    comments={teamComments}
-                    isLoading={commentsLoading}
-                    onSendComment={handleSendToSection}
-                    teamMembers={teamMembers || []}
-                    isGuestVisible={false}
-                    emptyMessage="No team updates yet"
-                  />
+                  <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                    <CommentSection
+                      title="Internal Team Updates"
+                      icon="team"
+                      comments={teamComments}
+                      isLoading={commentsLoading}
+                      onSendComment={handleSendToSection}
+                      teamMembers={teamMembers || []}
+                      isGuestVisible={false}
+                      emptyMessage="No team updates yet"
+                    />
+                  </div>
                 ) : (
-                  <CommentSection
-                    title="Guest Communication"
-                    icon="guest"
-                    comments={guestComments}
-                    isLoading={commentsLoading}
-                    onSendComment={handleSendToSection}
-                    teamMembers={teamMembers || []}
-                    isGuestVisible={true}
-                    emptyMessage="No guest communication yet"
-                  />
+                  <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                    <CommentSection
+                      title="Guest Communication"
+                      icon="guest"
+                      comments={guestComments}
+                      isLoading={commentsLoading}
+                      onSendComment={handleSendToSection}
+                      teamMembers={teamMembers || []}
+                      isGuestVisible={true}
+                      emptyMessage="No guest communication yet"
+                    />
+                  </div>
                 )}
               </div>
             )}

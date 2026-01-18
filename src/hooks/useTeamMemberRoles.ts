@@ -2,12 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
-export const ROLE_TYPES = ['translator', 'adapter', 'mixer', 'qc_premix', 'qc_mix', 'director', 'tecnico'] as const;
+export const ROLE_TYPES = ['translator', 'adapter', 'premix', 'mixer', 'qc_premix', 'qc_mix', 'director', 'tecnico'] as const;
 export type RoleType = typeof ROLE_TYPES[number];
 
 export const ROLE_LABELS: Record<RoleType, string> = {
   translator: 'Translator',
   adapter: 'Adapter',
+  premix: 'Premix',
   mixer: 'Mixer',
   qc_premix: 'QC Premix',
   qc_mix: 'QC Mix',

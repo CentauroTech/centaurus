@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { LogOut, User, Bell, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { LogOut, CheckCircle, Clock, AlertTriangle, Table, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Toggle } from '@/components/ui/toggle';
 import { GuestTaskCard } from '@/components/guest/GuestTaskCard';
+import { GuestTaskTable } from '@/components/guest/GuestTaskTable';
 import { GuestTaskView } from '@/components/guest/GuestTaskView';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
-import { useGuestTasks, GuestTask } from '@/hooks/useGuestTasks';
+import { useGuestTasks, useUpdateGuestTask, GuestTask } from '@/hooks/useGuestTasks';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 import centaurusLogo from '@/assets/centaurus-logo.jpeg';
 
 export default function GuestDashboard() {
@@ -20,8 +22,10 @@ export default function GuestDashboard() {
   const { signOut, user } = useAuth();
   const { data: currentMember } = useCurrentTeamMember();
   const { data: tasks, isLoading } = useGuestTasks();
+  const updateTask = useUpdateGuestTask();
 
   const [selectedTask, setSelectedTask] = useState<GuestTask | null>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   // Handle deep link from notifications
   useEffect(() => {
@@ -43,6 +47,22 @@ export default function GuestDashboard() {
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
+  };
+
+  const handleStatusChange = async (taskId: string, status: 'default' | 'working' | 'done') => {
+    if (status === 'done') {
+      // Open task view for delivery workflow
+      const task = tasks?.find(t => t.id === taskId);
+      if (task) setSelectedTask(task);
+      return;
+    }
+
+    try {
+      await updateTask.mutateAsync({ taskId, updates: { status } });
+      toast.success('Status updated');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update status');
+    }
   };
 
   return (
@@ -87,14 +107,34 @@ export default function GuestDashboard() {
       </header>
 
       <main className="container px-4 py-6">
-        {/* Welcome */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-2">
-            Welcome back, {currentMember?.name?.split(' ')[0] || 'Guest'}!
-          </h2>
-          <p className="text-muted-foreground">
-            Here are your assigned tasks. Complete them before their due dates.
-          </p>
+        {/* Welcome & View Toggle */}
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">
+              Welcome back, {currentMember?.name?.split(' ')[0] || 'Guest'}!
+            </h2>
+            <p className="text-muted-foreground">
+              Here are your assigned tasks. Complete them before their due dates.
+            </p>
+          </div>
+          <div className="flex items-center gap-1 border rounded-lg p-1">
+            <Toggle
+              pressed={viewMode === 'table'}
+              onPressedChange={() => setViewMode('table')}
+              size="sm"
+              aria-label="Table view"
+            >
+              <Table className="w-4 h-4" />
+            </Toggle>
+            <Toggle
+              pressed={viewMode === 'cards'}
+              onPressedChange={() => setViewMode('cards')}
+              size="sm"
+              aria-label="Card view"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </Toggle>
+          </div>
         </div>
 
         {/* Stats */}
@@ -164,6 +204,12 @@ export default function GuestDashboard() {
                   </p>
                 </CardContent>
               </Card>
+            ) : viewMode === 'table' ? (
+              <GuestTaskTable
+                tasks={activeTasks}
+                onTaskClick={setSelectedTask}
+                onStatusChange={handleStatusChange}
+              />
             ) : (
               <div className="grid gap-4">
                 {/* Delayed tasks first */}
@@ -219,6 +265,12 @@ export default function GuestDashboard() {
                   </p>
                 </CardContent>
               </Card>
+            ) : viewMode === 'table' ? (
+              <GuestTaskTable
+                tasks={completedTasks}
+                onTaskClick={setSelectedTask}
+                onStatusChange={handleStatusChange}
+              />
             ) : (
               <div className="grid gap-3">
                 {completedTasks.map(task => (

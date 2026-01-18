@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Send, Clock, Calendar, FileText, MessageSquare, CheckCircle, Download, ExternalLink } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Send, Clock, Calendar, FileText, MessageSquare, CheckCircle, Download, ExternalLink, Upload, Users, User, Loader2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,16 +7,30 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { GuestStatusBadge } from './GuestStatusBadge';
 import { GuestTask } from '@/hooks/useGuestTasks';
 import { useUpdateGuestTask, useCompleteGuestTask } from '@/hooks/useGuestTasks';
 import { useComments, useAddComment } from '@/hooks/useComments';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useTeamMembers } from '@/hooks/useWorkspaces';
-import { useTaskFiles, FILE_CATEGORIES } from '@/hooks/useTaskFiles';
+import { useTaskFiles, useUploadTaskFile, FILE_CATEGORIES } from '@/hooks/useTaskFiles';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+
+const PHASE_LABELS: Record<string, string> = {
+  pre_production: 'Pre-Production',
+  production: 'Production',
+  post_production: 'Post-Production',
+  delivery: 'Delivery',
+  Translation: 'Translation',
+  Adaptation: 'Adaptation',
+  'QC Premix': 'QC Premix',
+  Recording: 'Recording',
+  Mixing: 'Mixing',
+  'QC Mix': 'QC Mix',
+};
 
 interface GuestTaskViewProps {
   task: GuestTask;
@@ -28,6 +42,7 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
   const [newComment, setNewComment] = useState('');
   const [deliveryComment, setDeliveryComment] = useState('');
   const [showDeliveryForm, setShowDeliveryForm] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: currentMember } = useCurrentTeamMember();
   const { data: teamMembers } = useTeamMembers();
@@ -36,7 +51,7 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
   const updateTask = useUpdateGuestTask();
   const completeTask = useCompleteGuestTask();
   const addComment = useAddComment(task.id, '');
-
+  const uploadFile = useUploadTaskFile(task.id);
   // Filter to only guest-accessible files
   const guestFiles = taskFiles?.filter(f => f.is_guest_accessible) || [];
   

@@ -2,11 +2,18 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-export type UserRole = 'admin' | 'project_manager' | 'member' | 'guest';
+// New member types: god, admin, team_member, guest
+export type MemberType = 'god' | 'admin' | 'team_member' | 'guest';
+
+// Keep UserRole for backward compatibility (maps to MemberType)
+export type UserRole = MemberType | 'project_manager' | 'member';
 
 interface Permissions {
+  isGod: boolean;
   isAdmin: boolean;
   isProjectManager: boolean;
+  isTeamMember: boolean;
+  isGuest: boolean;
   canEditColumns: boolean;
   canReorderColumns: boolean;
   canCreateGroups: boolean;
@@ -15,7 +22,8 @@ interface Permissions {
   canMoveTasks: boolean;
   canDeleteTasks: boolean;
   canManageTeamMembers: boolean;
-  role: UserRole | null;
+  canViewAllColumns: boolean;
+  role: MemberType | null;
   isLoading: boolean;
 }
 
@@ -43,29 +51,48 @@ export function usePermissions(): Permissions {
   const isCentauroEmail = user?.email?.toLowerCase().endsWith('@centauro.com') ?? false;
   
   // Non-centauro emails are always treated as guests, regardless of role column
-  const isGuest = !isCentauroEmail;
+  const isGuestByEmail = !isCentauroEmail;
   
-  const dbRole = (teamMember?.role as UserRole) || null;
+  // Map old roles to new types for backward compatibility
+  const dbRole = teamMember?.role as string | null;
+  let mappedRole: MemberType | null = null;
+  
+  if (dbRole === 'god') mappedRole = 'god';
+  else if (dbRole === 'admin' || dbRole === 'project_manager') mappedRole = 'admin';
+  else if (dbRole === 'team_member' || dbRole === 'member') mappedRole = 'team_member';
+  else if (dbRole === 'guest') mappedRole = 'guest';
+  else if (dbRole) mappedRole = 'team_member'; // Default to team_member for unknown roles
+  
   // Override role to 'guest' if not a centauro email
-  const role: UserRole | null = isGuest ? 'guest' : dbRole;
+  const role: MemberType | null = isGuestByEmail ? 'guest' : mappedRole;
   
-  const isAdmin = !isGuest && dbRole === 'admin';
-  const isProjectManager = !isGuest && (dbRole === 'project_manager' || isAdmin);
+  const isGod = role === 'god';
+  const isAdmin = role === 'admin' || isGod;
+  const isTeamMember = role === 'team_member';
+  const isGuest = role === 'guest';
+  
+  // For backward compatibility
+  const isProjectManager = isGod || isAdmin;
 
   return {
+    isGod,
     isAdmin,
     isProjectManager,
+    isTeamMember,
+    isGuest,
     role,
     isLoading,
-    // Admin-only actions
-    canEditColumns: isAdmin,
-    canReorderColumns: isAdmin,
-    canCreateGroups: isAdmin || isProjectManager,
-    canDeleteGroups: isAdmin,
-    canManageTeamMembers: isAdmin,
-    // Project manager + admin actions
-    canDeleteTasks: isProjectManager,
-    // Only centauro members can freely edit/move tasks
+    // God-only actions (structural changes)
+    canEditColumns: isGod,
+    canReorderColumns: isGod,
+    canDeleteGroups: isGod,
+    canManageTeamMembers: isGod || isAdmin,
+    // God + Admin actions
+    canCreateGroups: isGod || isAdmin,
+    canDeleteTasks: isGod || isAdmin,
+    // God + Admin can view all columns, team_member respects visibility settings
+    canViewAllColumns: isGod || isAdmin,
+    // All centauro members (god, admin, team_member) can edit/move tasks
     canEditTasks: !isGuest,
     canMoveTasks: !isGuest,
   };

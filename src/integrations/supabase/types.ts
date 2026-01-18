@@ -100,6 +100,33 @@ export type Database = {
           },
         ]
       }
+      column_visibility: {
+        Row: {
+          column_id: string
+          column_label: string
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          visible_to_team_members: boolean
+        }
+        Insert: {
+          column_id: string
+          column_label: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          visible_to_team_members?: boolean
+        }
+        Update: {
+          column_id?: string
+          column_label?: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          visible_to_team_members?: boolean
+        }
+        Relationships: []
+      }
       comment_mentions: {
         Row: {
           comment_id: string

@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Users } from 'lucide-react';
+import { ArrowLeft, Search, Users, Columns, Eye, EyeOff } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { usePermissions } from '@/hooks/usePermissions';
 import { 
   useTeamMemberBranches, 
@@ -23,6 +25,19 @@ import {
   ROLE_LABELS, 
   RoleType 
 } from '@/hooks/useTeamMemberRoles';
+import {
+  useColumnVisibility,
+  useUpdateColumnVisibility,
+  useInitializeColumnVisibility,
+} from '@/hooks/useColumnVisibility';
+import {
+  MemberType,
+  MEMBER_TYPES,
+  MEMBER_TYPE_LABELS,
+  MEMBER_TYPE_DESCRIPTIONS,
+  useUpdateTeamMemberType,
+} from '@/hooks/useUpdateTeamMemberType';
+import { COLUMNS } from '@/types/board';
 
 const BRANCH_COLORS: Record<Branch, string> = {
   Colombia: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
@@ -31,9 +46,16 @@ const BRANCH_COLORS: Record<Branch, string> = {
   Mexico: 'bg-red-500/20 text-red-700 border-red-500/30',
 };
 
+const TYPE_COLORS: Record<MemberType, string> = {
+  god: 'bg-purple-500/20 text-purple-700 border-purple-500/30',
+  admin: 'bg-blue-500/20 text-blue-700 border-blue-500/30',
+  team_member: 'bg-green-500/20 text-green-700 border-green-500/30',
+  guest: 'bg-gray-500/20 text-gray-700 border-gray-500/30',
+};
+
 export default function Settings() {
   const navigate = useNavigate();
-  const { canManageTeamMembers, isProjectManager } = usePermissions();
+  const { canManageTeamMembers, isGod, isAdmin, isProjectManager } = usePermissions();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBranch, setFilterBranch] = useState<Branch | 'all'>('all');
 
@@ -55,6 +77,28 @@ export default function Settings() {
   const { data: roles, isLoading: loadingRoles } = useTeamMemberRoles();
   const updateBranches = useUpdateTeamMemberBranches();
   const updateRoles = useUpdateTeamMemberRoles();
+  const updateMemberType = useUpdateTeamMemberType();
+
+  // Column visibility
+  const { data: columnVisibility, isLoading: loadingColumnVisibility } = useColumnVisibility();
+  const updateColumnVisibility = useUpdateColumnVisibility();
+  const initializeColumnVisibility = useInitializeColumnVisibility();
+
+  // Initialize column visibility settings on first load
+  useEffect(() => {
+    if (columnVisibility && columnVisibility.length === 0 && isGod) {
+      initializeColumnVisibility.mutate();
+    }
+  }, [columnVisibility, isGod]);
+
+  // Create column visibility map
+  const columnVisibilityMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+    columnVisibility?.forEach((cv) => {
+      map.set(cv.column_id, cv.visible_to_team_members);
+    });
+    return map;
+  }, [columnVisibility]);
 
   // Create maps for quick lookup
   const branchesMap = useMemo(() => {
@@ -112,6 +156,18 @@ export default function Settings() {
     updateRoles.mutate({ teamMemberId: memberId, roles: newRoles });
   };
 
+  const handleTypeChange = (memberId: string, type: MemberType) => {
+    updateMemberType.mutate({ teamMemberId: memberId, type });
+  };
+
+  const handleColumnVisibilityToggle = (columnId: string, columnLabel: string, currentVisibility: boolean) => {
+    updateColumnVisibility.mutate({
+      columnId,
+      columnLabel,
+      visibleToTeamMembers: !currentVisibility,
+    });
+  };
+
   const isLoading = loadingMembers || loadingBranches || loadingRoles;
 
   if (!isProjectManager) {
@@ -140,7 +196,7 @@ export default function Settings() {
             <div>
               <h1 className="text-2xl font-bold">Settings</h1>
               <p className="text-sm text-muted-foreground">
-                Manage team member branches and roles
+                Manage team members, types, branches, roles, and column visibility
               </p>
             </div>
           </div>
@@ -154,6 +210,12 @@ export default function Settings() {
               <Users className="h-4 w-4" />
               Team Directory
             </TabsTrigger>
+            {isGod && (
+              <TabsTrigger value="columns" className="gap-2">
+                <Columns className="h-4 w-4" />
+                Column Visibility
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="directory" className="space-y-6">
@@ -201,6 +263,7 @@ export default function Settings() {
                     <thead className="bg-muted/50">
                       <tr>
                         <th className="text-left px-4 py-3 font-medium">Member</th>
+                        <th className="text-left px-4 py-3 font-medium w-40">Type</th>
                         <th className="text-left px-4 py-3 font-medium">Branches</th>
                         <th className="text-left px-4 py-3 font-medium">Roles</th>
                       </tr>
@@ -209,6 +272,7 @@ export default function Settings() {
                       {filteredMembers.map((member) => {
                         const memberBranches = branchesMap.get(member.id) || [];
                         const memberRoles = rolesMap.get(member.id) || [];
+                        const memberType = (member.role as MemberType) || 'team_member';
 
                         return (
                           <tr key={member.id} className="hover:bg-muted/30">
@@ -229,6 +293,34 @@ export default function Settings() {
                                   </div>
                                 </div>
                               </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              {isGod ? (
+                                <Select
+                                  value={memberType}
+                                  onValueChange={(value) => handleTypeChange(member.id, value as MemberType)}
+                                >
+                                  <SelectTrigger className="w-36">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {MEMBER_TYPES.map((type) => (
+                                      <SelectItem key={type} value={type}>
+                                        <div className="flex flex-col">
+                                          <span>{MEMBER_TYPE_LABELS[type]}</span>
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <Badge
+                                  variant="outline"
+                                  className={TYPE_COLORS[memberType]}
+                                >
+                                  {MEMBER_TYPE_LABELS[memberType]}
+                                </Badge>
+                              )}
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex flex-wrap gap-2">
@@ -286,7 +378,7 @@ export default function Settings() {
                       })}
                       {filteredMembers.length === 0 && (
                         <tr>
-                          <td colSpan={3} className="px-4 py-12 text-center text-muted-foreground">
+                          <td colSpan={4} className="px-4 py-12 text-center text-muted-foreground">
                             No team members found
                           </td>
                         </tr>
@@ -297,6 +389,96 @@ export default function Settings() {
               </div>
             )}
           </TabsContent>
+
+          {isGod && (
+            <TabsContent value="columns" className="space-y-6">
+              <div className="bg-muted/30 rounded-lg p-4 mb-6">
+                <h3 className="font-medium mb-2">Column Visibility Settings</h3>
+                <p className="text-sm text-muted-foreground">
+                  Control which columns are visible to Team Members. God and Admin users can always see all columns.
+                  Hidden columns will not appear for Team Members in the board view.
+                </p>
+              </div>
+
+              {loadingColumnVisibility ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  Loading column visibility settings...
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="text-left px-4 py-3 font-medium">Column</th>
+                          <th className="text-left px-4 py-3 font-medium">Type</th>
+                          <th className="text-left px-4 py-3 font-medium w-48">Visible to Team Members</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {COLUMNS.filter(col => col.label).map((column) => {
+                          const isVisible = columnVisibilityMap.get(column.id) ?? true;
+                          
+                          return (
+                            <tr key={column.id} className="hover:bg-muted/30">
+                              <td className="px-4 py-3">
+                                <div className="font-medium">{column.label}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {column.id}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge variant="outline">
+                                  {column.type}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  <Switch
+                                    checked={isVisible}
+                                    onCheckedChange={() => 
+                                      handleColumnVisibilityToggle(
+                                        column.id, 
+                                        column.label, 
+                                        isVisible
+                                      )
+                                    }
+                                  />
+                                  <span className="flex items-center gap-1 text-sm">
+                                    {isVisible ? (
+                                      <>
+                                        <Eye className="h-4 w-4 text-green-600" />
+                                        Visible
+                                      </>
+                                    ) : (
+                                      <>
+                                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                        Hidden
+                                      </>
+                                    )}
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => initializeColumnVisibility.mutate()}
+                  disabled={initializeColumnVisibility.isPending}
+                >
+                  {initializeColumnVisibility.isPending ? 'Initializing...' : 'Initialize Missing Columns'}
+                </Button>
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>

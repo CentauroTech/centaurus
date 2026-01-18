@@ -359,13 +359,13 @@ export function TaskRow({
             <td 
               key={column.id} 
               className={cn(
-                "border-r border-border/50 px-1.5 py-1",
+                "border-r border-border/50 px-1.5 py-1 whitespace-nowrap",
                 column.width,
                 isPrivate && "border-r-slate-600"
               )}
             >
               <div className={cn(
-                "flex items-center justify-center text-sm font-medium px-3 py-1 rounded-md",
+                "flex items-center justify-center text-sm font-medium px-3 py-1 rounded-md whitespace-nowrap",
                 phaseClass
               )}>
                 {phaseValue || '-'}
@@ -374,7 +374,7 @@ export function TaskRow({
           );
         }
         
-        return <td key={column.id} className={cn("border-r border-border/50 px-0 py-0", column.width, isSticky && cn("sticky z-20", stickyBg), index === 2 && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]", isPrivate && index !== 2 && "border-r-slate-600")} style={isSticky ? {
+        return <td key={column.id} className={cn("border-r border-border/50 px-0 py-0 whitespace-nowrap", column.width, isSticky && cn("sticky z-20", stickyBg), index === 2 && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]", isPrivate && index !== 2 && "border-r-slate-600")} style={isSticky ? {
           left: leftOffset
         } : undefined}>
               {renderCell(column)}

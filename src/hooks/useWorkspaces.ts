@@ -274,7 +274,7 @@ export function useTeamMembers() {
       if (error) throw error;
       return data;
     },
-    staleTime: 120000, // Cache for 2 minutes - team members rarely change
+    staleTime: 30000, // Cache for 30 seconds - refresh more frequently for name changes
   });
 }
 

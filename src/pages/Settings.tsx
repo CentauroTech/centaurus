@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Users, Columns, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Search, Users, Columns, Eye, EyeOff, X, Plus, Minus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,14 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { usePermissions } from '@/hooks/usePermissions';
 import { 
   useTeamMemberBranches, 
@@ -34,10 +42,10 @@ import {
   MemberType,
   MEMBER_TYPES,
   MEMBER_TYPE_LABELS,
-  MEMBER_TYPE_DESCRIPTIONS,
   useUpdateTeamMemberType,
 } from '@/hooks/useUpdateTeamMemberType';
 import { COLUMNS } from '@/types/board';
+import { toast } from 'sonner';
 
 const BRANCH_COLORS: Record<Branch, string> = {
   Colombia: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
@@ -58,6 +66,7 @@ export default function Settings() {
   const { canManageTeamMembers, isGod, isAdmin, isProjectManager } = usePermissions();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBranch, setFilterBranch] = useState<Branch | 'all'>('all');
+  const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
 
   // Fetch team members
   const { data: teamMembers, isLoading: loadingMembers } = useQuery({
@@ -138,6 +147,100 @@ export default function Settings() {
     });
   }, [teamMembers, searchQuery, filterBranch, branchesMap]);
 
+  // Selection handlers
+  const handleSelectMember = (memberId: string, checked: boolean) => {
+    setSelectedMembers(prev => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(memberId);
+      } else {
+        next.delete(memberId);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedMembers(new Set(filteredMembers.map(m => m.id)));
+    } else {
+      setSelectedMembers(new Set());
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedMembers(new Set());
+  };
+
+  // Bulk action handlers
+  const handleBulkAddBranch = async (branch: Branch) => {
+    const promises = Array.from(selectedMembers).map(memberId => {
+      const currentBranches = branchesMap.get(memberId) || [];
+      if (!currentBranches.includes(branch)) {
+        return updateBranches.mutateAsync({ 
+          teamMemberId: memberId, 
+          branches: [...currentBranches, branch] 
+        });
+      }
+      return Promise.resolve();
+    });
+    await Promise.all(promises);
+    toast.success(`Added ${branch} to ${selectedMembers.size} members`);
+  };
+
+  const handleBulkRemoveBranch = async (branch: Branch) => {
+    const promises = Array.from(selectedMembers).map(memberId => {
+      const currentBranches = branchesMap.get(memberId) || [];
+      if (currentBranches.includes(branch)) {
+        return updateBranches.mutateAsync({ 
+          teamMemberId: memberId, 
+          branches: currentBranches.filter(b => b !== branch) 
+        });
+      }
+      return Promise.resolve();
+    });
+    await Promise.all(promises);
+    toast.success(`Removed ${branch} from ${selectedMembers.size} members`);
+  };
+
+  const handleBulkAddRole = async (role: RoleType) => {
+    const promises = Array.from(selectedMembers).map(memberId => {
+      const currentRoles = rolesMap.get(memberId) || [];
+      if (!currentRoles.includes(role)) {
+        return updateRoles.mutateAsync({ 
+          teamMemberId: memberId, 
+          roles: [...currentRoles, role] 
+        });
+      }
+      return Promise.resolve();
+    });
+    await Promise.all(promises);
+    toast.success(`Added ${ROLE_LABELS[role]} to ${selectedMembers.size} members`);
+  };
+
+  const handleBulkRemoveRole = async (role: RoleType) => {
+    const promises = Array.from(selectedMembers).map(memberId => {
+      const currentRoles = rolesMap.get(memberId) || [];
+      if (currentRoles.includes(role)) {
+        return updateRoles.mutateAsync({ 
+          teamMemberId: memberId, 
+          roles: currentRoles.filter(r => r !== role) 
+        });
+      }
+      return Promise.resolve();
+    });
+    await Promise.all(promises);
+    toast.success(`Removed ${ROLE_LABELS[role]} from ${selectedMembers.size} members`);
+  };
+
+  const handleBulkSetType = async (type: MemberType) => {
+    const promises = Array.from(selectedMembers).map(memberId => {
+      return updateMemberType.mutateAsync({ teamMemberId: memberId, type });
+    });
+    await Promise.all(promises);
+    toast.success(`Set ${selectedMembers.size} members to ${MEMBER_TYPE_LABELS[type]}`);
+  };
+
   const handleBranchToggle = (memberId: string, branch: Branch) => {
     const currentBranches = branchesMap.get(memberId) || [];
     const newBranches = currentBranches.includes(branch)
@@ -169,6 +272,8 @@ export default function Settings() {
   };
 
   const isLoading = loadingMembers || loadingBranches || loadingRoles;
+  const allSelected = filteredMembers.length > 0 && filteredMembers.every(m => selectedMembers.has(m.id));
+  const someSelected = filteredMembers.some(m => selectedMembers.has(m.id));
 
   if (!isProjectManager) {
     return (
@@ -202,6 +307,144 @@ export default function Settings() {
           </div>
         </div>
       </header>
+
+      {/* Bulk Actions Toolbar */}
+      {selectedMembers.size > 0 && (
+        <div className="sticky top-[73px] z-40 bg-primary text-primary-foreground border-b shadow-lg">
+          <div className="container mx-auto px-6 py-3">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{selectedMembers.size} selected</span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6 hover:bg-primary-foreground/20"
+                  onClick={clearSelection}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="h-6 w-px bg-primary-foreground/30" />
+
+              {/* Bulk Branch Actions */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="sm" className="gap-1">
+                    <Plus className="h-3 w-3" />
+                    Add Branch
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>Add Branch</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {BRANCHES.map(branch => (
+                    <DropdownMenuItem 
+                      key={branch}
+                      onClick={() => handleBulkAddBranch(branch)}
+                    >
+                      {branch}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="sm" className="gap-1">
+                    <Minus className="h-3 w-3" />
+                    Remove Branch
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>Remove Branch</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {BRANCHES.map(branch => (
+                    <DropdownMenuItem 
+                      key={branch}
+                      onClick={() => handleBulkRemoveBranch(branch)}
+                    >
+                      {branch}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <div className="h-6 w-px bg-primary-foreground/30" />
+
+              {/* Bulk Role Actions */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="sm" className="gap-1">
+                    <Plus className="h-3 w-3" />
+                    Add Role
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>Add Role</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {ROLE_TYPES.map(role => (
+                    <DropdownMenuItem 
+                      key={role}
+                      onClick={() => handleBulkAddRole(role)}
+                    >
+                      {ROLE_LABELS[role]}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="sm" className="gap-1">
+                    <Minus className="h-3 w-3" />
+                    Remove Role
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>Remove Role</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {ROLE_TYPES.map(role => (
+                    <DropdownMenuItem 
+                      key={role}
+                      onClick={() => handleBulkRemoveRole(role)}
+                    >
+                      {ROLE_LABELS[role]}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {isGod && (
+                <>
+                  <div className="h-6 w-px bg-primary-foreground/30" />
+
+                  {/* Bulk Type Actions */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="secondary" size="sm">
+                        Set Type
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuLabel>Set Type</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {MEMBER_TYPES.map(type => (
+                        <DropdownMenuItem 
+                          key={type}
+                          onClick={() => handleBulkSetType(type)}
+                        >
+                          {MEMBER_TYPE_LABELS[type]}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="container mx-auto px-6 py-8">
         <Tabs defaultValue="directory" className="space-y-6">
@@ -262,6 +505,14 @@ export default function Settings() {
                   <table className="w-full">
                     <thead className="bg-muted/50">
                       <tr>
+                        <th className="text-left px-4 py-3 font-medium w-12">
+                          <Checkbox
+                            checked={allSelected}
+                            onCheckedChange={handleSelectAll}
+                            aria-label="Select all"
+                            className={someSelected && !allSelected ? 'opacity-50' : ''}
+                          />
+                        </th>
                         <th className="text-left px-4 py-3 font-medium">Member</th>
                         <th className="text-left px-4 py-3 font-medium w-40">Type</th>
                         <th className="text-left px-4 py-3 font-medium">Branches</th>
@@ -273,9 +524,22 @@ export default function Settings() {
                         const memberBranches = branchesMap.get(member.id) || [];
                         const memberRoles = rolesMap.get(member.id) || [];
                         const memberType = (member.role as MemberType) || 'team_member';
+                        const isSelected = selectedMembers.has(member.id);
 
                         return (
-                          <tr key={member.id} className="hover:bg-muted/30">
+                          <tr 
+                            key={member.id} 
+                            className={`hover:bg-muted/30 ${isSelected ? 'bg-primary/5' : ''}`}
+                          >
+                            <td className="px-4 py-3">
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={(checked) => 
+                                  handleSelectMember(member.id, checked as boolean)
+                                }
+                                aria-label={`Select ${member.name}`}
+                              />
+                            </td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-9 w-9">
@@ -378,7 +642,7 @@ export default function Settings() {
                       })}
                       {filteredMembers.length === 0 && (
                         <tr>
-                          <td colSpan={4} className="px-4 py-12 text-center text-muted-foreground">
+                          <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
                             No team members found
                           </td>
                         </tr>

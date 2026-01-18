@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { CommentWithUser } from '@/hooks/useComments';
 import { RichTextEditor, RichTextDisplay } from './RichTextEditor';
-import { ExpandableComment } from './ExpandableComment';
+
 interface CommentSectionProps {
   title: string;
   icon: 'team' | 'guest';
@@ -161,9 +161,7 @@ export function CommentSection({
                       {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                     </span>
                   </div>
-                  <ExpandableComment maxHeight={600}>
-                    {renderCommentContent(comment.content)}
-                  </ExpandableComment>
+{renderCommentContent(comment.content)}
                 </div>
               </div>
             ))

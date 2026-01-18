@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Send, AtSign, Smile, Paperclip, MessageSquare, Users, User } from 'lucide-react';
+import { Send, AtSign, MessageSquare, Users, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { CommentWithUser } from '@/hooks/useComments';
+import { RichTextEditor, RichTextDisplay } from './RichTextEditor';
 
 interface CommentSectionProps {
   title: string;
@@ -32,39 +33,19 @@ export function CommentSection({
   const [newComment, setNewComment] = useState('');
   const [showMentions, setShowMentions] = useState(false);
   const [mentionSearch, setMentionSearch] = useState('');
-  const [mentionCursorPosition, setMentionCursorPosition] = useState(0);
   const [isSending, setIsSending] = useState(false);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const mentionButtonRef = useRef<HTMLButtonElement>(null);
 
   const filteredMentionUsers = teamMembers?.filter(member =>
     mentionSearch === '' || member.name.toLowerCase().includes(mentionSearch.toLowerCase())
   ).slice(0, 6) || [];
 
-  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    const cursorPos = e.target.selectionStart;
-    setNewComment(value);
-
-    const textBeforeCursor = value.substring(0, cursorPos);
-    const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
-
-    if (mentionMatch) {
-      setShowMentions(true);
-      setMentionSearch(mentionMatch[1]);
-      setMentionCursorPosition(cursorPos - mentionMatch[0].length);
-    } else {
-      setShowMentions(false);
-      setMentionSearch('');
-    }
-  };
-
-  const handleSendComment = async () => {
-    if (!newComment.trim() || isSending) return;
-
+  // Extract mentions from HTML content
+  const extractMentionsFromHtml = (html: string): string[] => {
     const mentionPattern = /@([\w]+(?:\s[\w]+)?)/g;
     const mentionedNames: string[] = [];
     let match;
-    while ((match = mentionPattern.exec(newComment)) !== null) {
+    while ((match = mentionPattern.exec(html)) !== null) {
       mentionedNames.push(match[1]);
     }
 
@@ -80,6 +61,15 @@ export function CommentSection({
         }
       }
     }
+    return mentionedUserIds;
+  };
+
+  const handleSendComment = async () => {
+    // Strip HTML tags for empty check
+    const textContent = newComment.replace(/<[^>]*>/g, '').trim();
+    if (!textContent || isSending) return;
+
+    const mentionedUserIds = extractMentionsFromHtml(newComment);
 
     setIsSending(true);
     try {
@@ -91,45 +81,45 @@ export function CommentSection({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey && !showMentions) {
-      e.preventDefault();
-      handleSendComment();
-    }
-    if (e.key === 'Escape') {
-      setShowMentions(false);
-    }
-  };
-
   const insertMention = (user: { id: string; name: string }) => {
-    const textBeforeMention = newComment.substring(0, mentionCursorPosition);
-    const textAfterCursor = newComment.substring(inputRef.current?.selectionStart || newComment.length);
-    const cleanAfterText = textAfterCursor.replace(/^@?\w*/, '');
-
-    setNewComment(`${textBeforeMention}@${user.name} ${cleanAfterText}`);
+    // Insert mention at the end of current content
+    const mentionHtml = `<span class="text-primary font-medium bg-primary/10 px-1 rounded">@${user.name}</span>&nbsp;`;
+    setNewComment(prev => {
+      // Remove empty paragraph at end if exists
+      const cleaned = prev.replace(/<p><\/p>$/, '');
+      return cleaned + mentionHtml;
+    });
     setShowMentions(false);
     setMentionSearch('');
-
-    setTimeout(() => {
-      inputRef.current?.focus();
-      const newCursorPos = textBeforeMention.length + user.name.length + 2;
-      inputRef.current?.setSelectionRange(newCursorPos, newCursorPos);
-    }, 0);
   };
 
-  const renderCommentWithMentions = (content: string): React.ReactNode => {
+  const renderCommentContent = (content: string): React.ReactNode => {
+    // Check if content is HTML (has tags)
+    if (content.includes('<')) {
+      // Process mentions in HTML content
+      const processedContent = content.replace(
+        /@([\w]+(?:\s[\w]+)?)/g,
+        '<span class="text-primary font-medium bg-primary/10 px-1 rounded">@$1</span>'
+      );
+      return <RichTextDisplay content={processedContent} />;
+    }
+    
+    // Plain text fallback - render with mention highlighting
     const parts = content.split(/(@[\w]+(?:\s[\w]+)?)/g);
-
-    return parts.map((part, index) => {
-      if (part.startsWith('@')) {
-        return (
-          <span key={index} className="text-primary font-medium bg-primary/10 px-1 rounded">
-            {part}
-          </span>
-        );
-      }
-      return part;
-    });
+    return (
+      <div className="text-sm text-foreground/90 whitespace-pre-wrap break-words">
+        {parts.map((part, index) => {
+          if (part.startsWith('@')) {
+            return (
+              <span key={index} className="text-primary font-medium bg-primary/10 px-1 rounded">
+                {part}
+              </span>
+            );
+          }
+          return part;
+        })}
+      </div>
+    );
   };
 
   return (
@@ -172,9 +162,7 @@ export function CommentSection({
                       {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                     </span>
                   </div>
-                  <div className="text-sm text-foreground/90 whitespace-pre-wrap break-words">
-                    {renderCommentWithMentions(comment.content)}
-                  </div>
+                  {renderCommentContent(comment.content)}
                 </div>
               </div>
             ))
@@ -189,38 +177,24 @@ export function CommentSection({
 
       <div className="p-3 border-t border-border bg-card">
         <div className="relative">
-          <textarea
-            ref={inputRef}
-            value={newComment}
-            onChange={handleCommentChange}
-            onKeyDown={handleKeyDown}
+          <RichTextEditor
+            content={newComment}
+            onChange={setNewComment}
+            onSend={handleSendComment}
             placeholder={`Write ${isGuestVisible ? 'to guest' : 'a team update'}... Use @ to mention`}
-            className="w-full min-h-[60px] p-3 pr-20 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+            isSending={isSending}
           />
-          <div className="absolute bottom-2 right-2 flex items-center gap-1">
+          
+          {/* Mention button */}
+          <div className="absolute top-1.5 right-24 z-10">
             <Button
+              ref={mentionButtonRef}
               variant="ghost"
               size="icon"
               className="h-7 w-7"
-              onClick={() => {
-                setShowMentions(!showMentions);
-                setMentionSearch('');
-                setMentionCursorPosition(newComment.length);
-                if (!showMentions) {
-                  setNewComment(prev => prev + '@');
-                  inputRef.current?.focus();
-                }
-              }}
+              onClick={() => setShowMentions(!showMentions)}
             >
               <AtSign className="w-4 h-4" />
-            </Button>
-            <Button
-              size="icon"
-              className="h-7 w-7"
-              onClick={handleSendComment}
-              disabled={!newComment.trim() || isSending}
-            >
-              <Send className="w-4 h-4" />
             </Button>
           </div>
 
@@ -228,6 +202,16 @@ export function CommentSection({
             <div className="absolute bottom-full mb-2 left-0 w-64 bg-popover border border-border rounded-lg shadow-lg overflow-hidden z-50">
               <div className="p-2 text-xs text-muted-foreground border-b border-border">
                 {mentionSearch ? `Matching "${mentionSearch}"` : 'Select a person'}
+              </div>
+              <div className="p-2">
+                <input
+                  type="text"
+                  value={mentionSearch}
+                  onChange={(e) => setMentionSearch(e.target.value)}
+                  placeholder="Search..."
+                  className="w-full px-2 py-1 text-sm border border-border rounded mb-2 bg-background"
+                  autoFocus
+                />
               </div>
               <div className="max-h-40 overflow-y-auto">
                 {filteredMentionUsers.map((member) => (

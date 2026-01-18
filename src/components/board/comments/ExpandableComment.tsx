@@ -5,38 +5,52 @@ import { cn } from '@/lib/utils';
 
 interface ExpandableCommentProps {
   children: React.ReactNode;
-  maxHeight?: number;
+  maxLines?: number;
 }
 
-export function ExpandableComment({ children, maxHeight = 200 }: ExpandableCommentProps) {
+export function ExpandableComment({ children, maxLines = 20 }: ExpandableCommentProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [needsExpand, setNeedsExpand] = useState(false);
+  const [collapsedHeight, setCollapsedHeight] = useState<number | undefined>(undefined);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (contentRef.current) {
+      // Get computed line height
+      const computedStyle = window.getComputedStyle(contentRef.current);
+      const lineHeight = parseFloat(computedStyle.lineHeight) || 20;
+      
+      // Calculate max height based on lines
+      const maxHeight = lineHeight * maxLines;
       const scrollHeight = contentRef.current.scrollHeight;
-      setNeedsExpand(scrollHeight > maxHeight);
+      
+      if (scrollHeight > maxHeight) {
+        setNeedsExpand(true);
+        setCollapsedHeight(maxHeight);
+      } else {
+        setNeedsExpand(false);
+        setCollapsedHeight(undefined);
+      }
     }
-  }, [children, maxHeight]);
+  }, [children, maxLines]);
 
   return (
     <div className="relative">
       <div
         ref={contentRef}
         className={cn(
-          "transition-all duration-200",
+          "transition-all duration-200 leading-relaxed",
           !isExpanded && needsExpand && "overflow-hidden"
         )}
         style={{
-          maxHeight: !isExpanded && needsExpand ? `${maxHeight}px` : undefined,
+          maxHeight: !isExpanded && needsExpand && collapsedHeight ? `${collapsedHeight}px` : undefined,
         }}
       >
         {children}
       </div>
       
       {needsExpand && !isExpanded && (
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none" />
       )}
       
       {needsExpand && (

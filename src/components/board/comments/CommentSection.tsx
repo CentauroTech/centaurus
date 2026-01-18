@@ -161,7 +161,7 @@ export function CommentSection({
                       {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                     </span>
                   </div>
-                  <ExpandableComment maxHeight={250}>
+                  <ExpandableComment maxLines={20}>
                     {renderCommentContent(comment.content)}
                   </ExpandableComment>
                 </div>

@@ -35,6 +35,7 @@ interface PrivacyCellProps {
   onRoleAssignments?: (assignments: RoleAssignment[]) => void;
   onMakePublic?: () => void;
   onGuestDueDateChange?: (date: string) => void;
+  onDateAssignedChange?: (date: string) => void;
   currentViewerIds?: string[];
 }
 
@@ -75,6 +76,7 @@ export function PrivacyCell({
   onRoleAssignments,
   onMakePublic,
   onGuestDueDateChange,
+  onDateAssignedChange,
   currentViewerIds = []
 }: PrivacyCellProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -140,6 +142,13 @@ export function PrivacyCell({
     if (onRoleAssignments && roleAssignments.length > 0) {
       onRoleAssignments(roleAssignments);
     }
+    
+    // Set date_assigned to today when guest is assigned
+    if (onDateAssignedChange && selectedViewers.length > 0) {
+      const today = new Date().toISOString().split('T')[0];
+      onDateAssignedChange(today);
+    }
+    
     // Set guest_due_date to +1 business day when guest is assigned
     if (onGuestDueDateChange && selectedViewers.length > 0) {
       const tomorrow = new Date();

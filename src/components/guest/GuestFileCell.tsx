@@ -7,14 +7,48 @@ interface GuestFileCellProps {
   taskId: string;
   category: string;
   label: string;
+  phase?: string;
 }
 
-export function GuestFileCell({ taskId, category, label }: GuestFileCellProps) {
+// Phase-aware file category mapping
+// Translation phase: show 'source' files (material to translate)
+// Adaptation phase: show 'translated' files (translator's output to adapt)
+const getDisplayCategory = (requestedCategory: string, phase?: string): string => {
+  if (!phase) return requestedCategory;
+  
+  const normalizedPhase = phase.toLowerCase();
+  
+  // For "File to Translate" column
+  if (requestedCategory === 'source') {
+    // Always show source material for translation work
+    return 'source';
+  }
+  
+  // For "File to Adapt" column
+  if (requestedCategory === 'translated') {
+    // In adaptation phase, show translated files (from translator)
+    if (normalizedPhase.includes('adapt')) {
+      return 'translated';
+    }
+    // In translation phase, this column should be empty (translator creates these)
+    if (normalizedPhase.includes('translat')) {
+      return 'translated'; // Show any existing translated files
+    }
+    return 'translated';
+  }
+  
+  return requestedCategory;
+};
+
+export function GuestFileCell({ taskId, category, label, phase }: GuestFileCellProps) {
   const { data: files, isLoading } = useTaskFiles(taskId, true);
+  
+  // Determine which category to display based on phase
+  const displayCategory = getDisplayCategory(category, phase);
   
   // Filter to guest-accessible files in this category
   const categoryFiles = files?.filter(
-    f => f.is_guest_accessible && f.file_category === category
+    f => f.is_guest_accessible && f.file_category === displayCategory
   ) || [];
 
   if (isLoading) {

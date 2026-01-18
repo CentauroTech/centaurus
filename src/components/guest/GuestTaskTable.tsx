@@ -86,6 +86,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                         taskId={task.id} 
                         category="source" 
                         label="Source file"
+                        phase={task.fase}
                       />
                     </TableCell>
 
@@ -95,6 +96,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                         taskId={task.id} 
                         category="translated" 
                         label="Translated file"
+                        phase={task.fase}
                       />
                     </TableCell>
 

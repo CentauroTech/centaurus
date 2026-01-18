@@ -45,7 +45,7 @@ export function TextCell({ value, onChange, placeholder = '-' }: TextCellProps) 
       onFocus={handleFocus}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      className="w-full bg-transparent border-0 outline-none text-sm focus:ring-0 truncate text-inherit placeholder:text-slate-400"
+      className="w-full bg-transparent border-0 outline-none text-sm focus:ring-0 truncate text-inherit placeholder:text-slate-400 px-2.5"
       placeholder={placeholder}
     />
   );

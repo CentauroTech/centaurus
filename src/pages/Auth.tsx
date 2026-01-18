@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, LayoutDashboard } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import centaurusLogo from '@/assets/centaurus-logo.jpeg';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -175,12 +176,10 @@ export default function Auth() {
         <Card className="w-full max-w-md shadow-xl border-border/50">
           <CardHeader className="text-center space-y-2">
             <div className="flex justify-center mb-2">
-              <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
-                <LayoutDashboard className="h-6 w-6 text-primary-foreground" />
-              </div>
+              <img src={centaurusLogo} alt="Centaurus Logo" className="h-16 w-16 rounded-xl object-cover" />
             </div>
-            <CardTitle className="text-2xl font-display">Reset Password</CardTitle>
-            <CardDescription>Enter your new password below</CardDescription>
+            <CardTitle className="text-2xl font-display">Centaurus</CardTitle>
+            <CardDescription>Reset your password</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -230,11 +229,9 @@ export default function Auth() {
       <Card className="w-full max-w-md shadow-xl border-border/50">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-2">
-            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
-              <LayoutDashboard className="h-6 w-6 text-primary-foreground" />
-            </div>
+            <img src={centaurusLogo} alt="Centaurus Logo" className="h-16 w-16 rounded-xl object-cover" />
           </div>
-          <CardTitle className="text-2xl font-display">Work Management</CardTitle>
+          <CardTitle className="text-2xl font-display">Centaurus</CardTitle>
           <CardDescription>Sign in to access your boards and tasks</CardDescription>
         </CardHeader>
         <CardContent>

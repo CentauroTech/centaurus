@@ -52,11 +52,11 @@ export function StatusBadge({ status, onStatusChange, isKickoffPhase = false, on
   }, []);
 
   return (
-    <div className="relative h-full w-full -mx-1.5 -my-0.5" ref={dropdownRef}>
+    <div className="relative h-full w-full flex items-center justify-center px-1.5 py-1" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "h-full w-full px-2 text-xs font-medium text-center transition-smooth",
+          "px-3 py-1 rounded-md text-xs font-medium text-center transition-smooth",
           "flex items-center justify-center gap-1",
           config.className,
           "hover:opacity-90"

@@ -3,14 +3,15 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { BoardView } from '@/components/board/BoardView';
-import { useWorkspaces, useBoard } from '@/hooks/useWorkspaces';
+import { useBoard } from '@/hooks/useWorkspaces';
+import { useAccessibleWorkspaces } from '@/hooks/useAccessibleWorkspaces';
 import { usePermissions } from '@/hooks/usePermissions';
 
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
-  const { data: workspaces, isLoading: workspacesLoading } = useWorkspaces();
+  const { data: workspaces, isLoading: workspacesLoading } = useAccessibleWorkspaces();
   const { data: currentBoard, isLoading: boardLoading } = useBoard(selectedBoardId);
   const { role, isLoading: permissionsLoading } = usePermissions();
 

@@ -9,9 +9,10 @@ interface DropdownCellProps {
   options: string[];
   placeholder?: string;
   isPrivate?: boolean;
+  disabled?: boolean;
 }
 
-export function DropdownCell({ value, onChange, options, placeholder = 'Select...', isPrivate = false }: DropdownCellProps) {
+export function DropdownCell({ value, onChange, options, placeholder = 'Select...', isPrivate = false, disabled = false }: DropdownCellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -98,6 +99,9 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
 
   // Check if this is a Yes/No/Voice Bank style dropdown (badge style)
   const isBadgeStyle = options.includes('Yes') && options.includes('No');
+  
+  // Check if this is a Miami Studio dropdown
+  const isStudioDropdown = options.some(opt => opt.startsWith('Studio '));
 
   const getBadgeClass = (val?: string) => {
     if (!val) return "bg-muted text-muted-foreground";
@@ -107,6 +111,45 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
     return "bg-amber-500 text-white";
   };
 
+  const getStudioBadgeClass = (val?: string) => {
+    if (!val) return "bg-muted text-muted-foreground";
+    if (val === 'Studio 4') return "bg-purple-500 text-white";
+    if (val === 'Studio 3') return "bg-orange-500 text-white";
+    if (val === 'Studio 2') return "bg-blue-500 text-white";
+    return "bg-muted text-muted-foreground";
+  };
+
+  const shouldUseBadge = isBadgeStyle || isStudioDropdown;
+
+  if (disabled) {
+    return (
+      <div className={cn(
+        "flex items-center gap-1 text-left opacity-60 cursor-not-allowed",
+        shouldUseBadge ? "justify-center" : "w-full"
+      )}>
+        {isBadgeStyle ? (
+          <span className={cn(
+            "px-3 py-1 rounded text-xs font-medium",
+            getBadgeClass(value)
+          )}>
+            {value || 'No'}
+          </span>
+        ) : isStudioDropdown ? (
+          <span className={cn(
+            "px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap",
+            getStudioBadgeClass(value)
+          )}>
+            {value || 'Select'}
+          </span>
+        ) : (
+          <span className="text-sm truncate flex-1 text-inherit">
+            {value || placeholder}
+          </span>
+        )}
+      </div>
+    );
+  }
+
   return (
     <>
       <button
@@ -114,7 +157,7 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "flex items-center gap-1 text-left",
-          isBadgeStyle ? "justify-center" : "w-full"
+          shouldUseBadge ? "justify-center" : "w-full"
         )}
         type="button"
       >
@@ -125,6 +168,13 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
           )}>
             {value || 'No'}
           </span>
+        ) : isStudioDropdown ? (
+          <span className={cn(
+            "px-3 py-1 rounded-md text-xs font-medium transition-smooth whitespace-nowrap",
+            getStudioBadgeClass(value)
+          )}>
+            {value || 'Select'}
+          </span>
         ) : value && isPrivate ? (
           <span className="px-2 py-0.5 rounded text-xs font-medium truncate bg-white text-slate-800">
             {value}
@@ -134,7 +184,7 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
             {value || placeholder}
           </span>
         )}
-        {!isBadgeStyle && (
+        {!shouldUseBadge && (
           <ChevronDown className={cn("w-3 h-3 opacity-60 transition-transform flex-shrink-0", isOpen && "rotate-180")} />
         )}
       </button>

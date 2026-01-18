@@ -8,6 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 interface DateCellProps {
   date?: Date | string;
   onDateChange: (date: string | undefined) => void;
+  disabled?: boolean;
 }
 
 // Parse date string as local date (not UTC) to avoid timezone shift
@@ -31,7 +32,7 @@ function formatDateForDB(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-export function DateCell({ date, onDateChange }: DateCellProps) {
+export function DateCell({ date, onDateChange, disabled = false }: DateCellProps) {
   const [open, setOpen] = useState(false);
 
   // Handle both Date objects and string dates - parse strings as local dates
@@ -52,6 +53,20 @@ export function DateCell({ date, onDateChange }: DateCellProps) {
     onDateChange(dateString);
     setOpen(false);
   };
+
+  if (disabled) {
+    return (
+      <div
+        className={cn(
+          "flex items-center gap-2 px-2 py-1 rounded text-sm w-full opacity-60 cursor-not-allowed",
+          isValidDate ? "text-foreground" : "text-slate-400"
+        )}
+      >
+        <CalendarIcon className="w-4 h-4 flex-shrink-0" />
+        <span className="truncate">{isValidDate ? formatDateDisplay(dateObj) : 'No date'}</span>
+      </div>
+    );
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

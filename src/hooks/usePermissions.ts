@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { Task, TEAM_MEMBER_EDITABLE_COLUMNS } from '@/types/board';
 
 // New member types: god, admin, team_member, guest
 export type MemberType = 'god' | 'admin' | 'team_member' | 'guest';
@@ -25,6 +26,8 @@ interface Permissions {
   canViewAllColumns: boolean;
   role: MemberType | null;
   isLoading: boolean;
+  // Column-level permission check
+  canEditColumn: (columnId: string, task: Task, currentTeamMemberId?: string) => boolean;
 }
 
 export function usePermissions(): Permissions {
@@ -74,6 +77,30 @@ export function usePermissions(): Permissions {
   // For backward compatibility
   const isProjectManager = isGod || isAdmin;
 
+  // Column-level permission checker
+  const canEditColumn = (columnId: string, task: Task, currentTeamMemberId?: string): boolean => {
+    // Guests can never edit
+    if (isGuest) return false;
+    
+    // God and Admin can always edit all columns
+    if (isGod || isAdmin) return true;
+    
+    // Check if task is past kickoff phase
+    const isPostKickoff = task.fase && task.fase !== 'on_hold' && task.fase !== 'kickoff';
+    
+    // If still in kickoff or on_hold, all team members can edit
+    if (!isPostKickoff) return true;
+    
+    // After kickoff, check if user is the assigned Project Manager
+    const taskPmId = task.projectManager?.id;
+    if (currentTeamMemberId && taskPmId === currentTeamMemberId) {
+      return true; // PM can edit all columns on their tasks
+    }
+    
+    // Team member (not PM) can only edit specific columns after kickoff
+    return TEAM_MEMBER_EDITABLE_COLUMNS.includes(columnId);
+  };
+
   return {
     isGod,
     isAdmin,
@@ -95,5 +122,7 @@ export function usePermissions(): Permissions {
     // All centauro members (god, admin, team_member) can edit/move tasks
     canEditTasks: !isGuest,
     canMoveTasks: !isGuest,
+    // Column-level permission check
+    canEditColumn,
   };
 }

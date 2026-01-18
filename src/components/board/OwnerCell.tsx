@@ -7,9 +7,10 @@ import { useTeamMembers } from '@/hooks/useWorkspaces';
 interface OwnerCellProps {
   owner?: User;
   onOwnerChange: (owner: User | undefined) => void;
+  disabled?: boolean;
 }
 
-export function OwnerCell({ owner, onOwnerChange }: OwnerCellProps) {
+export function OwnerCell({ owner, onOwnerChange, disabled = false }: OwnerCellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { data: teamMembers = [] } = useTeamMembers();
@@ -32,6 +33,28 @@ export function OwnerCell({ owner, onOwnerChange }: OwnerCellProps) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  if (disabled) {
+    return (
+      <div className="relative opacity-60 cursor-not-allowed">
+        {owner ? (
+          <div className="flex items-center gap-2">
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium text-white"
+              style={{ backgroundColor: owner.color }}
+            >
+              {owner.initials}
+            </div>
+            <span className="text-sm text-inherit">{owner.name}</span>
+          </div>
+        ) : (
+          <div className="w-7 h-7 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+            <Plus className="w-4 h-4 text-muted-foreground" />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="relative" ref={dropdownRef}>

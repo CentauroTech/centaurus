@@ -257,6 +257,27 @@ export const TARGET_LANGUAGE_OPTIONS = ['English', 'Spanish (Latin America)', 'S
 export const VOICE_TEST_OPTIONS = ['Yes', 'No', 'Voice Bank'];
 
 export const STUDIO_OPTIONS = ['Studio A', 'Studio B', 'Studio C', 'External'];
+export const STUDIO_OPTIONS_MIAMI = ['Studio 2', 'Studio 3', 'Studio 4'];
+
+// Columns that team members (non-PM) can edit after kickoff
+export const TEAM_MEMBER_EDITABLE_COLUMNS = [
+  'lockedRuntime',
+  'finalRuntime',
+  'phaseDueDate',
+  'premixRetakeList',
+  'mixRetakeList',
+  'aorNeeded',
+  'pruebaDeVoz',
+  'traductor',
+  'adaptador',
+  'mixerBogota',    // premix
+  'qc1',            // qcPremix
+  'qcRetakes',
+  'mixerMiami',     // mixer
+  'qcMix',
+  'studio',
+  'director',
+];
 
 export const COLUMNS: ColumnConfig[] = [
   { id: 'isPrivate', label: '', type: 'privacy', width: 'w-8', field: 'isPrivate' },

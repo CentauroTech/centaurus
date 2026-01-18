@@ -6,10 +6,12 @@ import { useProjectManagers } from '@/hooks/useProjectManagers';
 interface ProjectManagerCellProps {
   owner?: User;
   onOwnerChange: (owner: User | undefined) => void;
+  disabled?: boolean;
 }
 export function ProjectManagerCell({
   owner,
-  onOwnerChange
+  onOwnerChange,
+  disabled = false
 }: ProjectManagerCellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -33,6 +35,22 @@ export function ProjectManagerCell({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  if (disabled) {
+    return (
+      <div className="relative opacity-60 cursor-not-allowed">
+        {owner ? (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-inherit px-[10px]">{owner.name}</span>
+          </div>
+        ) : (
+          <div className="w-7 h-7 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+            <Plus className="w-4 h-4 text-muted-foreground" />
+          </div>
+        )}
+      </div>
+    );
+  }
   return <div className="relative" ref={dropdownRef}>
       {owner ? <button onClick={() => setIsOpen(!isOpen)} className="gap-2 group flex items-center justify-start">
           

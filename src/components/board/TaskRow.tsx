@@ -344,7 +344,7 @@ export function TaskRow({
         : index === 1 ? 72 // after checkbox + drag + privacy (48 + 24)
         : 296 // after checkbox + drag + privacy + name (48 + 24 + 224)
         : undefined;
-        return <td key={column.id} className={cn("py-0.5 px-1.5 border-r border-border/50", column.width, isSticky && cn("sticky z-20", stickyBg), index === 2 && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]", isPrivate && index !== 2 && "border-r-slate-600")} style={isSticky ? {
+        return <td key={column.id} className={cn("py-0.5 px-1.5 border-r border-border/50 bg-[#fcebff]", column.width, isSticky && cn("sticky z-20", stickyBg), index === 2 && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]", isPrivate && index !== 2 && "border-r-slate-600")} style={isSticky ? {
           left: leftOffset
         } : undefined}>
               {renderCell(column)}

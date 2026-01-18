@@ -86,7 +86,11 @@ export function AppSidebar({ workspaces, selectedBoardId, onSelectBoard }: AppSi
       {/* Footer */}
       <div className="p-3 border-t border-white/10">
         <SidebarItem icon={<HelpCircle className="w-4 h-4" />} label="Help" />
-        <SidebarItem icon={<Settings className="w-4 h-4" />} label="Settings" />
+        <SidebarItem 
+          icon={<Settings className="w-4 h-4" />} 
+          label="Settings" 
+          onClick={() => navigate('/settings')}
+        />
       </div>
     </aside>
   );

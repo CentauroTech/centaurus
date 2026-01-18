@@ -638,6 +638,64 @@ export type Database = {
           },
         ]
       }
+      team_member_branches: {
+        Row: {
+          branch: string
+          created_at: string | null
+          id: string
+          team_member_id: string
+        }
+        Insert: {
+          branch: string
+          created_at?: string | null
+          id?: string
+          team_member_id: string
+        }
+        Update: {
+          branch?: string
+          created_at?: string | null
+          id?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_member_branches_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_member_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role_type: string
+          team_member_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role_type: string
+          team_member_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role_type?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_member_roles_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           color: string

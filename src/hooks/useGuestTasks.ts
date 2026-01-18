@@ -2,22 +2,38 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentTeamMember } from './useCurrentTeamMember';
 
+export interface GuestAssignedPerson {
+  id: string;
+  name: string;
+  initials: string;
+  color: string;
+}
+
 export interface GuestTask {
   id: string;
   name: string;
   status: string;
   currentPhase: string;
+  fase: string;
   dateAssigned?: string;
   guestDueDate?: string;
   startedAt?: string;
   completedAt?: string;
+  lastUpdated?: string;
   deliveryComment?: string;
   lockedRuntime?: string;
+  finalRuntime?: string;
   cantidadEpisodios?: number;
   tituloAprobadoEspanol?: string;
+  lenguajeOriginal?: string;
   isPrivate: boolean;
   boardName?: string;
   workspaceName?: string;
+  // Role assignments
+  translator?: GuestAssignedPerson;
+  adapter?: GuestAssignedPerson;
+  // People assigned
+  people?: GuestAssignedPerson[];
 }
 
 export function useGuestTasks() {
@@ -28,7 +44,7 @@ export function useGuestTasks() {
     queryFn: async (): Promise<GuestTask[]> => {
       if (!currentMember?.id) return [];
 
-      // Fetch tasks where this user is a viewer or assigned to a role field
+      // Fetch tasks where this user is a viewer
       const { data: viewerTasks, error: viewerError } = await supabase
         .from('task_viewers')
         .select('task_id')
@@ -40,27 +56,81 @@ export function useGuestTasks() {
 
       if (viewerTaskIds.length === 0) return [];
 
-      // Fetch the actual tasks
+      // Fetch the actual tasks with all needed columns
       const { data: tasks, error: tasksError } = await supabase
         .from('tasks')
         .select(`
           id,
           name,
           status,
+          fase,
           date_assigned,
           guest_due_date,
           started_at,
           completed_at,
+          last_updated,
           delivery_comment,
           locked_runtime,
+          final_runtime,
           cantidad_episodios,
           titulo_aprobado_espanol,
+          lenguaje_original,
           is_private,
-          group_id
+          group_id,
+          traductor_id,
+          adaptador_id
         `)
         .in('id', viewerTaskIds);
 
       if (tasksError) throw tasksError;
+
+      // Get all team member IDs we need to look up
+      const memberIds = new Set<string>();
+      tasks?.forEach(t => {
+        if (t.traductor_id) memberIds.add(t.traductor_id);
+        if (t.adaptador_id) memberIds.add(t.adaptador_id);
+      });
+
+      // Fetch team members
+      const { data: teamMembers } = await supabase
+        .from('team_members')
+        .select('id, name, initials, color')
+        .in('id', Array.from(memberIds));
+
+      const memberMap = new Map(teamMembers?.map(m => [m.id, m]) || []);
+
+      // Fetch task_people for people column
+      const { data: taskPeople } = await supabase
+        .from('task_people')
+        .select('task_id, team_member_id')
+        .in('task_id', viewerTaskIds);
+
+      // Get people member IDs
+      const peopleIds = new Set<string>();
+      taskPeople?.forEach(tp => peopleIds.add(tp.team_member_id));
+
+      // Fetch people team members if not already fetched
+      const missingPeopleIds = Array.from(peopleIds).filter(id => !memberMap.has(id));
+      if (missingPeopleIds.length > 0) {
+        const { data: peopleMembers } = await supabase
+          .from('team_members')
+          .select('id, name, initials, color')
+          .in('id', missingPeopleIds);
+        
+        peopleMembers?.forEach(m => memberMap.set(m.id, m));
+      }
+
+      // Create task -> people mapping
+      const taskPeopleMap = new Map<string, GuestAssignedPerson[]>();
+      taskPeople?.forEach(tp => {
+        const member = memberMap.get(tp.team_member_id);
+        if (member) {
+          if (!taskPeopleMap.has(tp.task_id)) {
+            taskPeopleMap.set(tp.task_id, []);
+          }
+          taskPeopleMap.get(tp.task_id)?.push(member);
+        }
+      });
 
       // Fetch group and board info for each task
       const groupIds = [...new Set(tasks?.map(t => t.group_id) || [])];
@@ -110,18 +180,25 @@ export function useGuestTasks() {
           id: task.id,
           name: task.name,
           status: task.status,
+          fase: task.fase || 'pre_production',
           currentPhase,
           dateAssigned: task.date_assigned,
           guestDueDate: task.guest_due_date,
           startedAt: task.started_at,
           completedAt: task.completed_at,
+          lastUpdated: task.last_updated,
           deliveryComment: task.delivery_comment,
           lockedRuntime: task.locked_runtime,
+          finalRuntime: task.final_runtime,
           cantidadEpisodios: task.cantidad_episodios,
           tituloAprobadoEspanol: task.titulo_aprobado_espanol,
+          lenguajeOriginal: task.lenguaje_original,
           isPrivate: task.is_private,
           boardName,
           workspaceName: workspaceName || '',
+          translator: task.traductor_id ? memberMap.get(task.traductor_id) : undefined,
+          adapter: task.adaptador_id ? memberMap.get(task.adaptador_id) : undefined,
+          people: taskPeopleMap.get(task.id) || [],
         };
       });
     },

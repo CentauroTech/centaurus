@@ -28,7 +28,7 @@ export function StatusBadge({ status, onStatusChange, isKickoffPhase = false, on
     return STATUS_CONFIG[statusKey];
   };
 
-  const config = getDisplayConfig(status) || STATUS_CONFIG[status];
+  const config = getDisplayConfig(status) || STATUS_CONFIG[status] || STATUS_CONFIG.default;
 
   // Filter out statuses based on phase context
   const availableStatuses = (Object.keys(STATUS_CONFIG) as Status[]).filter(statusKey => {

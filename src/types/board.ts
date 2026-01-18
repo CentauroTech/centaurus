@@ -172,6 +172,7 @@ export interface ColumnConfig {
   field: keyof Task;
   options?: string[];
   adminOnly?: boolean; // If true, only admins can see this column
+  roleFilter?: 'translator' | 'adapter' | 'mixer' | 'qc_premix' | 'qc_mix' | 'director' | 'tecnico'; // Filter team members by role
 }
 
 // Dropdown options for various fields
@@ -276,7 +277,7 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'dateDelivered', label: 'Delivered', type: 'date', width: 'w-28', field: 'dateDelivered' },
   { id: 'lastUpdated', label: 'Updated', type: 'last-updated', width: 'w-28', field: 'lastUpdated' },
   { id: 'studio', label: 'Studio', type: 'dropdown', width: 'w-28', field: 'studio', options: STUDIO_OPTIONS },
-  { id: 'director', label: 'Director', type: 'person', width: 'w-28', field: 'director' },
+  { id: 'director', label: 'Director', type: 'person', width: 'w-28', field: 'director', roleFilter: 'director' },
   { id: 'lenguajeOriginal', label: 'Original Language', type: 'dropdown', width: 'w-32', field: 'lenguajeOriginal', options: LENGUAJE_OPTIONS },
   { id: 'targetLanguage', label: 'Target Language', type: 'dropdown', width: 'w-32', field: 'targetLanguage', options: TARGET_LANGUAGE_OPTIONS },
   { id: 'tituloAprobadoEspanol', label: 'Approved Title', type: 'text', width: 'w-40', field: 'tituloAprobadoEspanol' },
@@ -284,13 +285,13 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'mixRetakeList', label: 'Mix Retakes', type: 'file', width: 'w-28', field: 'mixRetakeList' },
   { id: 'aorNeeded', label: 'Aor', type: 'boolean', width: 'w-16', field: 'aorNeeded' },
   { id: 'pruebaDeVoz', label: 'Voice Test', type: 'dropdown', width: 'w-24', field: 'pruebaDeVoz', options: VOICE_TEST_OPTIONS },
-  { id: 'traductor', label: 'Translator', type: 'person', width: 'w-28', field: 'traductor' },
-  { id: 'adaptador', label: 'Adapter', type: 'person', width: 'w-28', field: 'adaptador' },
-  { id: 'premix', label: 'Premix', type: 'person', width: 'w-28', field: 'mixerBogota' },
-  { id: 'qcPremix', label: 'QC Premix', type: 'person', width: 'w-28', field: 'qc1' },
-  { id: 'qcRetakes', label: 'QC Retakes', type: 'person', width: 'w-28', field: 'qcRetakes' },
-  { id: 'mixer', label: 'Mixer', type: 'person', width: 'w-28', field: 'mixerMiami' },
-  { id: 'qcMix', label: 'QC Mix', type: 'person', width: 'w-28', field: 'qcMix' },
+  { id: 'traductor', label: 'Translator', type: 'person', width: 'w-28', field: 'traductor', roleFilter: 'translator' },
+  { id: 'adaptador', label: 'Adapter', type: 'person', width: 'w-28', field: 'adaptador', roleFilter: 'adapter' },
+  { id: 'premix', label: 'Premix', type: 'person', width: 'w-28', field: 'mixerBogota', roleFilter: 'mixer' },
+  { id: 'qcPremix', label: 'QC Premix', type: 'person', width: 'w-28', field: 'qc1', roleFilter: 'qc_premix' },
+  { id: 'qcRetakes', label: 'QC Retakes', type: 'person', width: 'w-28', field: 'qcRetakes', roleFilter: 'qc_premix' },
+  { id: 'mixer', label: 'Mixer', type: 'person', width: 'w-28', field: 'mixerMiami', roleFilter: 'mixer' },
+  { id: 'qcMix', label: 'QC Mix', type: 'person', width: 'w-28', field: 'qcMix', roleFilter: 'qc_mix' },
   { id: 'formato', label: 'Format', type: 'multi-select', width: 'w-56', field: 'formato', options: FORMATO_OPTIONS },
   { id: 'branch', label: 'Branch', type: 'dropdown', width: 'w-24', field: 'branch', options: BRANCH_OPTIONS },
   { id: 'genre', label: 'Genre', type: 'dropdown', width: 'w-24', field: 'genre', options: GENRE_OPTIONS },
@@ -315,8 +316,8 @@ export const COLUMNS_COLOMBIA: ColumnConfig[] = [
   { id: 'status', label: 'Status', type: 'status', width: 'w-32', field: 'status' },
   { id: 'timeTracked', label: 'Time', type: 'time-tracked', width: 'w-24', field: 'startedAt', adminOnly: true },
   { id: 'studio', label: 'Studio', type: 'dropdown', width: 'w-28', field: 'studio', options: STUDIO_OPTIONS },
-  { id: 'director', label: 'Director', type: 'person', width: 'w-28', field: 'director' },
-  { id: 'tecnico', label: 'Tecnico', type: 'person', width: 'w-28', field: 'tecnico' },
+  { id: 'director', label: 'Director', type: 'person', width: 'w-28', field: 'director', roleFilter: 'director' },
+  { id: 'tecnico', label: 'Tecnico', type: 'person', width: 'w-28', field: 'tecnico', roleFilter: 'tecnico' },
   { id: 'lockedRuntime', label: 'Locked Runtime', type: 'text', width: 'w-28', field: 'lockedRuntime' },
   { id: 'finalRuntime', label: 'Final Runtime', type: 'text', width: 'w-24', field: 'finalRuntime' },
   { id: 'pruebaDeVoz', label: 'Prueba de Voz', type: 'dropdown', width: 'w-24', field: 'pruebaDeVoz', options: VOICE_TEST_OPTIONS },
@@ -329,9 +330,9 @@ export const COLUMNS_COLOMBIA: ColumnConfig[] = [
   { id: 'cantidadEpisodios', label: 'Cantidad Episodios', type: 'number', width: 'w-28', field: 'cantidadEpisodios' },
   { id: 'entregaFinalScriptItems', label: 'Entrega Final - Script y Dubcard', type: 'multi-select', width: 'w-96', field: 'entregaFinalScriptItems', options: ENTREGA_FINAL_SCRIPT_OPTIONS },
   { id: 'entregaFinalDubAudioItems', label: 'Entrega Final - Dub Audio', type: 'multi-select', width: 'w-96', field: 'entregaFinalDubAudioItems', options: ENTREGA_FINAL_DUB_AUDIO_OPTIONS },
-  { id: 'traductor', label: 'Traductor', type: 'person', width: 'w-28', field: 'traductor' },
-  { id: 'adaptador', label: 'Adaptador', type: 'person', width: 'w-28', field: 'adaptador' },
-  { id: 'mixerBogota', label: 'Mixer Bogota', type: 'person', width: 'w-28', field: 'mixerBogota' },
-  { id: 'mixerMiami', label: 'Mixer Miami', type: 'person', width: 'w-28', field: 'mixerMiami' },
-  { id: 'qcMix', label: 'QC Mix', type: 'person', width: 'w-28', field: 'qcMix' },
+  { id: 'traductor', label: 'Traductor', type: 'person', width: 'w-28', field: 'traductor', roleFilter: 'translator' },
+  { id: 'adaptador', label: 'Adaptador', type: 'person', width: 'w-28', field: 'adaptador', roleFilter: 'adapter' },
+  { id: 'mixerBogota', label: 'Mixer Bogota', type: 'person', width: 'w-28', field: 'mixerBogota', roleFilter: 'mixer' },
+  { id: 'mixerMiami', label: 'Mixer Miami', type: 'person', width: 'w-28', field: 'mixerMiami', roleFilter: 'mixer' },
+  { id: 'qcMix', label: 'QC Mix', type: 'person', width: 'w-28', field: 'qcMix', roleFilter: 'qc_mix' },
 ];

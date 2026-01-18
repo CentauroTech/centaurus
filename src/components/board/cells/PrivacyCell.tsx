@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Lock, Unlock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useTeamMemberRolesMap, RoleType, ROLE_LABELS } from '@/hooks/useTeamMemberRoles';
 
 export interface RoleAssignment {
   field: string;
@@ -47,25 +48,25 @@ interface TeamMember {
   email: string | null;
 }
 
-type FilterCategory = 'all' | 'translators' | 'adapters' | 'mixers' | 'qc_premix' | 'qc_mix';
+type FilterCategory = 'all' | 'translator' | 'adapter' | 'mixer' | 'qc_premix' | 'qc_mix';
 
 // Map filter categories to task fields
 const CATEGORY_TO_FIELD: Record<FilterCategory, string | null> = {
   all: null,
-  translators: 'traductor',
-  adapters: 'adaptador',
-  mixers: 'mixerMiami',
+  translator: 'traductor',
+  adapter: 'adaptador',
+  mixer: 'mixerMiami',
   qc_premix: 'qc1',
   qc_mix: 'qcMix',
 };
 
-const FILTER_CATEGORIES: { key: FilterCategory; label: string; names: string[] }[] = [
-  { key: 'all', label: 'All', names: [] },
-  { key: 'translators', label: 'Translators', names: ['Marina', 'Leandra', 'Zana', 'Fabio', 'Natalia', 'William', 'Pequerrecho', 'Cristiano'] },
-  { key: 'adapters', label: 'Adapters', names: ['Ethan', 'John', 'Jennyfer', 'Marina', 'Leandra', 'Zana', 'Pequerrecho', 'Fabio', 'Natalia', 'William', 'Cristiano'] },
-  { key: 'mixers', label: 'Mixers', names: ['Brazil', 'Edgar', 'Edwin', 'Fabio', 'Gonzalo', 'Joao', 'Julian', 'Chris', 'Cristiano'] },
-  { key: 'qc_premix', label: 'QC Premix', names: ['Chris', 'Cristiano'] },
-  { key: 'qc_mix', label: 'QC Mix', names: ['Brazil', 'Chris', 'Edwin', 'Joao', 'Julian', 'Willy', 'Cristiano'] },
+const FILTER_CATEGORIES: { key: FilterCategory; label: string; roleType: RoleType | null }[] = [
+  { key: 'all', label: 'All', roleType: null },
+  { key: 'translator', label: 'Translators', roleType: 'translator' },
+  { key: 'adapter', label: 'Adapters', roleType: 'adapter' },
+  { key: 'mixer', label: 'Mixers', roleType: 'mixer' },
+  { key: 'qc_premix', label: 'QC Premix', roleType: 'qc_premix' },
+  { key: 'qc_mix', label: 'QC Mix', roleType: 'qc_mix' },
 ];
 
 export function PrivacyCell({ 
@@ -85,6 +86,9 @@ export function PrivacyCell({
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
   const [roleAssignments, setRoleAssignments] = useState<RoleAssignment[]>([]);
 
+  // Get the roles map from settings
+  const rolesMap = useTeamMemberRolesMap();
+
   // Fetch guests (team members without @centauro.com email)
   const { data: guests = [] } = useQuery({
     queryKey: ['guests'],
@@ -99,15 +103,21 @@ export function PrivacyCell({
     },
   });
 
-  const filteredGuests = activeFilter === 'all' 
-    ? guests 
-    : guests.filter(guest => {
-        const category = FILTER_CATEGORIES.find(c => c.key === activeFilter);
-        if (!category) return true;
-        return category.names.some(name => 
-          guest.name.toLowerCase().includes(name.toLowerCase())
-        );
-      });
+  // Filter guests based on their assigned roles from Settings
+  const filteredGuests = useMemo(() => {
+    if (activeFilter === 'all') {
+      return guests;
+    }
+    
+    const category = FILTER_CATEGORIES.find(c => c.key === activeFilter);
+    if (!category || !category.roleType) return guests;
+    
+    // Filter guests who have the selected role assigned in Settings
+    return guests.filter(guest => {
+      const memberRoles = rolesMap.get(guest.id) || [];
+      return memberRoles.includes(category.roleType!);
+    });
+  }, [guests, activeFilter, rolesMap]);
 
   const handlePrivacyClick = () => {
     if (!isPrivate) {

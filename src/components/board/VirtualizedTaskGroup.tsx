@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, memo, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Plus, MoreHorizontal } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, MoreHorizontal, ChevronUp } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { horizontalListSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
@@ -8,6 +8,7 @@ import { TaskGroup as TaskGroupType, Task, ColumnConfig } from '@/types/board';
 import { MemoizedTaskRow } from './MemoizedTaskRow';
 import { DraggableColumnHeader } from './DraggableColumnHeader';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 
 interface VirtualizedTaskGroupProps {
@@ -27,10 +28,8 @@ interface VirtualizedTaskGroupProps {
   taskViewersMap?: Map<string, string[]>;
 }
 
-// Row height constant
-const ROW_HEIGHT = 36;
-const VISIBLE_ROWS = 30;
-const BUFFER_ROWS = 10;
+// How many tasks to show per page
+const TASKS_PER_PAGE = 50;
 
 export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({ 
   group, 
@@ -50,9 +49,8 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
 }: VirtualizedTaskGroupProps) {
   const [isCollapsed, setIsCollapsed] = useState(group.isCollapsed ?? false);
   const [groupName, setGroupName] = useState(group.name);
-  const [scrollTop, setScrollTop] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(TASKS_PER_PAGE);
   const { selectedTaskIds, selectAll, clearSelection } = useTaskSelection();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -90,30 +88,21 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
 
   const columnIds = useMemo(() => columns.map(col => col.id), [columns]);
 
-  // Calculate which rows to render based on scroll position
-  const { startIndex, endIndex, visibleTasks } = useMemo(() => {
-    const start = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - BUFFER_ROWS);
-    const end = Math.min(group.tasks.length, start + VISIBLE_ROWS + BUFFER_ROWS * 2);
-    return {
-      startIndex: start,
-      endIndex: end,
-      visibleTasks: group.tasks.slice(start, end),
-    };
-  }, [scrollTop, group.tasks]);
+  // Paginated tasks
+  const visibleTasks = useMemo(() => {
+    return group.tasks.slice(0, visibleCount);
+  }, [group.tasks, visibleCount]);
 
-  // Handle scroll with throttling
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const newScrollTop = e.currentTarget.scrollTop;
-    // Only update if scrolled significantly (reduces re-renders)
-    if (Math.abs(newScrollTop - scrollTop) > ROW_HEIGHT / 2) {
-      setScrollTop(newScrollTop);
-    }
-  }, [scrollTop]);
+  const hasMore = visibleCount < group.tasks.length;
+  const remainingCount = group.tasks.length - visibleCount;
 
-  const totalHeight = group.tasks.length * ROW_HEIGHT;
-  const containerHeight = Math.min(VISIBLE_ROWS * ROW_HEIGHT, totalHeight);
-  const paddingTop = startIndex * ROW_HEIGHT;
-  const paddingBottom = Math.max(0, (group.tasks.length - endIndex) * ROW_HEIGHT);
+  const loadMore = useCallback(() => {
+    setVisibleCount(prev => Math.min(prev + TASKS_PER_PAGE, group.tasks.length));
+  }, [group.tasks.length]);
+
+  const showLess = useCallback(() => {
+    setVisibleCount(TASKS_PER_PAGE);
+  }, []);
 
   return (
     <div className="mb-6">
@@ -145,6 +134,7 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
         
         <span className="text-sm text-muted-foreground">
           {group.tasks.length} {group.tasks.length === 1 ? 'task' : 'tasks'}
+          {hasMore && ` (showing ${visibleCount})`}
         </span>
 
         <button className="p-1 rounded hover:bg-muted transition-smooth opacity-0 group-hover:opacity-100">
@@ -154,87 +144,90 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
 
       {/* Tasks Table */}
       {!isCollapsed && (
-        <div className="bg-card rounded-lg border border-border shadow-board overflow-hidden animate-fade-in">
+        <div className="bg-card rounded-lg border border-border shadow-board overflow-visible animate-fade-in">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
             modifiers={[restrictToHorizontalAxis]}
           >
-            {/* Single scrollable container */}
-            <div 
-              ref={scrollContainerRef}
-              className="overflow-auto custom-scrollbar"
-              style={{ maxHeight: containerHeight + 40 }} // +40 for header
-              onScroll={handleScroll}
-            >
-              <table className="w-full">
-                {/* Sticky Header */}
-                <thead className="sticky top-0 z-30">
-                  <tr className="bg-slate-100 border-b border-border shadow-sm">
-                    <th className="w-6 px-1 sticky left-0 bg-slate-100 z-40">
-                      <Checkbox
-                        checked={allSelected}
-                        onCheckedChange={handleSelectAll}
-                        className={cn(
-                          "transition-smooth h-3.5 w-3.5",
-                          someSelected && "data-[state=unchecked]:bg-primary/30"
-                        )}
+            <table className="w-full">
+              <thead className="sticky top-0 z-30">
+                <tr className="bg-slate-100 border-b border-border shadow-sm">
+                  {/* Select All Checkbox */}
+                  <th className="w-6 px-1 sticky left-0 bg-slate-100 z-40">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={handleSelectAll}
+                      className={cn(
+                        "transition-smooth h-3.5 w-3.5",
+                        someSelected && "data-[state=unchecked]:bg-primary/30"
+                      )}
+                    />
+                  </th>
+                  <th className="w-6 sticky left-6 bg-slate-100 z-40" />
+                  <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
+                    {columns.map((column, index) => (
+                      <DraggableColumnHeader
+                        key={column.id}
+                        column={column}
+                        index={index}
+                        isLocked={isLocked}
                       />
-                    </th>
-                    <th className="w-6 sticky left-6 bg-slate-100 z-40" />
-                    <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-                      {columns.map((column, index) => (
-                        <DraggableColumnHeader
-                          key={column.id}
-                          column={column}
-                          index={index}
-                          isLocked={isLocked}
-                        />
-                      ))}
-                    </SortableContext>
-                    <th className="w-10" />
-                  </tr>
-                </thead>
-                
-                {/* Body with virtual padding */}
-                <tbody>
-                  {/* Top spacer for virtual scrolling */}
-                  {paddingTop > 0 && (
-                    <tr style={{ height: paddingTop }}>
-                      <td colSpan={columns.length + 3} />
-                    </tr>
-                  )}
-                  
-                  {/* Visible rows */}
-                  {visibleTasks.map((task) => {
-                    const viewerIds = taskViewersMap?.get(task.id) || [];
-                    return (
-                      <MemoizedTaskRow
-                        key={task.id}
-                        task={task}
-                        onUpdate={(updates) => onUpdateTask(task.id, updates)}
-                        onDelete={canDeleteTasks ? () => onDeleteTask(task.id) : undefined}
-                        boardId={boardId}
-                        boardName={boardName}
-                        workspaceName={workspaceName}
-                        columns={columns}
-                        onSendToPhase={onSendToPhase ? (phase) => onSendToPhase(task.id, phase) : undefined}
-                        viewerIds={viewerIds}
-                      />
-                    );
-                  })}
-                  
-                  {/* Bottom spacer for virtual scrolling */}
-                  {paddingBottom > 0 && (
-                    <tr style={{ height: paddingBottom }}>
-                      <td colSpan={columns.length + 3} />
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    ))}
+                  </SortableContext>
+                  <th className="w-10" />
+                </tr>
+              </thead>
+              <tbody>
+                {visibleTasks.map((task) => {
+                  const viewerIds = taskViewersMap?.get(task.id) || [];
+                  return (
+                    <MemoizedTaskRow
+                      key={task.id}
+                      task={task}
+                      onUpdate={(updates) => onUpdateTask(task.id, updates)}
+                      onDelete={canDeleteTasks ? () => onDeleteTask(task.id) : undefined}
+                      boardId={boardId}
+                      boardName={boardName}
+                      workspaceName={workspaceName}
+                      columns={columns}
+                      onSendToPhase={onSendToPhase ? (phase) => onSendToPhase(task.id, phase) : undefined}
+                      viewerIds={viewerIds}
+                    />
+                  );
+                })}
+              </tbody>
+            </table>
           </DndContext>
+
+          {/* Load More / Show Less Controls */}
+          {(hasMore || visibleCount > TASKS_PER_PAGE) && (
+            <div className="flex items-center justify-center gap-2 py-2 border-t border-border bg-muted/30">
+              {hasMore && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={loadMore}
+                  className="gap-2 text-primary"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                  Load {Math.min(TASKS_PER_PAGE, remainingCount)} more ({remainingCount} remaining)
+                </Button>
+              )}
+              {visibleCount > TASKS_PER_PAGE && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={showLess}
+                  className="gap-2 text-muted-foreground"
+                >
+                  <ChevronUp className="w-4 h-4" />
+                  Show less
+                </Button>
+              )}
+            </div>
+          )}
 
           {/* Add Task Row */}
           <button

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ColumnConfig, COLUMNS, COLUMNS_COLOMBIA } from '@/types/board';
 import { usePermissions } from './usePermissions';
+import { useColumnVisibility } from './useColumnVisibility';
 
 interface ColumnOrderState {
   order: string[]; // Array of column IDs in order
@@ -14,7 +15,8 @@ function getStorageKey(boardId: string): string {
 }
 
 export function useColumnOrder(boardId: string, workspaceName: string) {
-  const { isAdmin } = usePermissions();
+  const { isGod, isAdmin, isTeamMember } = usePermissions();
+  const { data: columnVisibility } = useColumnVisibility();
   
   // Get default columns based on workspace
   const defaultColumns = workspaceName === 'Colombia' ? COLUMNS_COLOMBIA : COLUMNS;
@@ -49,6 +51,15 @@ export function useColumnOrder(boardId: string, workspaceName: string) {
     
     return { order: defaultOrder, isLocked: false };
   });
+
+  // Create column visibility map for quick lookup
+  const columnVisibilityMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+    columnVisibility?.forEach((cv) => {
+      map.set(cv.column_id, cv.visible_to_team_members);
+    });
+    return map;
+  }, [columnVisibility]);
 
   // Update state when boardId changes
   useEffect(() => {
@@ -86,17 +97,35 @@ export function useColumnOrder(boardId: string, workspaceName: string) {
     }
   }, [boardId, state]);
 
-  // Get ordered columns, filtering out admin-only columns for non-admins
+  // Get ordered columns, filtering based on permissions and visibility settings
   const orderedColumns: ColumnConfig[] = useMemo(() => {
     return state.order
       .map(id => defaultColumns.find(col => col.id === id))
       .filter((col): col is ColumnConfig => {
         if (col === undefined) return false;
-        // Filter out admin-only columns for non-admins
-        if (col.adminOnly && !isAdmin) return false;
+        
+        // Filter out admin-only columns for non-admins (legacy check)
+        if (col.adminOnly && !isGod && !isAdmin) return false;
+        
+        // God and Admin can see all columns
+        if (isGod || isAdmin) return true;
+        
+        // For team members, check column visibility settings
+        if (isTeamMember) {
+          // If no visibility settings exist yet, show all columns
+          if (columnVisibilityMap.size === 0) return true;
+          
+          // Check if this column is visible to team members
+          const isVisible = columnVisibilityMap.get(col.id);
+          // Default to visible if not in the map
+          if (isVisible === undefined) return true;
+          return isVisible;
+        }
+        
+        // Guests see all columns by default (they have limited task access anyway)
         return true;
       });
-  }, [state.order, defaultColumns, isAdmin]);
+  }, [state.order, defaultColumns, isGod, isAdmin, isTeamMember, columnVisibilityMap]);
 
   // Reorder columns
   const reorderColumns = useCallback((activeId: string, overId: string) => {

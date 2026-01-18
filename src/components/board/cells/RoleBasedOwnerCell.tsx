@@ -10,9 +10,10 @@ interface RoleBasedOwnerCellProps {
   owner?: User;
   onOwnerChange: (owner: User | undefined) => void;
   roleFilter?: RoleType; // Filter by role from Settings
+  disabled?: boolean;
 }
 
-export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter }: RoleBasedOwnerCellProps) {
+export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled = false }: RoleBasedOwnerCellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { data: teamMembers = [] } = useTeamMembers();
@@ -48,6 +49,32 @@ export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter }: RoleBas
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen]);
+
+  if (disabled) {
+    return (
+      <div className="relative opacity-60 cursor-not-allowed">
+        <div className="flex items-center gap-1">
+          {owner ? (
+            <div className="flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                <AvatarFallback
+                  style={{ backgroundColor: owner.color }}
+                  className="text-xs text-white"
+                >
+                  {owner.initials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm truncate max-w-[100px]">{owner.name}</span>
+            </div>
+          ) : (
+            <div className="w-6 h-6 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+              <Plus className="w-3 h-3 text-muted-foreground" />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative" ref={dropdownRef}>

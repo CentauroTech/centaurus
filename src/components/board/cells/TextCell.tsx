@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
+import { cn } from '@/lib/utils';
 
 interface TextCellProps {
   value?: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  disabled?: boolean;
 }
 
-export function TextCell({ value, onChange, placeholder = '-' }: TextCellProps) {
+export function TextCell({ value, onChange, placeholder = '-', disabled = false }: TextCellProps) {
   const [localValue, setLocalValue] = useState(value || '');
   const initialValueRef = useRef(value || '');
 
@@ -36,6 +38,14 @@ export function TextCell({ value, onChange, placeholder = '-' }: TextCellProps) 
       e.currentTarget.blur();
     }
   };
+
+  if (disabled) {
+    return (
+      <span className="w-full text-sm truncate text-inherit opacity-60 px-2.5 cursor-not-allowed">
+        {value || placeholder}
+      </span>
+    );
+  }
 
   return (
     <input

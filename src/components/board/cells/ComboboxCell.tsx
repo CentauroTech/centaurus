@@ -8,13 +8,15 @@ interface ComboboxCellProps {
   options: string[];
   placeholder?: string;
   isPrivate?: boolean;
+  disabled?: boolean;
 }
 export function ComboboxCell({
   value,
   onChange,
   options,
   placeholder = 'Select...',
-  isPrivate = false
+  isPrivate = false,
+  disabled = false
 }: ComboboxCellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value || '');
@@ -142,6 +144,16 @@ export function ComboboxCell({
           Add "{inputValue}"
         </button> : <div className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">No options available</div>}
     </div>, document.body) : null;
+  if (disabled) {
+    return (
+      <div className="flex items-center gap-1 opacity-60 cursor-not-allowed">
+        <span className="text-sm truncate text-inherit px-[10px]">
+          {value || placeholder}
+        </span>
+      </div>
+    );
+  }
+
   return <>
       <div className="flex items-center gap-1" ref={containerRef}>
         {value && isPrivate ? <span className="px-2 py-0.5 rounded text-xs font-medium truncate bg-white text-slate-800">

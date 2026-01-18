@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { GripVertical, Trash2, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Task, User, Phase, Status, ColumnConfig } from '@/types/board';
+import { Task, User, Phase, Status, ColumnConfig, STUDIO_OPTIONS_MIAMI } from '@/types/board';
 import { StatusBadge } from './StatusBadge';
 import { OwnerCell } from './OwnerCell';
 import { DateCell } from './DateCell';
@@ -26,6 +26,8 @@ import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 import { useBulkEdit } from '@/contexts/BulkEditContext';
 import { useTaskViewers, useUpdateTaskViewers } from '@/hooks/useTaskViewers';
 import { useSendGuestAssignmentNotification } from '@/hooks/useGuestNotifications';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { mockUsers } from '@/data/mockData';
 import { RoleType } from '@/hooks/useTeamMemberRoles';
 interface TaskRowProps {
@@ -124,6 +126,15 @@ export function TaskRow({
     onBulkUpdate
   } = useBulkEdit();
 
+  // Permissions and current team member for column-level access control
+  const { canEditColumn } = usePermissions();
+  const { data: currentTeamMember } = useCurrentTeamMember();
+
+  // Check if a column is editable for the current user
+  const isColumnEditable = useCallback((columnId: string) => {
+    return canEditColumn(columnId, task, currentTeamMember?.id);
+  }, [canEditColumn, task, currentTeamMember?.id]);
+
   // Task viewers for privacy feature
   const {
     data: viewerIds = []
@@ -218,11 +229,12 @@ export function TaskRow({
   }, [task.id, shouldApplyBulkEdit, getSelectedTaskIds, onBulkUpdate, onUpdate]);
   const renderCell = (column: ColumnConfig) => {
     const value = getTaskValue(task, column.field);
+    const disabled = !isColumnEditable(column.id);
 
     // Special handling for Name column - add the updates button after
     if (column.field === 'name') {
       return <div className="flex items-center gap-2">
-          <TextCell value={value as string} onChange={val => handleUpdate(column.field, val)} />
+          <TextCell value={value as string} onChange={val => handleUpdate(column.field, val)} disabled={disabled} />
           <button onClick={() => setIsDetailsPanelOpen(true)} className={cn("flex-shrink-0 flex items-center justify-center gap-1 p-1.5 rounded hover:bg-accent transition-smooth", commentCount > 0 ? "text-primary" : "text-muted-foreground")} title="Open updates">
             <MessageSquare className="w-4 h-4" />
             {commentCount > 0 && <span className="text-xs font-medium">{commentCount}</span>}
@@ -239,22 +251,22 @@ export function TaskRow({
               {value as string || '-'}
             </span>;
         }
-        return <TextCell value={value as string} onChange={val => handleUpdate(column.field, val)} />;
+        return <TextCell value={value as string} onChange={val => handleUpdate(column.field, val)} disabled={disabled} />;
       case 'number':
-        return <NumberCell value={value as number} onChange={val => handleUpdate(column.field, val)} />;
+        return <NumberCell value={value as number} onChange={val => handleUpdate(column.field, val)} disabled={disabled} />;
       case 'date':
-        return <DateCell date={value as Date} onDateChange={val => handleUpdate(column.field, val)} />;
+        return <DateCell date={value as Date} onDateChange={val => handleUpdate(column.field, val)} disabled={disabled} />;
       case 'person':
         // Use ProjectManagerCell for project manager field
         if (column.field === 'projectManager') {
-          return <ProjectManagerCell owner={value as User} onOwnerChange={val => handleUpdate(column.field, val)} />;
+          return <ProjectManagerCell owner={value as User} onOwnerChange={val => handleUpdate(column.field, val)} disabled={disabled} />;
         }
         // Use RoleBasedOwnerCell if roleFilter is specified
         if (column.roleFilter) {
-          return <RoleBasedOwnerCell owner={value as User} onOwnerChange={val => handleUpdate(column.field, val)} roleFilter={column.roleFilter as RoleType} />;
+          return <RoleBasedOwnerCell owner={value as User} onOwnerChange={val => handleUpdate(column.field, val)} roleFilter={column.roleFilter as RoleType} disabled={disabled} />;
         }
         // Use regular OwnerCell for other person fields
-        return <OwnerCell owner={value as User} onOwnerChange={val => handleUpdate(column.field, val)} />;
+        return <OwnerCell owner={value as User} onOwnerChange={val => handleUpdate(column.field, val)} disabled={disabled} />;
       case 'people':
         return <PeopleCell people={value as User[]} onChange={val => handleUpdate(column.field, val)} />;
       case 'status':
@@ -267,13 +279,17 @@ export function TaskRow({
         // Phase rendering is handled at td level - just return the text
         return null;
       case 'boolean':
-        return <BooleanCell value={value as boolean} onChange={val => handleUpdate(column.field, val)} />;
+        return <BooleanCell value={value as boolean} onChange={val => handleUpdate(column.field, val)} disabled={disabled} />;
       case 'link':
         return <LinkCell value={value as string} onChange={val => handleUpdate(column.field, val)} />;
       case 'combobox':
-        return <ComboboxCell value={value as string} onChange={val => handleUpdate(column.field, val)} options={column.options || []} placeholder="Select..." isPrivate={isPrivate} />;
+        return <ComboboxCell value={value as string} onChange={val => handleUpdate(column.field, val)} options={column.options || []} placeholder="Select..." isPrivate={isPrivate} disabled={disabled} />;
       case 'dropdown':
-        return <DropdownCell value={value as string} onChange={val => handleUpdate(column.field, val)} options={column.options || []} placeholder="Select..." isPrivate={isPrivate} />;
+        // Use Miami studio options if this is the studio column and workspace is Miami
+        const dropdownOptions = column.field === 'studio' && workspaceName?.toLowerCase().includes('miami') 
+          ? STUDIO_OPTIONS_MIAMI 
+          : (column.options || []);
+        return <DropdownCell value={value as string} onChange={val => handleUpdate(column.field, val)} options={dropdownOptions} placeholder="Select..." isPrivate={isPrivate} disabled={disabled} />;
       case 'file':
         return <FileUploadCell value={value as string} onChange={val => handleUpdate(column.field, val)} placeholder="Upload" isPrivate={isPrivate} />;
       case 'auto':

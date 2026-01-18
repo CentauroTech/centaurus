@@ -4,9 +4,10 @@ interface NumberCellProps {
   value?: number;
   onChange: (value: number | undefined) => void;
   placeholder?: string;
+  disabled?: boolean;
 }
 
-export function NumberCell({ value, onChange, placeholder = '-' }: NumberCellProps) {
+export function NumberCell({ value, onChange, placeholder = '-', disabled = false }: NumberCellProps) {
   const [localValue, setLocalValue] = useState(value?.toString() || '');
   const initialValueRef = useRef(value);
 
@@ -37,6 +38,14 @@ export function NumberCell({ value, onChange, placeholder = '-' }: NumberCellPro
       e.currentTarget.blur();
     }
   };
+
+  if (disabled) {
+    return (
+      <span className="w-full text-sm text-inherit opacity-60 cursor-not-allowed">
+        {value ?? placeholder}
+      </span>
+    );
+  }
 
   return (
     <input

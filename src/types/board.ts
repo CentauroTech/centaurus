@@ -1,6 +1,6 @@
 export type Status = 'done' | 'launch' | 'working' | 'delayed' | 'default';
 export type Priority = 'high' | 'medium' | 'low';
-export type Phase = 'pre_production' | 'production' | 'post_production' | 'delivery' | 'complete';
+export type Phase = 'on_hold' | 'kickoff' | 'assets' | 'translation' | 'adapting' | 'casting' | 'recording' | 'premix' | 'qc_premix' | 'retakes' | 'qc_retakes' | 'mix' | 'qc_mix' | 'mix_retakes' | 'final_delivery';
 
 export interface User {
   id: string;
@@ -146,11 +146,21 @@ export const STATUS_CONFIG: Record<Status, { label: string; className: string }>
 };
 
 export const PHASE_CONFIG: Record<Phase, { label: string; className: string }> = {
-  pre_production: { label: 'Pre-Production', className: 'bg-purple-500 text-white' },
-  production: { label: 'Production', className: 'bg-blue-500 text-white' },
-  post_production: { label: 'Post-Production', className: 'bg-orange-500 text-white' },
-  delivery: { label: 'Delivery', className: 'bg-yellow-500 text-foreground' },
-  complete: { label: 'Complete', className: 'bg-status-done text-white' },
+  on_hold: { label: 'On Hold', className: 'bg-gray-300 text-gray-700' },
+  kickoff: { label: 'Kickoff', className: 'bg-gray-800 text-white' },
+  assets: { label: 'Assets', className: 'bg-pink-200 text-pink-800' },
+  translation: { label: 'Translation', className: 'bg-gray-200 text-gray-700' },
+  adapting: { label: 'Adapting', className: 'bg-amber-400 text-amber-900' },
+  casting: { label: 'Casting', className: 'bg-cyan-400 text-cyan-900' },
+  recording: { label: 'Recording', className: 'bg-pink-500 text-white' },
+  premix: { label: 'Premix', className: 'bg-pink-300 text-pink-800' },
+  qc_premix: { label: 'QC-Premix', className: 'bg-pink-200 text-pink-700' },
+  retakes: { label: 'Retakes', className: 'bg-fuchsia-600 text-white' },
+  qc_retakes: { label: 'QC-Retakes', className: 'bg-pink-200 text-pink-700' },
+  mix: { label: 'Mix', className: 'bg-sky-300 text-sky-800' },
+  qc_mix: { label: 'QC-Mix', className: 'bg-purple-300 text-purple-800' },
+  mix_retakes: { label: 'Mix Retakes', className: 'bg-purple-500 text-white' },
+  final_delivery: { label: 'Final Delivery', className: 'bg-emerald-500 text-white' },
 };
 
 export interface ColumnConfig {

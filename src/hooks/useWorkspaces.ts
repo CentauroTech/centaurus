@@ -74,120 +74,43 @@ export function useBoard(boardId: string | null) {
       if (wsError) throw wsError;
       const workspaceName = workspace?.name || '';
 
-      // Fetch team members to map person fields
-      const { data: teamMembers, error: teamError } = await supabase
-        .from('team_members')
-        .select('*');
-      
-      if (teamError) throw teamError;
-
-      const teamMemberMap = new Map(teamMembers?.map(m => [m.id, {
-        id: m.id,
-        name: m.name,
-        initials: m.initials,
-        color: m.color,
-        email: m.email,
-      }]) || []);
-
-      // For HQ boards, aggregate tasks from ALL boards in the workspace, grouped by phase
+      // For HQ boards, use optimized database function
       if (board.is_hq) {
-        // Get all boards in this workspace (except the HQ board itself)
-        const { data: workspaceBoards, error: wbError } = await supabase
-          .from('boards')
-          .select('id, name')
-          .eq('workspace_id', board.workspace_id)
-          .neq('is_hq', true);
+        const { data: hqData, error: hqError } = await supabase
+          .rpc('get_hq_board_data', { board_id_param: boardId }) as { data: any; error: any };
 
-        if (wbError) throw wbError;
+        if (hqError) throw hqError;
+        if (!hqData) return null;
 
-        const allBoardIds = workspaceBoards?.map(b => b.id) || [];
-        
-        // Create a map of board_id to board name for phase extraction
-        const boardMap = new Map(workspaceBoards?.map(b => [b.id, b.name]) || []);
-        
-        // Get all groups from all boards in the workspace
-        const { data: allGroups, error: allGroupsError } = await supabase
-          .from('task_groups')
-          .select('*')
-          .in('board_id', allBoardIds)
-          .order('sort_order');
+        // Build team member map from the response
+        const teamMemberMap = new Map<string, any>(
+          (hqData.team_members || []).map((m: any) => [m.id, m])
+        );
 
-        if (allGroupsError) throw allGroupsError;
-
-        const allGroupIds = allGroups?.map(g => g.id) || [];
-        
-        // Create a map of group_id to board_id
-        const groupToBoardMap = new Map(allGroups?.map(g => [g.id, g.board_id]) || []);
-        
-        let allTasks: any[] = [];
-        let taskPeopleMap = new Map<string, any[]>();
-        let taskViewersMap = new Map<string, string[]>();
-        
-        if (allGroupIds.length > 0) {
-          const { data: tasksData, error: tasksError } = await supabase
-            .from('tasks')
-            .select('*, comments(count)')
-            .in('group_id', allGroupIds)
-            .order('sort_order');
-
-          if (tasksError) throw tasksError;
-          allTasks = (tasksData || []).map(t => ({
-            ...t,
-            comment_count: t.comments?.[0]?.count || 0,
-          }));
-          
-          // Fetch task_people and task_viewers for all tasks in parallel
-          const allTaskIds = allTasks.map(t => t.id);
-          if (allTaskIds.length > 0) {
-            const [taskPeopleResult, taskViewersResult] = await Promise.all([
-              supabase
-                .from('task_people')
-                .select('task_id, team_member_id')
-                .in('task_id', allTaskIds),
-              supabase
-                .from('task_viewers')
-                .select('task_id, team_member_id')
-                .in('task_id', allTaskIds)
-            ]);
-            
-            if (taskPeopleResult.error) throw taskPeopleResult.error;
-            if (taskViewersResult.error) throw taskViewersResult.error;
-            
-            // Map task_id to array of team members
-            taskPeopleResult.data?.forEach(tp => {
-              const member = teamMemberMap.get(tp.team_member_id);
-              if (member) {
-                const existing = taskPeopleMap.get(tp.task_id) || [];
-                existing.push(member);
-                taskPeopleMap.set(tp.task_id, existing);
-              }
-            });
-            
-            // Map task_id to array of viewer IDs
-            taskViewersResult.data?.forEach(tv => {
-              const existing = taskViewersMap.get(tv.task_id) || [];
-              existing.push(tv.team_member_id);
-              taskViewersMap.set(tv.task_id, existing);
-            });
+        // Build task people map
+        const taskPeopleMap = new Map<string, any[]>();
+        (hqData.task_people || []).forEach((tp: any) => {
+          const member = teamMemberMap.get(tp.team_member_id);
+          if (member) {
+            const existing = taskPeopleMap.get(tp.task_id) || [];
+            existing.push(member);
+            taskPeopleMap.set(tp.task_id, existing);
           }
-        }
-
-        // Extract phase from board name (e.g., "Col-Kickoff" -> "Kickoff", "Mia-Recording" -> "Recording")
-        const extractPhase = (boardName: string): string => {
-          const parts = boardName.split('-');
-          return parts.length > 1 ? parts.slice(1).join('-') : boardName;
-        };
-
-        // Add currentPhase and people to each task based on its board
-        const tasksWithPhase = allTasks.map(t => {
-          const boardId = groupToBoardMap.get(t.group_id);
-          const boardName = boardId ? boardMap.get(boardId) : 'Unknown';
-          return {
-            ...t,
-            currentPhase: extractPhase(boardName || 'Unknown'),
-            people: taskPeopleMap.get(t.id) || [],
-          };
         });
+
+        // Build task viewers map
+        const taskViewersMap = new Map<string, string[]>();
+        (hqData.task_viewers || []).forEach((tv: any) => {
+          const existing = taskViewersMap.get(tv.task_id) || [];
+          existing.push(tv.team_member_id);
+          taskViewersMap.set(tv.task_id, existing);
+        });
+
+        // Transform tasks with people data
+        const tasksWithPeople = (hqData.tasks || []).map((t: any) => ({
+          ...t,
+          people: taskPeopleMap.get(t.id) || [],
+        }));
 
         // Group all tasks into one "Projects in Production" group
         const virtualGroups = [{
@@ -197,8 +120,8 @@ export function useBoard(boardId: string | null) {
           color: 'hsl(209, 100%, 46%)',
           is_collapsed: false,
           sort_order: 0,
-          tasks: tasksWithPhase,
-          isVirtual: true, // Mark as virtual group (read-only in HQ)
+          tasks: tasksWithPeople,
+          isVirtual: true,
         }];
 
         return {
@@ -211,15 +134,24 @@ export function useBoard(boardId: string | null) {
         };
       }
 
-      // Regular board - fetch only its own groups and tasks
-      const { data: groups, error: groupsError } = await supabase
-        .from('task_groups')
-        .select('*')
-        .eq('board_id', boardId)
-        .order('sort_order');
+      // Regular board - fetch with parallel queries
+      const [teamMembersResult, groupsResult] = await Promise.all([
+        supabase.from('team_members').select('*'),
+        supabase.from('task_groups').select('*').eq('board_id', boardId).order('sort_order')
+      ]);
+      
+      if (teamMembersResult.error) throw teamMembersResult.error;
+      if (groupsResult.error) throw groupsResult.error;
 
-      if (groupsError) throw groupsError;
+      const teamMemberMap = new Map(teamMembersResult.data?.map(m => [m.id, {
+        id: m.id,
+        name: m.name,
+        initials: m.initials,
+        color: m.color,
+        email: m.email,
+      }]) || []);
 
+      const groups = groupsResult.data || [];
       const groupIds = groups.map((g) => g.id);
       
       let tasks: any[] = [];

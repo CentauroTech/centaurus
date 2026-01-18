@@ -795,6 +795,7 @@ export type Database = {
         Returns: string
       }
       current_team_member_id: { Args: never; Returns: string }
+      get_hq_board_data: { Args: { board_id_param: string }; Returns: Json }
       is_centauro_member: { Args: never; Returns: boolean }
       is_guest: { Args: never; Returns: boolean }
       is_project_manager: { Args: never; Returns: boolean }

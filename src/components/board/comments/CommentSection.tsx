@@ -123,8 +123,8 @@ export function CommentSection({
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-muted/30">
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-muted/30 shrink-0">
         {icon === 'team' ? (
           <Users className="w-4 h-4 text-muted-foreground" />
         ) : (
@@ -138,8 +138,8 @@ export function CommentSection({
         )}
       </div>
 
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="p-4 space-y-4">
+      <div className="flex-1 min-h-0 overflow-auto p-4">
+        <div className="space-y-4">
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">
               <p className="text-sm">Loading...</p>
@@ -155,16 +155,14 @@ export function CommentSection({
                     {comment.user?.initials || '?'}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0 overflow-visible">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium text-sm">{comment.user?.name || 'Unknown'}</span>
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                     </span>
                   </div>
-                  <div className="overflow-visible">
-                    {renderCommentContent(comment.content)}
-                  </div>
+                  {renderCommentContent(comment.content)}
                 </div>
               </div>
             ))
@@ -175,9 +173,9 @@ export function CommentSection({
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
-      <div className="p-3 border-t border-border bg-card">
+      <div className="p-3 border-t border-border bg-card shrink-0">
         <div className="relative">
           <RichTextEditor
             content={newComment}
@@ -201,7 +199,7 @@ export function CommentSection({
           </div>
 
           {showMentions && filteredMentionUsers.length > 0 && (
-            <div className="absolute bottom-full mb-2 left-0 w-64 bg-popover border border-border rounded-lg shadow-lg overflow-hidden z-50">
+            <div className="absolute top-full mt-2 left-0 w-64 bg-popover border border-border rounded-lg shadow-lg z-[100]">
               <div className="p-2 text-xs text-muted-foreground border-b border-border">
                 {mentionSearch ? `Matching "${mentionSearch}"` : 'Select a person'}
               </div>

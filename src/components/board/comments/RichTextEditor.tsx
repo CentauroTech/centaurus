@@ -13,7 +13,10 @@ import {
   AlignLeft,
   AlignCenter,
   Highlighter,
+  Heading1,
   Heading2,
+  Heading3,
+  Type,
   Undo,
   Redo,
   Send
@@ -45,7 +48,7 @@ export function RichTextEditor({
     extensions: [
       StarterKit.configure({
         heading: {
-          levels: [2, 3],
+          levels: [1, 2, 3],
         },
       }),
       Underline,
@@ -136,10 +139,41 @@ export function RichTextEditor({
             type="button"
             variant="ghost"
             size="icon"
+            className={cn("h-7 w-7", editor.isActive('paragraph') && !editor.isActive('heading') && "bg-accent")}
+            onClick={() => editor.chain().focus().setParagraph().run()}
+            title="Body text"
+          >
+            <Type className="w-3.5 h-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={cn("h-7 w-7", editor.isActive('heading', { level: 1 }) && "bg-accent")}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+            title="Heading 1"
+          >
+            <Heading1 className="w-3.5 h-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             className={cn("h-7 w-7", editor.isActive('heading', { level: 2 }) && "bg-accent")}
             onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            title="Heading 2"
           >
             <Heading2 className="w-3.5 h-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={cn("h-7 w-7", editor.isActive('heading', { level: 3 }) && "bg-accent")}
+            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+            title="Heading 3"
+          >
+            <Heading3 className="w-3.5 h-3.5" />
           </Button>
           <Button
             type="button"

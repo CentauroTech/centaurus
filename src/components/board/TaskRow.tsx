@@ -225,6 +225,7 @@ export function TaskRow({ task, onUpdate, onDelete, boardId, boardName, workspac
             onRoleAssignments={handleRoleAssignments}
             onMakePublic={handleMakePublic}
             onGuestDueDateChange={(date) => handleUpdate('guestDueDate', date)}
+            onDateAssignedChange={(date) => handleUpdate('dateAssigned', date)}
             currentViewerIds={viewerIds}
           />
         );

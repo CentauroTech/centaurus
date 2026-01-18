@@ -36,7 +36,7 @@ export function ProjectManagerCell({
   return <div className="relative" ref={dropdownRef}>
       {owner ? <button onClick={() => setIsOpen(!isOpen)} className="gap-2 group flex items-center justify-start">
           
-          <span className="text-sm text-inherit">{owner.name}</span>
+          <span className="text-sm text-inherit px-[10px]">{owner.name}</span>
           <button onClick={e => {
         e.stopPropagation();
         onOwnerChange(undefined);

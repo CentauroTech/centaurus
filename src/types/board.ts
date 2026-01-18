@@ -172,7 +172,7 @@ export interface ColumnConfig {
   field: keyof Task;
   options?: string[];
   adminOnly?: boolean; // If true, only admins can see this column
-  roleFilter?: 'translator' | 'adapter' | 'premix' | 'mixer' | 'qc_premix' | 'qc_mix' | 'director' | 'tecnico'; // Filter team members by role
+  roleFilter?: 'translator' | 'adapter' | 'premix' | 'mixer' | 'qc_premix' | 'qc_retakes' | 'qc_mix' | 'director' | 'tecnico'; // Filter team members by role
 }
 
 // Dropdown options for various fields
@@ -289,7 +289,7 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'adaptador', label: 'Adapter', type: 'person', width: 'w-28', field: 'adaptador', roleFilter: 'adapter' },
   { id: 'premix', label: 'Premix', type: 'person', width: 'w-28', field: 'mixerBogota', roleFilter: 'premix' },
   { id: 'qcPremix', label: 'QC Premix', type: 'person', width: 'w-28', field: 'qc1', roleFilter: 'qc_premix' },
-  { id: 'qcRetakes', label: 'QC Retakes', type: 'person', width: 'w-28', field: 'qcRetakes', roleFilter: 'qc_premix' },
+  { id: 'qcRetakes', label: 'QC Retakes', type: 'person', width: 'w-28', field: 'qcRetakes', roleFilter: 'qc_retakes' },
   { id: 'mixer', label: 'Mixer', type: 'person', width: 'w-28', field: 'mixerMiami', roleFilter: 'mixer' },
   { id: 'qcMix', label: 'QC Mix', type: 'person', width: 'w-28', field: 'qcMix', roleFilter: 'qc_mix' },
   { id: 'formato', label: 'Format', type: 'multi-select', width: 'w-56', field: 'formato', options: FORMATO_OPTIONS },

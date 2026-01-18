@@ -302,45 +302,56 @@ export function TaskDetailsPanel({
 
           {/* Kickoff Tab */}
           <TabsContent value="kickoff" className="m-0 overflow-auto max-h-[calc(100vh-200px)]">
-            <div className="p-4 py-0">
-                {isEditingKickoff && !isGuest ? <div className="space-y-4">
-                    <RichTextEditor content={kickoffBrief} onChange={setKickoffBrief} placeholder="Enter the full brief/kickoff information..." />
-                    <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => {
-                  setKickoffBrief(task.kickoff_brief || '');
-                  setIsEditingKickoff(false);
-                }}>
-                        Cancel
-                      </Button>
-                      <Button size="sm" disabled={isSavingKickoff} onClick={async () => {
-                  setIsSavingKickoff(true);
-                  try {
-                    const {
-                      error
-                    } = await supabase.from('tasks').update({
-                      kickoff_brief: kickoffBrief
-                    } as any).eq('id', task.id);
-                    if (error) throw error;
-                    toast.success('Kickoff brief saved');
-                    setIsEditingKickoff(false);
-                  } catch (error) {
-                    toast.error('Failed to save kickoff brief');
-                  } finally {
-                    setIsSavingKickoff(false);
-                  }
-                }}>
-                        {isSavingKickoff ? 'Saving...' : 'Save'}
-                      </Button>
+            <div className="px-4 pt-2">
+              {!isGuest && !isEditingKickoff && (
+                <div className="flex justify-end mb-2">
+                  <Button variant="outline" size="sm" onClick={() => setIsEditingKickoff(true)}>
+                    Edit
+                  </Button>
+                </div>
+              )}
+              {isEditingKickoff && !isGuest ? (
+                <div className="space-y-3">
+                  <RichTextEditor content={kickoffBrief} onChange={setKickoffBrief} placeholder="Enter the full brief/kickoff information..." />
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" size="sm" onClick={() => {
+                      setKickoffBrief(task.kickoff_brief || '');
+                      setIsEditingKickoff(false);
+                    }}>
+                      Cancel
+                    </Button>
+                    <Button size="sm" disabled={isSavingKickoff} onClick={async () => {
+                      setIsSavingKickoff(true);
+                      try {
+                        const { error } = await supabase.from('tasks').update({
+                          kickoff_brief: kickoffBrief
+                        } as any).eq('id', task.id);
+                        if (error) throw error;
+                        toast.success('Kickoff brief saved');
+                        setIsEditingKickoff(false);
+                      } catch (error) {
+                        toast.error('Failed to save kickoff brief');
+                      } finally {
+                        setIsSavingKickoff(false);
+                      }
+                    }}>
+                      {isSavingKickoff ? 'Saving...' : 'Save'}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {kickoffBrief ? (
+                    <RichTextDisplay content={kickoffBrief} />
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Rocket className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                      <p className="text-sm">No kickoff brief yet</p>
+                      {!isGuest && <p className="text-xs mt-1">Click Edit to add the full brief</p>}
                     </div>
-                  </div> : <>
-                    {kickoffBrief ? <div className="cursor-pointer" onClick={() => !isGuest && setIsEditingKickoff(true)}>
-                        <RichTextDisplay content={kickoffBrief} />
-                      </div> : <div className="text-center py-12 text-muted-foreground cursor-pointer" onClick={() => !isGuest && setIsEditingKickoff(true)}>
-                        <Rocket className="w-12 h-12 mx-auto mb-3 opacity-40" />
-                        <p className="text-sm">No kickoff brief yet</p>
-                        {!isGuest && <p className="text-xs mt-1">Click to add the full brief</p>}
-                      </div>}
-                  </>}
+                  )}
+                </>
+              )}
             </div>
           </TabsContent>
 

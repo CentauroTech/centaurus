@@ -39,7 +39,7 @@ export function AppSidebar({ workspaces, selectedBoardId, onSelectBoard }: AppSi
           />
           <div className="flex flex-col">
             <span className="font-display font-semibold text-lg">Centaurus</span>
-            <span className="text-xs text-white/50">v1.1.0</span>
+            <span className="text-xs text-white/50">v1.2.0</span>
           </div>
         </div>
       </div>

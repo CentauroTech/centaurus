@@ -7,22 +7,9 @@ import { BulkActionsToolbar } from './BulkActionsToolbar';
 import { MultipleWODialog } from './MultipleWODialog';
 import { TaskSelectionProvider } from '@/contexts/TaskSelectionContext';
 import { BulkEditProvider, BulkUpdateParams } from '@/contexts/BulkEditContext';
-import {
-  useAddTaskGroup, 
-  useUpdateTaskGroup, 
-  useAddTask, 
-  useUpdateTask, 
-  useDeleteTask 
-} from '@/hooks/useWorkspaces';
+import { useAddTaskGroup, useUpdateTaskGroup, useAddTask, useUpdateTask, useDeleteTask } from '@/hooks/useWorkspaces';
 import { useMoveToNextPhase } from '@/hooks/usePhaseProgression';
-import { 
-  useBulkDuplicate, 
-  useBulkDelete, 
-  useBulkMoveToPhase, 
-  useMoveTaskToPhase,
-  useBulkUpdateField,
-  AVAILABLE_PHASES 
-} from '@/hooks/useBulkTaskActions';
+import { useBulkDuplicate, useBulkDelete, useBulkMoveToPhase, useMoveTaskToPhase, useBulkUpdateField, AVAILABLE_PHASES } from '@/hooks/useBulkTaskActions';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useAddMultipleTasks } from '@/hooks/useAddMultipleTasks';
 import { useColumnOrder } from '@/hooks/useColumnOrder';
@@ -30,7 +17,6 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-
 interface BoardGroup {
   id: string;
   board_id: string;
@@ -40,7 +26,6 @@ interface BoardGroup {
   sort_order: number;
   tasks: any[];
 }
-
 interface BoardData {
   id: string;
   workspace_id: string;
@@ -51,25 +36,38 @@ interface BoardData {
   teamMemberMap?: Map<string, any>;
   taskViewersMap?: Map<string, string[]>;
 }
-
 interface BoardViewProps {
   board: BoardData;
   boardId: string;
 }
-
-function BoardViewContent({ board, boardId }: BoardViewProps) {
+function BoardViewContent({
+  board,
+  boardId
+}: BoardViewProps) {
   const workspaceName = board.workspaceName || '';
-  const { data: currentTeamMember } = useCurrentTeamMember();
+  const {
+    data: currentTeamMember
+  } = useCurrentTeamMember();
   const currentUserId = currentTeamMember?.id || null;
   const queryClient = useQueryClient();
   const [isMultipleWODialogOpen, setIsMultipleWODialogOpen] = useState(false);
-  
+
   // Permissions
-  const { isAdmin, canReorderColumns, canCreateGroups, canDeleteTasks } = usePermissions();
-  
+  const {
+    isAdmin,
+    canReorderColumns,
+    canCreateGroups,
+    canDeleteTasks
+  } = usePermissions();
+
   // Column order management
-  const { columns, isLocked, reorderColumns, toggleLock, resetOrder } = useColumnOrder(boardId, workspaceName);
-  
+  const {
+    columns,
+    isLocked,
+    reorderColumns,
+    toggleLock,
+    resetOrder
+  } = useColumnOrder(boardId, workspaceName);
   const addTaskGroupMutation = useAddTaskGroup(boardId);
   const updateTaskGroupMutation = useUpdateTaskGroup(boardId);
   const addTaskMutation = useAddTask(boardId);
@@ -82,7 +80,6 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
   const bulkMoveMutation = useBulkMoveToPhase(boardId, currentUserId);
   const bulkUpdateFieldMutation = useBulkUpdateField(boardId, currentUserId);
   const addMultipleTasksMutation = useAddMultipleTasks(boardId);
-
 
   // Check if this is a Kickoff board
   const isKickoffBoard = board.name.toLowerCase().includes('kickoff');
@@ -99,7 +96,6 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
       if (!id || !board.teamMemberMap) return undefined;
       return board.teamMemberMap.get(id);
     };
-
     return board.groups.map(group => ({
       id: group.id,
       name: group.name,
@@ -162,8 +158,8 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
         linkToColHQ: t.link_to_col_hq,
         rateInfo: t.rate_info,
         people: t.people || [],
-        createdAt: new Date(t.created_at),
-      })),
+        createdAt: new Date(t.created_at)
+      }))
     }));
   }, [board.groups, board.teamMemberMap, boardPhase]);
 
@@ -236,13 +232,12 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
     if (updates.qcMix !== undefined) dbUpdates.qc_mix_id = updates.qcMix?.id || null;
     if (updates.traductor !== undefined) dbUpdates.traductor_id = updates.traductor?.id || null;
     if (updates.adaptador !== undefined) dbUpdates.adaptador_id = updates.adaptador?.id || null;
-    
+
     // Handle people updates separately
     if (updates.people !== undefined) {
       const oldPeople = rawTask?.people || [];
       await updatePeople(taskId, updates.people, oldPeople);
     }
-    
     if (Object.keys(dbUpdates).length > 0) {
       const realGroupId = rawTask?.group_id;
       updateTask(taskId, dbUpdates, realGroupId, rawTask?.prueba_de_voz, rawTask?.status);
@@ -253,18 +248,18 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
   const updatePeople = async (taskId: string, newPeople: User[], oldPeople: User[]) => {
     // Delete existing people for this task
     await supabase.from('task_people').delete().eq('task_id', taskId);
-    
+
     // Insert new people
     if (newPeople.length > 0) {
-      await supabase.from('task_people').insert(
-        newPeople.map(p => ({ task_id: taskId, team_member_id: p.id }))
-      );
+      await supabase.from('task_people').insert(newPeople.map(p => ({
+        task_id: taskId,
+        team_member_id: p.id
+      })));
     }
-    
+
     // Log the change
     const oldNames = oldPeople.map(p => p.name).join(', ') || null;
     const newNames = newPeople.map(p => p.name).join(', ') || null;
-    
     if (oldNames !== newNames) {
       await supabase.from('activity_log').insert({
         task_id: taskId,
@@ -272,15 +267,18 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
         field: 'people',
         old_value: oldNames,
         new_value: newNames,
-        user_id: currentUserId,
+        user_id: currentUserId
       });
     }
-    
-    // Invalidate queries to refresh data
-    queryClient.invalidateQueries({ queryKey: ['board', boardId] });
-    queryClient.invalidateQueries({ queryKey: ['activity-log'] });
-  };
 
+    // Invalidate queries to refresh data
+    queryClient.invalidateQueries({
+      queryKey: ['board', boardId]
+    });
+    queryClient.invalidateQueries({
+      queryKey: ['activity-log']
+    });
+  };
   const updateTask = (taskId: string, updates: Record<string, any>, groupId?: string, pruebaDeVoz?: string | null, currentStatus?: string) => {
     // STATUS LOCKING: Block status change FROM "Done" unless admin
     if (updates.status && currentStatus === 'done' && updates.status !== 'done' && !isAdmin) {
@@ -301,84 +299,87 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
 
     // If status is changing to 'done', trigger phase progression
     if (updates.status === 'done' && groupId) {
-      updateTaskMutation.mutate({ taskId, updates }, {
+      updateTaskMutation.mutate({
+        taskId,
+        updates
+      }, {
         onSuccess: () => {
           // Move to next phase after status update
           moveToNextPhaseMutation.mutate({
             taskId,
             currentGroupId: groupId,
-            pruebaDeVoz: pruebaDeVoz ?? null,
+            pruebaDeVoz: pruebaDeVoz ?? null
           });
-        },
+        }
       });
     } else {
-      updateTaskMutation.mutate({ taskId, updates });
+      updateTaskMutation.mutate({
+        taskId,
+        updates
+      });
     }
   };
-
   const deleteTask = (taskId: string) => {
     deleteTaskMutation.mutate(taskId);
   };
-
   const addTask = (groupId: string) => {
     // Single task creation requires branch and project_manager_id
     // Show error toast prompting to use Multiple WO tool
-    addTaskMutation.mutate({ group_id: groupId }, {
-      onError: (error) => {
+    addTaskMutation.mutate({
+      group_id: groupId
+    }, {
+      onError: error => {
         console.error('Use Multiple WO tool:', error.message);
       }
     });
   };
-
-  const updateGroup = (groupId: string, updates: Partial<{ name: string; color: string; is_collapsed: boolean }>) => {
-    updateTaskGroupMutation.mutate({ groupId, updates });
-  };
-
-  const addGroup = () => {
-    const colors = [
-      'hsl(209, 100%, 46%)',
-      'hsl(154, 64%, 45%)',
-      'hsl(270, 50%, 60%)',
-      'hsl(25, 95%, 53%)',
-      'hsl(0, 72%, 51%)',
-    ];
-    
-    addTaskGroupMutation.mutate({
-      name: 'New Group',
-      color: colors[board.groups.length % colors.length],
+  const updateGroup = (groupId: string, updates: Partial<{
+    name: string;
+    color: string;
+    is_collapsed: boolean;
+  }>) => {
+    updateTaskGroupMutation.mutate({
+      groupId,
+      updates
     });
   };
-
+  const addGroup = () => {
+    const colors = ['hsl(209, 100%, 46%)', 'hsl(154, 64%, 45%)', 'hsl(270, 50%, 60%)', 'hsl(25, 95%, 53%)', 'hsl(0, 72%, 51%)'];
+    addTaskGroupMutation.mutate({
+      name: 'New Group',
+      color: colors[board.groups.length % colors.length]
+    });
+  };
   const handleBulkDuplicate = (taskIds: string[]) => {
     bulkDuplicateMutation.mutate(taskIds);
   };
-
   const handleBulkDelete = (taskIds: string[]) => {
     bulkDeleteMutation.mutate(taskIds);
   };
-
   const handleBulkMove = (taskIds: string[], phase: string) => {
-    bulkMoveMutation.mutate({ taskIds, targetPhase: phase });
+    bulkMoveMutation.mutate({
+      taskIds,
+      targetPhase: phase
+    });
   };
-
   const handleSendTaskToPhase = (taskId: string, phase: string) => {
-    moveTaskToPhaseMutation.mutate({ taskId, targetPhase: phase });
+    moveTaskToPhaseMutation.mutate({
+      taskId,
+      targetPhase: phase
+    });
   };
-
   const handleBulkUpdate = (params: BulkUpdateParams) => {
     bulkUpdateFieldMutation.mutate({
       taskIds: params.taskIds,
       field: params.field,
       value: params.value,
-      displayField: params.displayField,
+      displayField: params.displayField
     });
   };
-
-  return (
-    <BulkEditProvider onBulkUpdate={handleBulkUpdate}>
+  return <BulkEditProvider onBulkUpdate={handleBulkUpdate}>
     <div className="flex-1 flex flex-col p-6 overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center justify-between mb-6 flex-shrink-0">
+      <div className="flex items-center justify-between mb-6 flex-shrink-0 px-[10px]">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="gap-2">
             <Filter className="w-4 h-4" />
@@ -396,16 +397,10 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
 
         <div className="flex items-center gap-2">
           {/* Column Lock/Unlock - Admin only */}
-          {isAdmin && (
-            <>
+          {isAdmin && <>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    onClick={toggleLock} 
-                    size="sm" 
-                    variant={isLocked ? "default" : "outline"}
-                    className="gap-2"
-                  >
+                  <Button onClick={toggleLock} size="sm" variant={isLocked ? "default" : "outline"} className="gap-2">
                     {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                     {isLocked ? 'Locked' : 'Unlocked'}
                   </Button>
@@ -415,82 +410,49 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
                 </TooltipContent>
               </Tooltip>
               
-              {!isLocked && (
-                <Tooltip>
+              {!isLocked && <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      onClick={resetOrder} 
-                      size="sm" 
-                      variant="ghost"
-                      className="gap-2"
-                    >
+                    <Button onClick={resetOrder} size="sm" variant="ghost" className="gap-2">
                       <RotateCcw className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Reset to default column order</TooltipContent>
-                </Tooltip>
-              )}
-            </>
-          )}
+                </Tooltip>}
+            </>}
 
-          {isKickoffBoard && (
-            <Button 
-              onClick={() => setIsMultipleWODialogOpen(true)} 
-              size="sm" 
-              variant="outline"
-              className="gap-2"
-            >
+          {isKickoffBoard && <Button onClick={() => setIsMultipleWODialogOpen(true)} size="sm" variant="outline" className="gap-2">
               <ListPlus className="w-4 h-4" />
               Multiple WO
-            </Button>
-          )}
-          {canCreateGroups && (
-            <Button onClick={addGroup} size="sm" className="gap-2" disabled={addTaskGroupMutation.isPending}>
+            </Button>}
+          {canCreateGroups && <Button onClick={addGroup} size="sm" className="gap-2" disabled={addTaskGroupMutation.isPending}>
               <Plus className="w-4 h-4" />
               New Group
-            </Button>
-          )}
+            </Button>}
         </div>
       </div>
 
       {/* Multiple WO Dialog */}
-      <MultipleWODialog
-        isOpen={isMultipleWODialogOpen}
-        onClose={() => setIsMultipleWODialogOpen(false)}
-        onCreateTasks={(groupId, template, names) => {
-          addMultipleTasksMutation.mutate({ groupId, template, names });
-        }}
-        groups={board.groups.map(g => ({ id: g.id, name: g.name, color: g.color }))}
-        isCreating={addMultipleTasksMutation.isPending}
-      />
+      <MultipleWODialog isOpen={isMultipleWODialogOpen} onClose={() => setIsMultipleWODialogOpen(false)} onCreateTasks={(groupId, template, names) => {
+        addMultipleTasksMutation.mutate({
+          groupId,
+          template,
+          names
+        });
+      }} groups={board.groups.map(g => ({
+        id: g.id,
+        name: g.name,
+        color: g.color
+      }))} isCreating={addMultipleTasksMutation.isPending} />
 
       {/* Scrollable Board Area */}
       <div className="flex-1 overflow-auto custom-scrollbar">
       {/* Task Groups */}
         <div className="space-y-6 min-w-max">
-          {transformedGroups.map((group) => (
-            <TaskGroup
-              key={group.id}
-              group={group}
-              onUpdateTask={handleUpdateTask}
-              onDeleteTask={deleteTask}
-              onAddTask={() => addTask(group.id)}
-              onUpdateGroup={(updates) => updateGroup(group.id, updates)}
-              onSendToPhase={handleSendTaskToPhase}
-              boardId={boardId}
-              boardName={board.name}
-              workspaceName={workspaceName}
-              columns={columns}
-              isLocked={isLocked || !canReorderColumns}
-              onReorderColumns={reorderColumns}
-              canDeleteTasks={canDeleteTasks}
-            />
-          ))}
+          {transformedGroups.map(group => <TaskGroup key={group.id} group={group} onUpdateTask={handleUpdateTask} onDeleteTask={deleteTask} onAddTask={() => addTask(group.id)} onUpdateGroup={updates => updateGroup(group.id, updates)} onSendToPhase={handleSendTaskToPhase} boardId={boardId} boardName={board.name} workspaceName={workspaceName} columns={columns} isLocked={isLocked || !canReorderColumns} onReorderColumns={reorderColumns} canDeleteTasks={canDeleteTasks} />)}
         </div>
 
         {/* Empty State */}
-        {board.groups.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
+        {board.groups.length === 0 && <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
               <Plus className="w-8 h-8 text-primary" />
             </div>
@@ -502,26 +464,19 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
               <Plus className="w-4 h-4" />
               Add Group
             </Button>
-          </div>
-        )}
+          </div>}
       </div>
 
       {/* Bulk Actions Toolbar */}
-      <BulkActionsToolbar
-        onDuplicate={handleBulkDuplicate}
-        onDelete={handleBulkDelete}
-        onMoveToPhase={handleBulkMove}
-        availablePhases={AVAILABLE_PHASES}
-      />
+      <BulkActionsToolbar onDuplicate={handleBulkDuplicate} onDelete={handleBulkDelete} onMoveToPhase={handleBulkMove} availablePhases={AVAILABLE_PHASES} />
     </div>
-    </BulkEditProvider>
-  );
+    </BulkEditProvider>;
 }
-
-export function BoardView({ board, boardId }: BoardViewProps) {
-  return (
-    <TaskSelectionProvider>
+export function BoardView({
+  board,
+  boardId
+}: BoardViewProps) {
+  return <TaskSelectionProvider>
       <BoardViewContent board={board} boardId={boardId} />
-    </TaskSelectionProvider>
-  );
+    </TaskSelectionProvider>;
 }

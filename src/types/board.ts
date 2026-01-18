@@ -146,21 +146,21 @@ export const STATUS_CONFIG: Record<Status, { label: string; className: string }>
 };
 
 export const PHASE_CONFIG: Record<Phase, { label: string; className: string }> = {
-  on_hold: { label: 'On Hold', className: 'bg-gray-300 text-gray-700' },
-  kickoff: { label: 'Kickoff', className: 'bg-gray-800 text-white' },
-  assets: { label: 'Assets', className: 'bg-pink-200 text-pink-800' },
-  translation: { label: 'Translation', className: 'bg-gray-200 text-gray-700' },
-  adapting: { label: 'Adapting', className: 'bg-amber-400 text-amber-900' },
-  casting: { label: 'Casting', className: 'bg-cyan-400 text-cyan-900' },
-  recording: { label: 'Recording', className: 'bg-pink-500 text-white' },
-  premix: { label: 'Premix', className: 'bg-pink-300 text-pink-800' },
-  qc_premix: { label: 'QC-Premix', className: 'bg-pink-200 text-pink-700' },
-  retakes: { label: 'Retakes', className: 'bg-fuchsia-600 text-white' },
-  qc_retakes: { label: 'QC-Retakes', className: 'bg-pink-200 text-pink-700' },
-  mix: { label: 'Mix', className: 'bg-sky-300 text-sky-800' },
-  qc_mix: { label: 'QC-Mix', className: 'bg-purple-300 text-purple-800' },
-  mix_retakes: { label: 'Mix Retakes', className: 'bg-purple-500 text-white' },
-  final_delivery: { label: 'Final Delivery', className: 'bg-emerald-500 text-white' },
+  on_hold: { label: 'On Hold', className: 'bg-[#c0c0c0] text-[#666666]' },
+  kickoff: { label: 'Kickoff', className: 'bg-[#444444] text-white' },
+  assets: { label: 'Assets', className: 'bg-[#ffcce0] text-[#cc6699]' },
+  translation: { label: 'Translation', className: 'bg-[#d0d0d0] text-[#666666]' },
+  adapting: { label: 'Adapting', className: 'bg-[#f5c842] text-[#996600]' },
+  casting: { label: 'Casting', className: 'bg-[#2dc5cd] text-[#ffffff]' },
+  recording: { label: 'Recording', className: 'bg-[#df2f8d] text-white' },
+  premix: { label: 'Premix', className: 'bg-[#f9b4d6] text-[#cc3399]' },
+  qc_premix: { label: 'QC-Premix', className: 'bg-[#f9b4d6] text-[#cc3399]' },
+  retakes: { label: 'Retakes', className: 'bg-[#9b2b77] text-white' },
+  qc_retakes: { label: 'QC-Retakes', className: 'bg-[#f9b4d6] text-[#cc3399]' },
+  mix: { label: 'Mix', className: 'bg-[#7ecef4] text-[#1a6699]' },
+  qc_mix: { label: 'QC-Mix', className: 'bg-[#c4a5de] text-[#7733aa]' },
+  mix_retakes: { label: 'Mix Retakes', className: 'bg-[#a358ba] text-white' },
+  final_delivery: { label: 'Final Delivery', className: 'bg-[#00c875] text-white' },
 };
 
 export interface ColumnConfig {

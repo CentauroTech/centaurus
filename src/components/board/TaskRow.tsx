@@ -258,39 +258,8 @@ export function TaskRow({
       case 'phase':
         return <PhaseCell phase={value as Phase} onPhaseChange={val => handleUpdate(column.field, val)} />;
       case 'current-phase':
-        // Read-only phase cell showing current board/phase with full-cell background
-        const phaseValue = value as string || '';
-        const phaseColors: Record<string, string> = {
-          'On Hold': 'bg-[#c0c0c0] text-[#666666]',
-          'Kickoff': 'bg-[#444444] text-white',
-          'Assets': 'bg-[#ffcce0] text-[#cc6699]',
-          'Translation': 'bg-[#d0d0d0] text-[#666666]',
-          'Adapting': 'bg-[#f5c842] text-[#996600]',
-          'Casting': 'bg-[#2dc5cd] text-white',
-          'VoiceTests': 'bg-[#ff69b4] text-white',
-          'Recording': 'bg-[#df2f8d] text-white',
-          'Premix': 'bg-[#f9b4d6] text-[#cc3399]',
-          'QC Premix': 'bg-[#f9b4d6] text-[#cc3399]',
-          'QC-Premix': 'bg-[#f9b4d6] text-[#cc3399]',
-          'Retakes': 'bg-[#9b2b77] text-white',
-          'QC Retakes': 'bg-[#f9b4d6] text-[#cc3399]',
-          'QC-Retakes': 'bg-[#f9b4d6] text-[#cc3399]',
-          'Mix': 'bg-[#7ecef4] text-[#1a6699]',
-          'QC Mix': 'bg-[#c4a5de] text-[#7733aa]',
-          'QC-Mix': 'bg-[#c4a5de] text-[#7733aa]',
-          'MixRetakes': 'bg-[#a358ba] text-white',
-          'Mix Retakes': 'bg-[#a358ba] text-white',
-          'Deliveries': 'bg-[#00c875] text-white',
-          'Final Delivery': 'bg-[#00c875] text-white'
-        };
-        const phaseClass = phaseColors[phaseValue] || 'bg-muted text-muted-foreground';
-        return (
-          <div className="relative h-full w-full">
-            <div className={cn("absolute inset-0 flex items-center justify-center text-sm font-medium", phaseClass)}>
-              {phaseValue || '-'}
-            </div>
-          </div>
-        );
+        // Phase rendering is handled at td level - just return the text
+        return null;
       case 'boolean':
         return <BooleanCell value={value as boolean} onChange={val => handleUpdate(column.field, val)} />;
       case 'link':
@@ -355,9 +324,54 @@ export function TaskRow({
         : index === 1 ? 72 // after checkbox + drag + privacy (48 + 24)
         : 296 // after checkbox + drag + privacy + name (48 + 24 + 224)
         : undefined;
-        // Apply p-0 specifically for current-phase column
+        
+        // Handle current-phase column with background directly on td
         const isPhaseColumn = column.type === 'current-phase';
-        return <td key={column.id} className={cn("border-r border-border/50", isPhaseColumn ? "p-0 relative" : "px-0 py-0", column.width, isSticky && cn("sticky z-20", stickyBg), index === 2 && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]", isPrivate && index !== 2 && "border-r-slate-600")} style={isSticky ? {
+        if (isPhaseColumn) {
+          const phaseValue = getTaskValue(task, column.field) as string || '';
+          const phaseColors: Record<string, string> = {
+            'On Hold': 'bg-[#c0c0c0] text-[#666666]',
+            'Kickoff': 'bg-[#444444] text-white',
+            'Assets': 'bg-[#ffcce0] text-[#cc6699]',
+            'Translation': 'bg-[#d0d0d0] text-[#666666]',
+            'Adapting': 'bg-[#f5c842] text-[#996600]',
+            'Casting': 'bg-[#2dc5cd] text-white',
+            'VoiceTests': 'bg-[#ff69b4] text-white',
+            'Recording': 'bg-[#df2f8d] text-white',
+            'Premix': 'bg-[#f9b4d6] text-[#cc3399]',
+            'QC Premix': 'bg-[#f9b4d6] text-[#cc3399]',
+            'QC-Premix': 'bg-[#f9b4d6] text-[#cc3399]',
+            'Retakes': 'bg-[#9b2b77] text-white',
+            'QC Retakes': 'bg-[#f9b4d6] text-[#cc3399]',
+            'QC-Retakes': 'bg-[#f9b4d6] text-[#cc3399]',
+            'Mix': 'bg-[#7ecef4] text-[#1a6699]',
+            'QC Mix': 'bg-[#c4a5de] text-[#7733aa]',
+            'QC-Mix': 'bg-[#c4a5de] text-[#7733aa]',
+            'MixRetakes': 'bg-[#a358ba] text-white',
+            'Mix Retakes': 'bg-[#a358ba] text-white',
+            'Deliveries': 'bg-[#00c875] text-white',
+            'Final Delivery': 'bg-[#00c875] text-white'
+          };
+          const phaseClass = phaseColors[phaseValue] || 'bg-muted text-muted-foreground';
+          
+          return (
+            <td 
+              key={column.id} 
+              className={cn(
+                "border-r border-border/50 text-center text-sm font-medium",
+                phaseClass,
+                column.width,
+                isPrivate && "border-r-slate-600"
+              )}
+            >
+              <div className="flex items-center justify-center h-full w-full py-1">
+                {phaseValue || '-'}
+              </div>
+            </td>
+          );
+        }
+        
+        return <td key={column.id} className={cn("border-r border-border/50 px-0 py-0", column.width, isSticky && cn("sticky z-20", stickyBg), index === 2 && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]", isPrivate && index !== 2 && "border-r-slate-600")} style={isSticky ? {
           left: leftOffset
         } : undefined}>
               {renderCell(column)}

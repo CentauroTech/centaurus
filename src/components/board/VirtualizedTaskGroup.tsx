@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, memo } from 'react';
+import { useState, useRef, useCallback, memo, useMemo } from 'react';
 import { ChevronDown, ChevronRight, Plus, MoreHorizontal } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { horizontalListSortingStrategy, SortableContext } from '@dnd-kit/sortable';
@@ -30,6 +30,7 @@ interface VirtualizedTaskGroupProps {
 
 // Row height constant for virtualization
 const ROW_HEIGHT = 36;
+const VISIBLE_ROWS = 25; // Show 25 rows at a time
 
 export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({ 
   group, 
@@ -74,7 +75,7 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
     }
   }, [groupName, group.name, onUpdateGroup]);
 
-  const groupTaskIds = group.tasks.map(t => t.id);
+  const groupTaskIds = useMemo(() => group.tasks.map(t => t.id), [group.tasks]);
   const allSelected = groupTaskIds.length > 0 && groupTaskIds.every(id => selectedTaskIds.has(id));
   const someSelected = groupTaskIds.some(id => selectedTaskIds.has(id)) && !allSelected;
 
@@ -87,31 +88,46 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
   }, [allSelected, clearSelection, selectAll, groupTaskIds]);
 
   // Column IDs for sortable context
-  const columnIds = columns.map(col => col.id);
+  const columnIds = useMemo(() => columns.map(col => col.id), [columns]);
 
   // Virtual row renderer
   const rowVirtualizer = useVirtualizer({
     count: group.tasks.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => ROW_HEIGHT,
-    overscan: 20, // Render 20 extra rows above/below for smooth scrolling
+    overscan: 10, // Render 10 extra rows above/below for smooth scrolling
   });
 
   const virtualRows = rowVirtualizer.getVirtualItems();
-  const totalSize = rowVirtualizer.getTotalSize();
 
-  // Memoized task update handlers
-  const createUpdateHandler = useCallback((taskId: string) => {
-    return (updates: Partial<Task>) => onUpdateTask(taskId, updates);
-  }, [onUpdateTask]);
+  // Memoized handlers to prevent recreating functions
+  const updateHandlers = useMemo(() => {
+    const handlers = new Map<string, (updates: Partial<Task>) => void>();
+    group.tasks.forEach(task => {
+      handlers.set(task.id, (updates: Partial<Task>) => onUpdateTask(task.id, updates));
+    });
+    return handlers;
+  }, [group.tasks, onUpdateTask]);
 
-  const createDeleteHandler = useCallback((taskId: string) => {
-    return () => onDeleteTask(taskId);
-  }, [onDeleteTask]);
+  const deleteHandlers = useMemo(() => {
+    const handlers = new Map<string, () => void>();
+    group.tasks.forEach(task => {
+      handlers.set(task.id, () => onDeleteTask(task.id));
+    });
+    return handlers;
+  }, [group.tasks, onDeleteTask]);
 
-  const createSendToPhaseHandler = useCallback((taskId: string) => {
-    return onSendToPhase ? (phase: string) => onSendToPhase(taskId, phase) : undefined;
-  }, [onSendToPhase]);
+  const sendToPhaseHandlers = useMemo(() => {
+    if (!onSendToPhase) return null;
+    const handlers = new Map<string, (phase: string) => void>();
+    group.tasks.forEach(task => {
+      handlers.set(task.id, (phase: string) => onSendToPhase(task.id, phase));
+    });
+    return handlers;
+  }, [group.tasks, onSendToPhase]);
+
+  // Calculate visible height
+  const containerHeight = Math.min(group.tasks.length * ROW_HEIGHT, VISIBLE_ROWS * ROW_HEIGHT);
 
   return (
     <div className="mb-6">
@@ -159,7 +175,7 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
             onDragEnd={handleDragEnd}
             modifiers={[restrictToHorizontalAxis]}
           >
-            {/* Fixed Header */}
+            {/* Sticky Header - always visible */}
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="sticky top-0 z-30">
@@ -192,14 +208,14 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
               </table>
             </div>
 
-            {/* Virtualized Body */}
+            {/* Virtualized scrollable body */}
             <div 
               ref={parentRef}
               className="overflow-auto custom-scrollbar"
-              style={{ maxHeight: 'calc(100vh - 300px)', minHeight: Math.min(group.tasks.length * ROW_HEIGHT + 50, 600) }}
+              style={{ height: containerHeight }}
             >
-              <div style={{ height: `${totalSize}px`, position: 'relative' }}>
-                <table className="w-full">
+              <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative', width: '100%' }}>
+                <table className="w-full" style={{ tableLayout: 'fixed' }}>
                   <tbody>
                     {virtualRows.map((virtualRow) => {
                       const task = group.tasks[virtualRow.index];
@@ -209,15 +225,16 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
                         <MemoizedTaskRow
                           key={task.id}
                           task={task}
-                          onUpdate={createUpdateHandler(task.id)}
-                          onDelete={canDeleteTasks ? createDeleteHandler(task.id) : undefined}
+                          onUpdate={updateHandlers.get(task.id)!}
+                          onDelete={canDeleteTasks ? deleteHandlers.get(task.id) : undefined}
                           boardId={boardId}
                           boardName={boardName}
                           workspaceName={workspaceName}
                           columns={columns}
-                          onSendToPhase={createSendToPhaseHandler(task.id)}
+                          onSendToPhase={sendToPhaseHandlers?.get(task.id)}
                           viewerIds={viewerIds}
                           style={{
+                            height: ROW_HEIGHT,
                             position: 'absolute',
                             top: 0,
                             left: 0,

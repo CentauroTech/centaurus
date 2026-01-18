@@ -138,8 +138,8 @@ export function CommentSection({
         )}
       </div>
 
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="p-4 space-y-4">
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">
               <p className="text-sm">Loading...</p>
@@ -155,14 +155,16 @@ export function CommentSection({
                     {comment.user?.initials || '?'}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 overflow-visible">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium text-sm">{comment.user?.name || 'Unknown'}</span>
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                     </span>
                   </div>
-                  {renderCommentContent(comment.content)}
+                  <div className="overflow-visible">
+                    {renderCommentContent(comment.content)}
+                  </div>
                 </div>
               </div>
             ))

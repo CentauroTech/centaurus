@@ -19,6 +19,7 @@ import { LastUpdatedCell } from './cells/LastUpdatedCell';
 import { PrivacyCell, RoleAssignment } from './cells/PrivacyCell';
 import { MultiSelectCell } from './cells/MultiSelectCell';
 import { ProjectManagerCell } from './cells/ProjectManagerCell';
+import { RoleBasedOwnerCell } from './cells/RoleBasedOwnerCell';
 import { TimeTrackedCell } from './cells/TimeTrackedCell';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
@@ -26,6 +27,7 @@ import { useBulkEdit } from '@/contexts/BulkEditContext';
 import { useTaskViewers, useUpdateTaskViewers } from '@/hooks/useTaskViewers';
 import { useSendGuestAssignmentNotification } from '@/hooks/useGuestNotifications';
 import { mockUsers } from '@/data/mockData';
+import { RoleType } from '@/hooks/useTeamMemberRoles';
 interface TaskRowProps {
   task: Task;
   onUpdate: (updates: Partial<Task>) => void;
@@ -246,6 +248,14 @@ export function TaskRow({
         // Use ProjectManagerCell for project manager field
         if (column.field === 'projectManager') {
           return <ProjectManagerCell owner={value as User} onOwnerChange={val => handleUpdate(column.field, val)} />;
+        }
+        // Use RoleBasedOwnerCell if roleFilter is specified
+        if (column.roleFilter) {
+          return <RoleBasedOwnerCell 
+            owner={value as User} 
+            onOwnerChange={val => handleUpdate(column.field, val)} 
+            roleFilter={column.roleFilter as RoleType}
+          />;
         }
         // Use regular OwnerCell for other person fields
         return <OwnerCell owner={value as User} onOwnerChange={val => handleUpdate(column.field, val)} />;

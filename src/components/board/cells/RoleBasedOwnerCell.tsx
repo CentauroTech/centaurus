@@ -1,0 +1,136 @@
+import { useState, useEffect, useRef } from 'react';
+import { Plus, X } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { User } from '@/types/board';
+import { useTeamMembers } from '@/hooks/useWorkspaces';
+import { useTeamMemberRolesMap, RoleType } from '@/hooks/useTeamMemberRoles';
+import { cn } from '@/lib/utils';
+
+interface RoleBasedOwnerCellProps {
+  owner?: User;
+  onOwnerChange: (owner: User | undefined) => void;
+  roleFilter?: RoleType; // Filter by role from Settings
+}
+
+export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter }: RoleBasedOwnerCellProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { data: teamMembers = [] } = useTeamMembers();
+  const rolesMap = useTeamMemberRolesMap();
+
+  // Map team members to User format, filtering by role if specified
+  const users: User[] = teamMembers
+    .filter(m => {
+      if (!roleFilter) return true;
+      const memberRoles = rolesMap.get(m.id) || [];
+      return memberRoles.includes(roleFilter);
+    })
+    .map(m => ({
+      id: m.id,
+      name: m.name,
+      initials: m.initials,
+      color: m.color,
+    }));
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <div className="flex items-center gap-1">
+        {owner ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="flex items-center gap-2 hover:bg-accent rounded px-1 py-0.5 transition-smooth"
+            >
+              <Avatar className="h-6 w-6">
+                <AvatarFallback
+                  style={{ backgroundColor: owner.color }}
+                  className="text-xs text-white"
+                >
+                  {owner.initials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm truncate max-w-[100px]">{owner.name}</span>
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onOwnerChange(undefined);
+              }}
+              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-accent transition-smooth"
+            >
+              <X className="w-3 h-3 text-muted-foreground" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-6 h-6 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-muted-foreground/50 transition-smooth"
+          >
+            <Plus className="w-3 h-3 text-muted-foreground" />
+          </button>
+        )}
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-md shadow-lg border z-[9999] max-h-64 overflow-y-auto">
+          {users.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-muted-foreground">
+              {roleFilter ? `No team members with ${roleFilter} role` : 'No team members found'}
+            </div>
+          ) : (
+            <>
+              {owner && (
+                <button
+                  onClick={() => {
+                    onOwnerChange(undefined);
+                    setIsOpen(false);
+                  }}
+                  className="w-full px-3 py-2 text-left text-sm text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-smooth"
+                >
+                  Remove assignee
+                </button>
+              )}
+              {users.map((user) => (
+                <button
+                  key={user.id}
+                  onClick={() => {
+                    onOwnerChange(user);
+                    setIsOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-slate-900 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-smooth"
+                >
+                  <Avatar className="h-6 w-6">
+                    <AvatarFallback
+                      style={{ backgroundColor: user.color }}
+                      className="text-xs text-white"
+                    >
+                      {user.initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="truncate">{user.name}</span>
+                </button>
+              ))}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -3,7 +3,6 @@ import { ChevronDown, ChevronRight, Plus, MoreHorizontal } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { horizontalListSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { cn } from '@/lib/utils';
 import { TaskGroup as TaskGroupType, Task, ColumnConfig } from '@/types/board';
 import { MemoizedTaskRow } from './MemoizedTaskRow';
@@ -28,9 +27,10 @@ interface VirtualizedTaskGroupProps {
   taskViewersMap?: Map<string, string[]>;
 }
 
-// Row height constant for virtualization
+// Row height constant
 const ROW_HEIGHT = 36;
-const VISIBLE_ROWS = 25; // Show 25 rows at a time
+const VISIBLE_ROWS = 30;
+const BUFFER_ROWS = 10;
 
 export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({ 
   group, 
@@ -50,8 +50,9 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
 }: VirtualizedTaskGroupProps) {
   const [isCollapsed, setIsCollapsed] = useState(group.isCollapsed ?? false);
   const [groupName, setGroupName] = useState(group.name);
+  const [scrollTop, setScrollTop] = useState(0);
   const { selectedTaskIds, selectAll, clearSelection } = useTaskSelection();
-  const parentRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -87,47 +88,32 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
     }
   }, [allSelected, clearSelection, selectAll, groupTaskIds]);
 
-  // Column IDs for sortable context
   const columnIds = useMemo(() => columns.map(col => col.id), [columns]);
 
-  // Virtual row renderer
-  const rowVirtualizer = useVirtualizer({
-    count: group.tasks.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => ROW_HEIGHT,
-    overscan: 10, // Render 10 extra rows above/below for smooth scrolling
-  });
+  // Calculate which rows to render based on scroll position
+  const { startIndex, endIndex, visibleTasks } = useMemo(() => {
+    const start = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - BUFFER_ROWS);
+    const end = Math.min(group.tasks.length, start + VISIBLE_ROWS + BUFFER_ROWS * 2);
+    return {
+      startIndex: start,
+      endIndex: end,
+      visibleTasks: group.tasks.slice(start, end),
+    };
+  }, [scrollTop, group.tasks]);
 
-  const virtualRows = rowVirtualizer.getVirtualItems();
+  // Handle scroll with throttling
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const newScrollTop = e.currentTarget.scrollTop;
+    // Only update if scrolled significantly (reduces re-renders)
+    if (Math.abs(newScrollTop - scrollTop) > ROW_HEIGHT / 2) {
+      setScrollTop(newScrollTop);
+    }
+  }, [scrollTop]);
 
-  // Memoized handlers to prevent recreating functions
-  const updateHandlers = useMemo(() => {
-    const handlers = new Map<string, (updates: Partial<Task>) => void>();
-    group.tasks.forEach(task => {
-      handlers.set(task.id, (updates: Partial<Task>) => onUpdateTask(task.id, updates));
-    });
-    return handlers;
-  }, [group.tasks, onUpdateTask]);
-
-  const deleteHandlers = useMemo(() => {
-    const handlers = new Map<string, () => void>();
-    group.tasks.forEach(task => {
-      handlers.set(task.id, () => onDeleteTask(task.id));
-    });
-    return handlers;
-  }, [group.tasks, onDeleteTask]);
-
-  const sendToPhaseHandlers = useMemo(() => {
-    if (!onSendToPhase) return null;
-    const handlers = new Map<string, (phase: string) => void>();
-    group.tasks.forEach(task => {
-      handlers.set(task.id, (phase: string) => onSendToPhase(task.id, phase));
-    });
-    return handlers;
-  }, [group.tasks, onSendToPhase]);
-
-  // Calculate visible height
-  const containerHeight = Math.min(group.tasks.length * ROW_HEIGHT, VISIBLE_ROWS * ROW_HEIGHT);
+  const totalHeight = group.tasks.length * ROW_HEIGHT;
+  const containerHeight = Math.min(VISIBLE_ROWS * ROW_HEIGHT, totalHeight);
+  const paddingTop = startIndex * ROW_HEIGHT;
+  const paddingBottom = Math.max(0, (group.tasks.length - endIndex) * ROW_HEIGHT);
 
   return (
     <div className="mb-6">
@@ -166,7 +152,7 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
         </button>
       </div>
 
-      {/* Tasks Table with Virtualization */}
+      {/* Tasks Table */}
       {!isCollapsed && (
         <div className="bg-card rounded-lg border border-border shadow-board overflow-hidden animate-fade-in">
           <DndContext
@@ -175,12 +161,17 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
             onDragEnd={handleDragEnd}
             modifiers={[restrictToHorizontalAxis]}
           >
-            {/* Sticky Header - always visible */}
-            <div className="overflow-x-auto">
+            {/* Single scrollable container */}
+            <div 
+              ref={scrollContainerRef}
+              className="overflow-auto custom-scrollbar"
+              style={{ maxHeight: containerHeight + 40 }} // +40 for header
+              onScroll={handleScroll}
+            >
               <table className="w-full">
+                {/* Sticky Header */}
                 <thead className="sticky top-0 z-30">
                   <tr className="bg-slate-100 border-b border-border shadow-sm">
-                    {/* Select All Checkbox */}
                     <th className="w-6 px-1 sticky left-0 bg-slate-100 z-40">
                       <Checkbox
                         checked={allSelected}
@@ -205,48 +196,43 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
                     <th className="w-10" />
                   </tr>
                 </thead>
+                
+                {/* Body with virtual padding */}
+                <tbody>
+                  {/* Top spacer for virtual scrolling */}
+                  {paddingTop > 0 && (
+                    <tr style={{ height: paddingTop }}>
+                      <td colSpan={columns.length + 3} />
+                    </tr>
+                  )}
+                  
+                  {/* Visible rows */}
+                  {visibleTasks.map((task) => {
+                    const viewerIds = taskViewersMap?.get(task.id) || [];
+                    return (
+                      <MemoizedTaskRow
+                        key={task.id}
+                        task={task}
+                        onUpdate={(updates) => onUpdateTask(task.id, updates)}
+                        onDelete={canDeleteTasks ? () => onDeleteTask(task.id) : undefined}
+                        boardId={boardId}
+                        boardName={boardName}
+                        workspaceName={workspaceName}
+                        columns={columns}
+                        onSendToPhase={onSendToPhase ? (phase) => onSendToPhase(task.id, phase) : undefined}
+                        viewerIds={viewerIds}
+                      />
+                    );
+                  })}
+                  
+                  {/* Bottom spacer for virtual scrolling */}
+                  {paddingBottom > 0 && (
+                    <tr style={{ height: paddingBottom }}>
+                      <td colSpan={columns.length + 3} />
+                    </tr>
+                  )}
+                </tbody>
               </table>
-            </div>
-
-            {/* Virtualized scrollable body */}
-            <div 
-              ref={parentRef}
-              className="overflow-auto custom-scrollbar"
-              style={{ height: containerHeight }}
-            >
-              <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative', width: '100%' }}>
-                <table className="w-full" style={{ tableLayout: 'fixed' }}>
-                  <tbody>
-                    {virtualRows.map((virtualRow) => {
-                      const task = group.tasks[virtualRow.index];
-                      const viewerIds = taskViewersMap?.get(task.id) || [];
-                      
-                      return (
-                        <MemoizedTaskRow
-                          key={task.id}
-                          task={task}
-                          onUpdate={updateHandlers.get(task.id)!}
-                          onDelete={canDeleteTasks ? deleteHandlers.get(task.id) : undefined}
-                          boardId={boardId}
-                          boardName={boardName}
-                          workspaceName={workspaceName}
-                          columns={columns}
-                          onSendToPhase={sendToPhaseHandlers?.get(task.id)}
-                          viewerIds={viewerIds}
-                          style={{
-                            height: ROW_HEIGHT,
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            transform: `translateY(${virtualRow.start}px)`,
-                          }}
-                        />
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
             </div>
           </DndContext>
 

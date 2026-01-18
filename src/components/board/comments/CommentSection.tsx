@@ -2,13 +2,12 @@ import { useState, useRef } from 'react';
 import { Send, AtSign, MessageSquare, Users, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { CommentWithUser } from '@/hooks/useComments';
 import { RichTextEditor, RichTextDisplay } from './RichTextEditor';
-
+import { ExpandableComment } from './ExpandableComment';
 interface CommentSectionProps {
   title: string;
   icon: 'team' | 'guest';
@@ -147,7 +146,7 @@ export function CommentSection({
           ) : comments.length > 0 ? (
             comments.map((comment) => (
               <div key={comment.id} className="flex gap-3">
-                <Avatar className="h-8 w-8 shrink-0">
+                <Avatar className="h-8 w-8 shrink-0 mt-0.5">
                   <AvatarFallback
                     style={{ backgroundColor: comment.user?.color || 'hsl(0, 0%, 50%)' }}
                     className="text-xs text-white"
@@ -162,7 +161,9 @@ export function CommentSection({
                       {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                     </span>
                   </div>
-                  {renderCommentContent(comment.content)}
+                  <ExpandableComment maxHeight={250}>
+                    {renderCommentContent(comment.content)}
+                  </ExpandableComment>
                 </div>
               </div>
             ))

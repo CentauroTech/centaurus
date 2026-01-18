@@ -172,7 +172,7 @@ export interface ColumnConfig {
   field: keyof Task;
   options?: string[];
   adminOnly?: boolean; // If true, only admins can see this column
-  roleFilter?: 'translator' | 'adapter' | 'mixer' | 'qc_premix' | 'qc_mix' | 'director' | 'tecnico'; // Filter team members by role
+  roleFilter?: 'translator' | 'adapter' | 'premix' | 'mixer' | 'qc_premix' | 'qc_mix' | 'director' | 'tecnico'; // Filter team members by role
 }
 
 // Dropdown options for various fields
@@ -287,7 +287,7 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'pruebaDeVoz', label: 'Voice Test', type: 'dropdown', width: 'w-24', field: 'pruebaDeVoz', options: VOICE_TEST_OPTIONS },
   { id: 'traductor', label: 'Translator', type: 'person', width: 'w-28', field: 'traductor', roleFilter: 'translator' },
   { id: 'adaptador', label: 'Adapter', type: 'person', width: 'w-28', field: 'adaptador', roleFilter: 'adapter' },
-  { id: 'premix', label: 'Premix', type: 'person', width: 'w-28', field: 'mixerBogota', roleFilter: 'mixer' },
+  { id: 'premix', label: 'Premix', type: 'person', width: 'w-28', field: 'mixerBogota', roleFilter: 'premix' },
   { id: 'qcPremix', label: 'QC Premix', type: 'person', width: 'w-28', field: 'qc1', roleFilter: 'qc_premix' },
   { id: 'qcRetakes', label: 'QC Retakes', type: 'person', width: 'w-28', field: 'qcRetakes', roleFilter: 'qc_premix' },
   { id: 'mixer', label: 'Mixer', type: 'person', width: 'w-28', field: 'mixerMiami', roleFilter: 'mixer' },
@@ -332,7 +332,7 @@ export const COLUMNS_COLOMBIA: ColumnConfig[] = [
   { id: 'entregaFinalDubAudioItems', label: 'Entrega Final - Dub Audio', type: 'multi-select', width: 'w-96', field: 'entregaFinalDubAudioItems', options: ENTREGA_FINAL_DUB_AUDIO_OPTIONS },
   { id: 'traductor', label: 'Traductor', type: 'person', width: 'w-28', field: 'traductor', roleFilter: 'translator' },
   { id: 'adaptador', label: 'Adaptador', type: 'person', width: 'w-28', field: 'adaptador', roleFilter: 'adapter' },
-  { id: 'mixerBogota', label: 'Mixer Bogota', type: 'person', width: 'w-28', field: 'mixerBogota', roleFilter: 'mixer' },
+  { id: 'mixerBogota', label: 'Mixer Bogota', type: 'person', width: 'w-28', field: 'mixerBogota', roleFilter: 'premix' },
   { id: 'mixerMiami', label: 'Mixer Miami', type: 'person', width: 'w-28', field: 'mixerMiami', roleFilter: 'mixer' },
   { id: 'qcMix', label: 'QC Mix', type: 'person', width: 'w-28', field: 'qcMix', roleFilter: 'qc_mix' },
 ];

@@ -137,7 +137,7 @@ export const mockTaskGroups: TaskGroup[] = [
       {
         id: 'task-3',
         name: 'Stranger Things - Promo',
-        status: 'waiting',
+        status: 'default',
         dateAssigned: new Date('2024-12-05'),
         branch: 'Miami',
         projectManager: mockUsers[2],
@@ -159,7 +159,7 @@ export const mockTaskGroups: TaskGroup[] = [
       {
         id: 'task-4',
         name: 'Documentary - Ocean Life',
-        status: 'planning',
+        status: 'default',
         branch: 'Miami',
         clientName: 'Discovery',
         cantidadEpisodios: 4,
@@ -172,7 +172,7 @@ export const mockTaskGroups: TaskGroup[] = [
       {
         id: 'task-5',
         name: 'Animation - Kids Series',
-        status: 'stuck',
+        status: 'delayed',
         dateAssigned: new Date('2024-12-08'),
         branch: 'Bogotá',
         projectManager: mockUsers[3],

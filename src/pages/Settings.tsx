@@ -210,7 +210,7 @@ export default function Settings() {
               <Users className="h-4 w-4" />
               Team Directory
             </TabsTrigger>
-            {isGod && (
+            {(isGod || isAdmin) && (
               <TabsTrigger value="columns" className="gap-2">
                 <Columns className="h-4 w-4" />
                 Column Visibility
@@ -390,7 +390,7 @@ export default function Settings() {
             )}
           </TabsContent>
 
-          {isGod && (
+          {(isGod || isAdmin) && (
             <TabsContent value="columns" className="space-y-6">
               <div className="bg-muted/30 rounded-lg p-4 mb-6">
                 <h3 className="font-medium mb-2">Column Visibility Settings</h3>

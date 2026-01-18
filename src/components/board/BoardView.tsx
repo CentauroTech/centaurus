@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TaskGroup } from './TaskGroup';
+import { VirtualizedTaskGroup } from './VirtualizedTaskGroup';
 import { BulkActionsToolbar } from './BulkActionsToolbar';
 import { MultipleWODialog } from './MultipleWODialog';
 import { TaskSelectionProvider } from '@/contexts/TaskSelectionContext';
@@ -49,6 +50,7 @@ interface BoardData {
   is_hq: boolean;
   groups: BoardGroup[];
   teamMemberMap?: Map<string, any>;
+  taskViewersMap?: Map<string, string[]>;
 }
 
 interface BoardViewProps {
@@ -303,9 +305,10 @@ function BoardViewContent({ board, boardId }: BoardViewProps) {
 
       {/* Scrollable Board Area */}
       <div className="flex-1 overflow-auto custom-scrollbar">
-        {/* Task Groups */}
+      {/* Task Groups - Use virtualization for large groups (100+ tasks) */}
         <div className="space-y-6 min-w-max">
           {board.groups.map((group) => {
+            const shouldVirtualize = group.tasks.length > 100;
             // Helper to get team member by ID
             const getTeamMember = (id: string | null | undefined) => {
               if (!id || !board.teamMemberMap) return undefined;

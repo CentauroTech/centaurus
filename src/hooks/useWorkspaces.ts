@@ -121,6 +121,7 @@ export function useBoard(boardId: string | null) {
         
         let allTasks: any[] = [];
         let taskPeopleMap = new Map<string, any[]>();
+        let taskViewersMap = new Map<string, string[]>();
         
         if (allGroupIds.length > 0) {
           const { data: tasksData, error: tasksError } = await supabase
@@ -135,24 +136,38 @@ export function useBoard(boardId: string | null) {
             comment_count: t.comments?.[0]?.count || 0,
           }));
           
-          // Fetch task_people for all tasks
+          // Fetch task_people and task_viewers for all tasks in parallel
           const allTaskIds = allTasks.map(t => t.id);
           if (allTaskIds.length > 0) {
-            const { data: taskPeopleData, error: tpError } = await supabase
-              .from('task_people')
-              .select('task_id, team_member_id')
-              .in('task_id', allTaskIds);
+            const [taskPeopleResult, taskViewersResult] = await Promise.all([
+              supabase
+                .from('task_people')
+                .select('task_id, team_member_id')
+                .in('task_id', allTaskIds),
+              supabase
+                .from('task_viewers')
+                .select('task_id, team_member_id')
+                .in('task_id', allTaskIds)
+            ]);
             
-            if (tpError) throw tpError;
+            if (taskPeopleResult.error) throw taskPeopleResult.error;
+            if (taskViewersResult.error) throw taskViewersResult.error;
             
             // Map task_id to array of team members
-            taskPeopleData?.forEach(tp => {
+            taskPeopleResult.data?.forEach(tp => {
               const member = teamMemberMap.get(tp.team_member_id);
               if (member) {
                 const existing = taskPeopleMap.get(tp.task_id) || [];
                 existing.push(member);
                 taskPeopleMap.set(tp.task_id, existing);
               }
+            });
+            
+            // Map task_id to array of viewer IDs
+            taskViewersResult.data?.forEach(tv => {
+              const existing = taskViewersMap.get(tv.task_id) || [];
+              existing.push(tv.team_member_id);
+              taskViewersMap.set(tv.task_id, existing);
             });
           }
         }
@@ -190,6 +205,7 @@ export function useBoard(boardId: string | null) {
           ...board,
           workspaceName,
           teamMemberMap,
+          taskViewersMap,
           groups: virtualGroups,
           isHqView: true,
         };
@@ -208,6 +224,7 @@ export function useBoard(boardId: string | null) {
       
       let tasks: any[] = [];
       let taskPeopleMap = new Map<string, any[]>();
+      let taskViewersMap = new Map<string, string[]>();
       
       if (groupIds.length > 0) {
         const { data: tasksData, error: tasksError } = await supabase
@@ -222,24 +239,38 @@ export function useBoard(boardId: string | null) {
           comment_count: t.comments?.[0]?.count || 0,
         }));
         
-        // Fetch task_people for all tasks
+        // Fetch task_people and task_viewers for all tasks in parallel
         const taskIds = tasks.map(t => t.id);
         if (taskIds.length > 0) {
-          const { data: taskPeopleData, error: tpError } = await supabase
-            .from('task_people')
-            .select('task_id, team_member_id')
-            .in('task_id', taskIds);
+          const [taskPeopleResult, taskViewersResult] = await Promise.all([
+            supabase
+              .from('task_people')
+              .select('task_id, team_member_id')
+              .in('task_id', taskIds),
+            supabase
+              .from('task_viewers')
+              .select('task_id, team_member_id')
+              .in('task_id', taskIds)
+          ]);
           
-          if (tpError) throw tpError;
+          if (taskPeopleResult.error) throw taskPeopleResult.error;
+          if (taskViewersResult.error) throw taskViewersResult.error;
           
           // Map task_id to array of team members
-          taskPeopleData?.forEach(tp => {
+          taskPeopleResult.data?.forEach(tp => {
             const member = teamMemberMap.get(tp.team_member_id);
             if (member) {
               const existing = taskPeopleMap.get(tp.task_id) || [];
               existing.push(member);
               taskPeopleMap.set(tp.task_id, existing);
             }
+          });
+          
+          // Map task_id to array of viewer IDs
+          taskViewersResult.data?.forEach(tv => {
+            const existing = taskViewersMap.get(tv.task_id) || [];
+            existing.push(tv.team_member_id);
+            taskViewersMap.set(tv.task_id, existing);
           });
         }
       }
@@ -248,6 +279,7 @@ export function useBoard(boardId: string | null) {
         ...board,
         workspaceName,
         teamMemberMap,
+        taskViewersMap,
         groups: groups.map((g) => ({
           ...g,
           tasks: tasks.filter((t) => t.group_id === g.id).map(t => ({

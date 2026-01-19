@@ -100,7 +100,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                   File to Translate
                 </TableHead>
                 <TableHead 
-                  className="font-semibold whitespace-nowrap sticky z-50 bg-slate-100 dark:bg-slate-800 w-[200px] min-w-[200px] border-r border-border shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]"
+                  className="font-semibold whitespace-nowrap sticky z-50 bg-slate-100 dark:bg-slate-800 w-[280px] min-w-[280px] border-r border-border shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]"
                   style={{ left: '320px' }}
                 >
                   Original Title
@@ -182,11 +182,11 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                     {/* Original Title - Sticky with shadow separator */}
                     <TableCell 
                       onClick={() => onTaskClick(task)}
-                      className="sticky z-30 bg-white dark:bg-slate-950 w-[200px] min-w-[200px] border-r border-border shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]"
+                      className="sticky z-30 bg-white dark:bg-slate-950 w-[280px] min-w-[280px] border-r border-border shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]"
                       style={{ left: '320px' }}
                     >
                       <div className="flex items-center gap-2 whitespace-nowrap">
-                        <span className="font-medium truncate max-w-[160px]">
+                        <span className="font-medium truncate max-w-[240px]">
                           {task.name || 'Untitled'}
                         </span>
                         {(task.commentCount || 0) > 0 && (

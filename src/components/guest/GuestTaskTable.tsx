@@ -1,7 +1,6 @@
-import { FileText, Download, Upload, Calendar, Clock, Users, CheckCircle, ExternalLink, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -64,15 +63,14 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
                 <TableHead className="font-semibold whitespace-nowrap">Phase</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">WO#</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">File to Translate</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">File to Adapt</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Original Title</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Spanish Title</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Runtime</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap text-center">Episodes</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">Studio Assigned</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Date Assigned</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">People</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Delivery</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Status</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Translator</TableHead>
@@ -107,6 +105,13 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       >
                         {PHASE_LABELS[task.fase] || task.currentPhase || task.fase}
                       </Badge>
+                    </TableCell>
+
+                    {/* WO# */}
+                    <TableCell onClick={() => onTaskClick(task)}>
+                      <span className="text-sm font-mono whitespace-nowrap">
+                        {task.workOrderNumber || '—'}
+                      </span>
                     </TableCell>
 
                     {/* File to Translate */}
@@ -165,60 +170,15 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       </span>
                     </TableCell>
 
-                    {/* Studio Assigned (manual) */}
-                    <TableCell onClick={() => onTaskClick(task)}>
-                      {task.studioAssigned ? (
-                        <span className="text-sm">
-                          {format(new Date(task.studioAssigned), 'MMM d, yyyy')}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-
                     {/* Date Assigned (auto) */}
                     <TableCell onClick={() => onTaskClick(task)}>
                       {task.dateAssigned ? (
-                        <span className="text-sm">
+                        <span className="text-sm whitespace-nowrap">
                           {format(new Date(task.dateAssigned), 'MMM d, yyyy')}
                         </span>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
-                    </TableCell>
-
-                    {/* People */}
-                    <TableCell onClick={() => onTaskClick(task)}>
-                      <div className="flex -space-x-2">
-                        {task.people && task.people.length > 0 ? (
-                          task.people.slice(0, 3).map((person) => (
-                            <Tooltip key={person.id}>
-                              <TooltipTrigger asChild>
-                                <Avatar className="h-7 w-7 border-2 border-background">
-                                  <AvatarFallback 
-                                    style={{ backgroundColor: person.color }}
-                                    className="text-[10px] text-white"
-                                  >
-                                    {person.initials}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{person.name}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          ))
-                        ) : (
-                          <span className="text-muted-foreground text-sm">—</span>
-                        )}
-                        {task.people && task.people.length > 3 && (
-                          <Avatar className="h-7 w-7 border-2 border-background">
-                            <AvatarFallback className="text-[10px] bg-muted">
-                              +{task.people.length - 3}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                      </div>
                     </TableCell>
 
                     {/* Delivery - File Upload */}

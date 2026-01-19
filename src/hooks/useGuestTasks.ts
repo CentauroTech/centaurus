@@ -16,7 +16,6 @@ export interface GuestTask {
   currentPhase: string;
   fase: string;
   dateAssigned?: string;
-  studioAssigned?: string;
   guestDueDate?: string;
   startedAt?: string;
   completedAt?: string;
@@ -27,6 +26,7 @@ export interface GuestTask {
   cantidadEpisodios?: number;
   tituloAprobadoEspanol?: string;
   lenguajeOriginal?: string;
+  workOrderNumber?: string;
   isPrivate: boolean;
   boardName?: string;
   workspaceName?: string;
@@ -34,8 +34,6 @@ export interface GuestTask {
   // Role assignments
   translator?: GuestAssignedPerson;
   adapter?: GuestAssignedPerson;
-  // People assigned
-  people?: GuestAssignedPerson[];
 }
 
 export function useGuestTasks() {
@@ -67,7 +65,6 @@ export function useGuestTasks() {
           status,
           fase,
           date_assigned,
-          studio_assigned,
           guest_due_date,
           started_at,
           completed_at,
@@ -78,6 +75,7 @@ export function useGuestTasks() {
           cantidad_episodios,
           titulo_aprobado_espanol,
           lenguaje_original,
+          work_order_number,
           is_private,
           group_id,
           traductor_id,
@@ -114,39 +112,6 @@ export function useGuestTasks() {
         .in('id', Array.from(memberIds));
 
       const memberMap = new Map(teamMembers?.map(m => [m.id, m]) || []);
-
-      // Fetch task_people for people column
-      const { data: taskPeople } = await supabase
-        .from('task_people')
-        .select('task_id, team_member_id')
-        .in('task_id', viewerTaskIds);
-
-      // Get people member IDs
-      const peopleIds = new Set<string>();
-      taskPeople?.forEach(tp => peopleIds.add(tp.team_member_id));
-
-      // Fetch people team members if not already fetched
-      const missingPeopleIds = Array.from(peopleIds).filter(id => !memberMap.has(id));
-      if (missingPeopleIds.length > 0) {
-        const { data: peopleMembers } = await supabase
-          .from('team_members')
-          .select('id, name, initials, color')
-          .in('id', missingPeopleIds);
-        
-        peopleMembers?.forEach(m => memberMap.set(m.id, m));
-      }
-
-      // Create task -> people mapping
-      const taskPeopleMap = new Map<string, GuestAssignedPerson[]>();
-      taskPeople?.forEach(tp => {
-        const member = memberMap.get(tp.team_member_id);
-        if (member) {
-          if (!taskPeopleMap.has(tp.task_id)) {
-            taskPeopleMap.set(tp.task_id, []);
-          }
-          taskPeopleMap.get(tp.task_id)?.push(member);
-        }
-      });
 
       // Fetch group and board info for each task
       const groupIds = [...new Set(tasks?.map(t => t.group_id) || [])];
@@ -199,7 +164,6 @@ export function useGuestTasks() {
           fase: task.fase || 'pre_production',
           currentPhase,
           dateAssigned: task.date_assigned,
-          studioAssigned: task.studio_assigned,
           guestDueDate: task.guest_due_date,
           startedAt: task.started_at,
           completedAt: task.completed_at,
@@ -210,13 +174,13 @@ export function useGuestTasks() {
           cantidadEpisodios: task.cantidad_episodios,
           tituloAprobadoEspanol: task.titulo_aprobado_espanol,
           lenguajeOriginal: task.lenguaje_original,
+          workOrderNumber: task.work_order_number,
           isPrivate: task.is_private,
           boardName,
           workspaceName: workspaceName || '',
           commentCount: commentCountMap.get(task.id) || 0,
           translator: task.traductor_id ? memberMap.get(task.traductor_id) : undefined,
           adapter: task.adaptador_id ? memberMap.get(task.adaptador_id) : undefined,
-          people: taskPeopleMap.get(task.id) || [],
         };
       });
     },

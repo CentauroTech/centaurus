@@ -530,6 +530,7 @@ export type Database = {
           started_at: string | null
           status: string
           studio: string | null
+          studio_assigned: string | null
           target_language: string | null
           tecnico_id: string | null
           titulo_aprobado_espanol: string | null
@@ -591,6 +592,7 @@ export type Database = {
           started_at?: string | null
           status?: string
           studio?: string | null
+          studio_assigned?: string | null
           target_language?: string | null
           tecnico_id?: string | null
           titulo_aprobado_espanol?: string | null
@@ -652,6 +654,7 @@ export type Database = {
           started_at?: string | null
           status?: string
           studio?: string | null
+          studio_assigned?: string | null
           target_language?: string | null
           tecnico_id?: string | null
           titulo_aprobado_espanol?: string | null

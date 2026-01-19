@@ -15,6 +15,7 @@ import { useComments, useAddComment } from '@/hooks/useComments';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useTeamMembers } from '@/hooks/useWorkspaces';
 import { useTaskFiles, useUploadTaskFile, FILE_CATEGORIES } from '@/hooks/useTaskFiles';
+import { RichTextDisplay } from '@/components/board/comments/RichTextEditor';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -289,7 +290,7 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
                             {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                           </span>
                         </div>
-                        <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+                        <RichTextDisplay content={comment.content} className="text-sm" />
                       </div>
                     </div>
                   ))}

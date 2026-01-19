@@ -34,6 +34,7 @@ export default function TaskDetailsPanel({
   const [isEditingKickoff, setIsEditingKickoff] = useState(false);
   const [kickoffBrief, setKickoffBrief] = useState(task.kickoff_brief || "");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   
   const kickoffBriefRef = useRef<string>(task.kickoff_brief || "");
   const hasUnsavedChangesRef = useRef<boolean>(false);
@@ -49,24 +50,22 @@ export default function TaskDetailsPanel({
   const toggleAccessMutation = useToggleFileAccessibility(task.id);
   const deleteFileMutation = useDeleteTaskFile(task.id);
 
-  // Sync state and ref
-  const updateKickoffBrief = (value: string) => {
+  // Sync state and ref together
+  const updateKickoffBrief = useCallback((value: string) => {
     setKickoffBrief(value);
     kickoffBriefRef.current = value;
-  };
+  }, []);
 
-  const updateHasUnsavedChanges = (value: boolean) => {
+  const updateHasUnsavedChanges = useCallback((value: boolean) => {
     setHasUnsavedChanges(value);
     hasUnsavedChangesRef.current = value;
-  };
+  }, []);
 
-  // Immediate save function using refs for latest values
-  const saveKickoffNow = useCallback(async (taskIdOverride?: string) => {
-    const taskIdToSave = taskIdOverride || currentTaskIdRef.current;
-    const briefToSave = kickoffBriefRef.current;
-    
-    if (!hasUnsavedChangesRef.current) return;
+  // Immediate save function - uses passed values or refs
+  const saveKickoffNow = useCallback(async (taskIdToSave: string, briefToSave: string) => {
+    if (!taskIdToSave || briefToSave === undefined) return;
 
+    setIsSaving(true);
     try {
       const { error } = await supabase
         .from("tasks")
@@ -75,49 +74,57 @@ export default function TaskDetailsPanel({
 
       if (error) throw error;
       updateHasUnsavedChanges(false);
+      console.log("Kickoff brief saved successfully for task:", taskIdToSave);
     } catch (error) {
       console.error("Failed to save kickoff brief:", error);
       toast.error("Failed to save kickoff brief");
+    } finally {
+      setIsSaving(false);
     }
-  }, []);
+  }, [updateHasUnsavedChanges]);
 
   // Handle panel close - save first then close
-  const handlePanelClose = async () => {
+  const handlePanelClose = useCallback(async () => {
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
       autoSaveTimeoutRef.current = null;
     }
     if (hasUnsavedChangesRef.current) {
-      await saveKickoffNow();
+      await saveKickoffNow(currentTaskIdRef.current, kickoffBriefRef.current);
     }
     onClose();
-  };
+  }, [onClose, saveKickoffNow]);
 
   // When task changes, save current and reset for new task
   useEffect(() => {
     if (currentTaskIdRef.current !== task.id) {
-      // Save the previous task's changes
+      // Save the previous task's changes synchronously before switching
       if (hasUnsavedChangesRef.current) {
         const previousTaskId = currentTaskIdRef.current;
-        supabase
-          .from("tasks")
-          .update({ kickoff_brief: kickoffBriefRef.current } as any)
-          .eq("id", previousTaskId)
-          .then(({ error }) => {
-            if (error) console.error("Failed to save kickoff:", error);
-          });
+        const previousBrief = kickoffBriefRef.current;
+        saveKickoffNow(previousTaskId, previousBrief);
       }
 
       // Reset for new task
       currentTaskIdRef.current = task.id;
-      updateKickoffBrief(task.kickoff_brief || "");
-      updateHasUnsavedChanges(false);
+      kickoffBriefRef.current = task.kickoff_brief || "";
+      hasUnsavedChangesRef.current = false;
+      setKickoffBrief(task.kickoff_brief || "");
+      setHasUnsavedChanges(false);
       setIsEditingKickoff(false);
     }
-  }, [task.id, task.kickoff_brief]);
+  }, [task.id, task.kickoff_brief, saveKickoffNow]);
+
+  // Also sync when task.kickoff_brief changes externally (same task)
+  useEffect(() => {
+    if (currentTaskIdRef.current === task.id && !hasUnsavedChangesRef.current) {
+      kickoffBriefRef.current = task.kickoff_brief || "";
+      setKickoffBrief(task.kickoff_brief || "");
+    }
+  }, [task.kickoff_brief, task.id]);
 
   // Auto-save with debounce
-  const handleKickoffChange = (value: string) => {
+  const handleKickoffChange = useCallback((value: string) => {
     updateKickoffBrief(value);
     updateHasUnsavedChanges(true);
 
@@ -126,22 +133,26 @@ export default function TaskDetailsPanel({
     }
 
     autoSaveTimeoutRef.current = setTimeout(async () => {
-      await saveKickoffNow();
+      await saveKickoffNow(currentTaskIdRef.current, kickoffBriefRef.current);
       autoSaveTimeoutRef.current = null;
     }, 1500);
-  };
+  }, [updateKickoffBrief, updateHasUnsavedChanges, saveKickoffNow]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount - use sendBeacon for reliability
   useEffect(() => {
     return () => {
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
       }
-      if (hasUnsavedChangesRef.current) {
+      // Fire-and-forget save on unmount
+      if (hasUnsavedChangesRef.current && currentTaskIdRef.current) {
         supabase
           .from("tasks")
           .update({ kickoff_brief: kickoffBriefRef.current } as any)
-          .eq("id", currentTaskIdRef.current);
+          .eq("id", currentTaskIdRef.current)
+          .then(({ error }) => {
+            if (error) console.error("Failed to save on unmount:", error);
+          });
       }
     };
   }, []);
@@ -279,7 +290,7 @@ export default function TaskDetailsPanel({
                               clearTimeout(autoSaveTimeoutRef.current);
                               autoSaveTimeoutRef.current = null;
                             }
-                            await saveKickoffNow();
+                            await saveKickoffNow(currentTaskIdRef.current, kickoffBriefRef.current);
                             setIsEditingKickoff(false);
                           }}
                           className="gap-1.5"

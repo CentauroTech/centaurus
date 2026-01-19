@@ -11,29 +11,19 @@ interface GuestFileCellProps {
 }
 
 // Phase-aware file category mapping
-// Translation phase: show 'source' files (material to translate)
+// Translation phase: show 'script' files (original script to translate)
 // Adaptation phase: show 'translated' files (translator's output to adapt)
 const getDisplayCategory = (requestedCategory: string, phase?: string): string => {
   if (!phase) return requestedCategory;
   
-  const normalizedPhase = phase.toLowerCase();
-  
-  // For "File to Translate" column
-  if (requestedCategory === 'source') {
-    // Always show source material for translation work
-    return 'source';
+  // For "File to Translate" column - shows original script
+  if (requestedCategory === 'script') {
+    return 'script';
   }
   
   // For "File to Adapt" column
   if (requestedCategory === 'translated') {
     // In adaptation phase, show translated files (from translator)
-    if (normalizedPhase.includes('adapt')) {
-      return 'translated';
-    }
-    // In translation phase, this column should be empty (translator creates these)
-    if (normalizedPhase.includes('translat')) {
-      return 'translated'; // Show any existing translated files
-    }
     return 'translated';
   }
   

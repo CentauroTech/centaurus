@@ -107,11 +107,10 @@ export function useUploadTaskFile(taskId: string) {
           is_guest_accessible: isGuestAccessible,
           uploaded_by_id: currentMember.id,
         })
-        .select()
-        .single();
+        .select();
 
       if (error) throw error;
-      return data;
+      return data?.[0] || null;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task-files', taskId] });

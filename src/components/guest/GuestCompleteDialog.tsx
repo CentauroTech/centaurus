@@ -1,14 +1,16 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, FileText, MessageSquare, CheckCircle, Loader2, X, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useCompleteGuestTask } from '@/hooks/useGuestTasks';
 import { useUploadTaskFile } from '@/hooks/useTaskFiles';
 import { useAddComment } from '@/hooks/useComments';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface GuestCompleteDialogProps {
   taskId: string;
@@ -17,6 +19,13 @@ interface GuestCompleteDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: () => void;
+}
+
+interface TeamMember {
+  id: string;
+  name: string;
+  initials: string;
+  color: string;
 }
 
 export function GuestCompleteDialog({
@@ -30,12 +39,36 @@ export function GuestCompleteDialog({
   const [comment, setComment] = useState('');
   const [droppedFile, setDroppedFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionSearch, setMentionSearch] = useState('');
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [mentionedUserIds, setMentionedUserIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: currentMember } = useCurrentTeamMember();
   const completeTask = useCompleteGuestTask();
   const uploadFile = useUploadTaskFile(taskId);
   const addComment = useAddComment(taskId, '');
+
+  // Fetch team members for @mentions
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ['team-members-for-mentions'],
+    queryFn: async (): Promise<TeamMember[]> => {
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('id, name, initials, color')
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isOpen,
+  });
+
+  const filteredMembers = teamMembers.filter(member =>
+    member.name.toLowerCase().includes(mentionSearch.toLowerCase())
+  );
 
   const isSubmitting = completeTask.isPending || uploadFile.isPending || addComment.isPending;
   const hasContent = comment.trim() || droppedFile;
@@ -85,6 +118,68 @@ export function GuestCompleteDialog({
     }
   };
 
+  // Handle comment input with @mention detection
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const position = e.target.selectionStart || 0;
+    setComment(value);
+    setCursorPosition(position);
+
+    // Check for @ trigger
+    const textBeforeCursor = value.slice(0, position);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtIndex !== -1) {
+      const textAfterAt = textBeforeCursor.slice(lastAtIndex + 1);
+      // Only show mentions if no space after @
+      if (!textAfterAt.includes(' ') && !textAfterAt.includes('\n')) {
+        setMentionSearch(textAfterAt);
+        setShowMentions(true);
+        return;
+      }
+    }
+    setShowMentions(false);
+    setMentionSearch('');
+  };
+
+  // Insert mention into comment
+  const insertMention = (member: TeamMember) => {
+    const textBeforeCursor = comment.slice(0, cursorPosition);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    const textAfterCursor = comment.slice(cursorPosition);
+    
+    const newComment = 
+      comment.slice(0, lastAtIndex) + 
+      `@${member.name} ` + 
+      textAfterCursor;
+    
+    setComment(newComment);
+    setShowMentions(false);
+    setMentionSearch('');
+    
+    // Track mentioned user
+    if (!mentionedUserIds.includes(member.id)) {
+      setMentionedUserIds([...mentionedUserIds, member.id]);
+    }
+    
+    // Focus back on textarea
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 0);
+  };
+
+  // Close mentions dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowMentions(false);
+    };
+    
+    if (showMentions) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showMentions]);
+
   const handleComplete = async () => {
     if (!hasContent) {
       toast.error('Please add a comment or upload a file before marking as done');
@@ -112,7 +207,7 @@ export function GuestCompleteDialog({
         await addComment.mutateAsync({
           content: comment.trim(),
           userId: currentMember.id,
-          mentionedUserIds: [],
+          mentionedUserIds: mentionedUserIds,
           isGuestVisible: true,
         });
       }
@@ -135,6 +230,8 @@ export function GuestCompleteDialog({
     if (!isSubmitting) {
       setComment('');
       setDroppedFile(null);
+      setMentionedUserIds([]);
+      setShowMentions(false);
       onClose();
     }
   };
@@ -217,22 +314,50 @@ export function GuestCompleteDialog({
             <div className="flex-1 h-px bg-border" />
           </div>
 
-          {/* Comment Field */}
-          <div>
+          {/* Comment Field with @mentions */}
+          <div className="relative">
             <label className="text-sm font-medium mb-2 block">
               <MessageSquare className="w-4 h-4 inline mr-1.5" />
               Delivery Comment
             </label>
-            <Textarea
+            <textarea
+              ref={textareaRef}
               value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Add notes about your delivery..."
-              className="min-h-[80px] resize-none"
+              onChange={handleCommentChange}
+              placeholder="Add notes about your delivery... Use @ to mention team members"
+              className="w-full min-h-[80px] resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={isSubmitting}
             />
             <p className="text-xs text-muted-foreground mt-1">
-              This comment will be visible in guest communication
+              This comment will be visible in guest communication. Use @ to tag team members.
             </p>
+
+            {/* Mentions Dropdown */}
+            {showMentions && filteredMembers.length > 0 && (
+              <div 
+                className="absolute z-50 w-full max-h-48 overflow-y-auto bg-popover border rounded-md shadow-lg mt-1"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {filteredMembers.slice(0, 8).map((member) => (
+                  <button
+                    key={member.id}
+                    type="button"
+                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-accent text-left text-sm"
+                    onClick={() => insertMention(member)}
+                  >
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback 
+                        style={{ backgroundColor: member.color }}
+                        className="text-[10px] text-white"
+                      >
+                        {member.initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>{member.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Warning if no content */}

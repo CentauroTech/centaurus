@@ -49,10 +49,68 @@ export function TaskDetailsPanel({
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedKickoffRef = useRef<string>(task.kickoff_brief || '');
   const currentTaskIdRef = useRef<string>(task.id);
+  const kickoffBriefRef = useRef<string>(kickoffBrief);
+  const hasUnsavedChangesRef = useRef<boolean>(false);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    kickoffBriefRef.current = kickoffBrief;
+  }, [kickoffBrief]);
+
+  useEffect(() => {
+    hasUnsavedChangesRef.current = hasUnsavedChanges;
+  }, [hasUnsavedChanges]);
+
+  // Immediate save function (no debounce)
+  const saveKickoffNow = async () => {
+    if (!hasUnsavedChangesRef.current) return;
+    if (kickoffBriefRef.current === lastSavedKickoffRef.current) return;
+    
+    try {
+      const { error } = await supabase.from('tasks').update({
+        kickoff_brief: kickoffBriefRef.current
+      } as any).eq('id', currentTaskIdRef.current);
+      if (error) throw error;
+      lastSavedKickoffRef.current = kickoffBriefRef.current;
+      hasUnsavedChangesRef.current = false;
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error('Save failed:', error);
+    }
+  };
+
+  // Save on unmount or when panel closes
+  useEffect(() => {
+    return () => {
+      // Clear pending auto-save
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+      // Save immediately on unmount if there are unsaved changes
+      if (hasUnsavedChangesRef.current && kickoffBriefRef.current !== lastSavedKickoffRef.current) {
+        supabase.from('tasks').update({
+          kickoff_brief: kickoffBriefRef.current
+        } as any).eq('id', currentTaskIdRef.current);
+      }
+    };
+  }, []);
+
+  // Save when panel closes
+  useEffect(() => {
+    if (!isOpen && hasUnsavedChangesRef.current) {
+      saveKickoffNow();
+    }
+  }, [isOpen]);
 
   // Only sync kickoffBrief state when switching to a different task
   useEffect(() => {
     if (currentTaskIdRef.current !== task.id) {
+      // Save current changes before switching
+      if (hasUnsavedChangesRef.current) {
+        supabase.from('tasks').update({
+          kickoff_brief: kickoffBriefRef.current
+        } as any).eq('id', currentTaskIdRef.current);
+      }
       // Task changed - reset to the new task's data
       setKickoffBrief(task.kickoff_brief || '');
       lastSavedKickoffRef.current = task.kickoff_brief || '';
@@ -385,14 +443,13 @@ export function TaskDetailsPanel({
                     <span className="text-xs text-muted-foreground">
                       {isSavingKickoff ? 'Saving...' : hasUnsavedChanges ? 'Unsaved changes' : 'All changes saved'}
                     </span>
-                    <Button variant="outline" size="sm" onClick={() => {
+                    <Button variant="outline" size="sm" onClick={async () => {
                       // Clear any pending auto-save
                       if (autoSaveTimeoutRef.current) {
                         clearTimeout(autoSaveTimeoutRef.current);
                       }
-                      // Don't reset kickoffBrief - it was already auto-saved
-                      // Just close the editor
-                      setHasUnsavedChanges(false);
+                      // Save immediately before closing
+                      await saveKickoffNow();
                       setIsEditingKickoff(false);
                     }}>
                       Done

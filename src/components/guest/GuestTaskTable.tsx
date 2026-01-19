@@ -6,7 +6,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { GuestTask } from '@/hooks/useGuestTasks';
 import { GuestStatusBadge } from './GuestStatusBadge';
 import { GuestFileCell } from './GuestFileCell';
-import { GuestDeliveryCell } from './GuestDeliveryCell';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -114,7 +113,6 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                 <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Runtime</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap text-center bg-slate-100 dark:bg-slate-800">Episodes</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Date Assigned</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Delivery</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Due Date</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Status</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Last Updated</TableHead>
@@ -244,14 +242,6 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
-                    </TableCell>
-
-                    {/* Delivery - File Upload */}
-                    <TableCell>
-                      <GuestDeliveryCell 
-                        taskId={task.id}
-                        disabled={isDone}
-                      />
                     </TableCell>
 
                     {/* Due Date */}

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw } from 'lucide-react';
+import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TaskGroup } from './TaskGroup';
 import { Task, User, TaskGroup as TaskGroupType } from '@/types/board';
@@ -7,16 +7,17 @@ import { BulkActionsToolbar } from './BulkActionsToolbar';
 import { MultipleWODialog } from './MultipleWODialog';
 import { TaskSelectionProvider } from '@/contexts/TaskSelectionContext';
 import { BulkEditProvider, BulkUpdateParams } from '@/contexts/BulkEditContext';
-import { useAddTaskGroup, useUpdateTaskGroup, useDeleteTaskGroup, useAddTask, useUpdateTask, useDeleteTask } from '@/hooks/useWorkspaces';
+import { useAddTaskGroup, useUpdateTaskGroup, useDeleteTaskGroup, useAddTask, useUpdateTask, useDeleteTask, useWorkspaces } from '@/hooks/useWorkspaces';
 import { useMoveToNextPhase } from '@/hooks/usePhaseProgression';
 import { useBulkDuplicate, useBulkDelete, useBulkMoveToPhase, useMoveTaskToPhase, useBulkUpdateField, AVAILABLE_PHASES } from '@/hooks/useBulkTaskActions';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useAddMultipleTasks } from '@/hooks/useAddMultipleTasks';
-import { useColumnOrder } from '@/hooks/useColumnOrder';
+import { useColumnOrder, syncColumnOrderToWorkspace } from '@/hooks/useColumnOrder';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 interface BoardGroup {
   id: string;
   board_id: string;
@@ -63,11 +64,15 @@ function BoardViewContent({
   // Column order management
   const {
     columns,
+    columnOrder,
     isLocked,
     reorderColumns,
     toggleLock,
     resetOrder
   } = useColumnOrder(boardId, workspaceName);
+
+  // Fetch all workspaces to get board IDs for syncing
+  const { data: workspaces } = useWorkspaces();
   const addTaskGroupMutation = useAddTaskGroup(boardId);
   const updateTaskGroupMutation = useUpdateTaskGroup(boardId);
   const deleteTaskGroupMutation = useDeleteTaskGroup(boardId);
@@ -414,14 +419,41 @@ function BoardViewContent({
                 </TooltipContent>
               </Tooltip>
               
-              {!isLocked && <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button onClick={resetOrder} size="sm" variant="ghost" className="gap-2">
-                      <RotateCcw className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Reset to default column order</TooltipContent>
-                </Tooltip>}
+              {!isLocked && <>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button onClick={resetOrder} size="sm" variant="ghost" className="gap-2">
+                        <RotateCcw className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Reset to default column order</TooltipContent>
+                  </Tooltip>
+                  
+                  {/* Sync to workspace button */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        onClick={() => {
+                          // Get all board IDs from the same workspace
+                          const currentWorkspace = workspaces?.find(ws => 
+                            ws.boards.some(b => b.id === boardId)
+                          );
+                          if (currentWorkspace) {
+                            const allBoardIds = currentWorkspace.boards.map(b => b.id);
+                            syncColumnOrderToWorkspace(boardId, allBoardIds);
+                            toast.success(`Column order synced to all ${currentWorkspace.name} boards`);
+                          }
+                        }} 
+                        size="sm" 
+                        variant="ghost" 
+                        className="gap-2"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Sync column order to all boards in this workspace</TooltipContent>
+                  </Tooltip>
+                </>}
             </>}
 
           {isKickoffBoard && <Button onClick={() => setIsMultipleWODialogOpen(true)} size="sm" variant="outline" className="gap-2">

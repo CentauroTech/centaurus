@@ -31,6 +31,30 @@ const PHASE_LABELS: Record<string, string> = {
   'QC Mix': 'QC Mix',
 };
 
+// Match main workspace phase colors
+const PHASE_COLORS: Record<string, string> = {
+  'On Hold': 'bg-gray-400 text-white',
+  'Kickoff': 'bg-gray-900 text-white',
+  'Assets': 'bg-cyan-200 text-cyan-800',
+  'Translation': 'bg-blue-200 text-blue-800',
+  'Adapting': 'bg-teal-500 text-white',
+  'Casting': 'bg-yellow-400 text-yellow-900',
+  'Recording': 'bg-red-800 text-white',
+  'Premix': 'bg-pink-200 text-pink-800',
+  'QC Premix': 'bg-purple-200 text-purple-800',
+  'QC-Premix': 'bg-purple-200 text-purple-800',
+  'Mix': 'bg-blue-300 text-blue-900',
+  'Mixing': 'bg-blue-300 text-blue-900',
+  'QC Mix': 'bg-purple-200 text-purple-800',
+  'QC-Mix': 'bg-purple-200 text-purple-800',
+  'Retakes': 'bg-purple-600 text-white',
+  'QC-Retakes': 'bg-amber-200 text-amber-800',
+  'Mix Retakes': 'bg-pink-500 text-white',
+  'Client Retakes': 'bg-amber-700 text-white',
+  'Final Delivery': 'bg-green-500 text-white',
+  'Adaptation': 'bg-teal-500 text-white',
+};
+
 export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTaskTableProps) {
   return (
     <TooltipProvider>
@@ -39,22 +63,22 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
-                <TableHead className="w-[100px] font-semibold">Phase</TableHead>
-                <TableHead className="w-[120px] font-semibold">File to Translate</TableHead>
-                <TableHead className="w-[120px] font-semibold">File to Adapt</TableHead>
-                <TableHead className="w-[200px] font-semibold">Original Title</TableHead>
-                <TableHead className="w-[180px] font-semibold">Spanish Title</TableHead>
-                <TableHead className="w-[80px] font-semibold">Runtime</TableHead>
-                <TableHead className="w-[60px] font-semibold text-center">Episodes</TableHead>
-                <TableHead className="w-[100px] font-semibold">Studio Assigned</TableHead>
-                <TableHead className="w-[100px] font-semibold">Date Assigned</TableHead>
-                <TableHead className="w-[80px] font-semibold">People</TableHead>
-                <TableHead className="w-[140px] font-semibold">Delivery</TableHead>
-                <TableHead className="w-[120px] font-semibold">Status</TableHead>
-                <TableHead className="w-[100px] font-semibold">Translator</TableHead>
-                <TableHead className="w-[100px] font-semibold">Adapter</TableHead>
-                <TableHead className="w-[100px] font-semibold">Completed</TableHead>
-                <TableHead className="w-[100px] font-semibold">Last Updated</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">Phase</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">File to Translate</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">File to Adapt</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">Original Title</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">Spanish Title</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">Runtime</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap text-center">Episodes</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">Studio Assigned</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">Date Assigned</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">People</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">Delivery</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">Status</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">Translator</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">Adapter</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">Completed</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">Last Updated</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -75,7 +99,12 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                   >
                     {/* Phase */}
                     <TableCell onClick={() => onTaskClick(task)}>
-                      <Badge variant="outline" className="whitespace-nowrap text-xs">
+                      <Badge 
+                        className={cn(
+                          "whitespace-nowrap text-xs rounded-md px-3 py-1",
+                          PHASE_COLORS[task.fase] || PHASE_COLORS[task.currentPhase || ''] || 'bg-gray-200 text-gray-800'
+                        )}
+                      >
                         {PHASE_LABELS[task.fase] || task.currentPhase || task.fase}
                       </Badge>
                     </TableCell>
@@ -102,17 +131,10 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
 
                     {/* Original Title with Comment Icon */}
                     <TableCell onClick={() => onTaskClick(task)}>
-                      <div className="flex items-center gap-2">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="truncate block max-w-[160px] font-medium">
-                              {task.name || 'Untitled'}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{task.name}</p>
-                          </TooltipContent>
-                        </Tooltip>
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <span className="font-medium">
+                          {task.name || 'Untitled'}
+                        </span>
                         {(task.commentCount || 0) > 0 && (
                           <div className="flex items-center gap-1 text-primary shrink-0">
                             <MessageSquare className="w-3.5 h-3.5" />
@@ -124,16 +146,9 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
 
                     {/* Spanish Title */}
                     <TableCell onClick={() => onTaskClick(task)}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="truncate block max-w-[180px] text-muted-foreground">
-                            {task.tituloAprobadoEspanol || '—'}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{task.tituloAprobadoEspanol || 'Not set'}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <span className="whitespace-nowrap text-muted-foreground">
+                        {task.tituloAprobadoEspanol || '—'}
+                      </span>
                     </TableCell>
 
                     {/* Runtime */}
@@ -229,8 +244,8 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       {task.translator ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-6 w-6">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
+                              <Avatar className="h-6 w-6 shrink-0">
                                 <AvatarFallback 
                                   style={{ backgroundColor: task.translator.color }}
                                   className="text-[10px] text-white"
@@ -238,7 +253,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                                   {task.translator.initials}
                                 </AvatarFallback>
                               </Avatar>
-                              <span className="text-sm truncate max-w-[60px]">
+                              <span className="text-sm">
                                 {task.translator.name.split(' ')[0]}
                               </span>
                             </div>
@@ -257,8 +272,8 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       {task.adapter ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-6 w-6">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
+                              <Avatar className="h-6 w-6 shrink-0">
                                 <AvatarFallback 
                                   style={{ backgroundColor: task.adapter.color }}
                                   className="text-[10px] text-white"
@@ -266,7 +281,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                                   {task.adapter.initials}
                                 </AvatarFallback>
                               </Avatar>
-                              <span className="text-sm truncate max-w-[60px]">
+                              <span className="text-sm">
                                 {task.adapter.name.split(' ')[0]}
                               </span>
                             </div>

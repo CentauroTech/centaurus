@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Send, Clock, Calendar, FileText, MessageSquare, CheckCircle, Download, ExternalLink, Users, Hash, Globe, Film, User } from 'lucide-react';
+import { Clock, Calendar, FileText, MessageSquare, CheckCircle, Download, ExternalLink, Hash, Globe, Film, User } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -14,11 +13,11 @@ import { useUpdateGuestTask } from '@/hooks/useGuestTasks';
 import { useComments, useAddComment } from '@/hooks/useComments';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useTaskFiles, FILE_CATEGORIES } from '@/hooks/useTaskFiles';
-import { RichTextDisplay } from '@/components/board/comments/RichTextEditor';
+import { useTeamMembers } from '@/hooks/useWorkspaces';
+import { RichTextEditor, RichTextDisplay, MentionUser } from '@/components/board/comments/RichTextEditor';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-
 // Match main workspace phase colors
 const PHASE_COLORS: Record<string, string> = {
   'On Hold': 'bg-gray-400 text-white',
@@ -52,8 +51,28 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
   const { data: currentMember } = useCurrentTeamMember();
   const { data: comments, isLoading: commentsLoading } = useComments(task.id, isOpen);
   const { data: taskFiles, isLoading: filesLoading } = useTaskFiles(task.id, isOpen);
+  const { data: teamMembers = [] } = useTeamMembers();
   const updateTask = useUpdateGuestTask();
   const addComment = useAddComment(task.id, '');
+
+  // Convert team members to MentionUser format
+  const mentionUsers: MentionUser[] = teamMembers.map((member) => ({
+    id: member.id,
+    name: member.name,
+    initials: member.initials,
+    color: member.color,
+  }));
+
+  // Extract @mentions from HTML content
+  const extractMentionsFromHtml = (html: string): string[] => {
+    const mentionRegex = /data-id="([^"]+)"/g;
+    const mentions: string[] = [];
+    let match;
+    while ((match = mentionRegex.exec(html)) !== null) {
+      mentions.push(match[1]);
+    }
+    return mentions;
+  };
 
   // Filter to only guest-accessible files
   const guestFiles = taskFiles?.filter(f => f.is_guest_accessible) || [];
@@ -81,13 +100,16 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
   };
 
   const handleSendComment = async () => {
-    if (!newComment.trim() || !currentMember?.id) return;
+    const textContent = newComment.replace(/<[^>]*>/g, '').trim();
+    if (!textContent || !currentMember?.id) return;
+
+    const mentionedUserIds = extractMentionsFromHtml(newComment);
 
     try {
       await addComment.mutateAsync({
-        content: newComment.trim(),
+        content: newComment,
         userId: currentMember.id,
-        mentionedUserIds: [],
+        mentionedUserIds,
         isGuestVisible: true,
       });
       setNewComment('');
@@ -333,29 +355,16 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
 
               {/* Comment input */}
               {!isDone && (
-                <div className="p-4 border-t bg-card">
-                  <div className="relative">
-                    <Textarea
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Send a message to the team..."
-                      className="min-h-[60px] pr-12 resize-none"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendComment();
-                        }
-                      }}
-                    />
-                    <Button
-                      size="icon"
-                      className="absolute bottom-2 right-2 h-8 w-8"
-                      onClick={handleSendComment}
-                      disabled={!newComment.trim() || addComment.isPending}
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
-                  </div>
+                <div className="p-3 border-t bg-card">
+                  <RichTextEditor
+                    content={newComment}
+                    onChange={setNewComment}
+                    onSend={handleSendComment}
+                    placeholder="Send a message to the team... Use @ to mention"
+                    isSending={addComment.isPending}
+                    mentionUsers={mentionUsers}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Ctrl+Enter to send</p>
                 </div>
               )}
             </TabsContent>

@@ -60,6 +60,14 @@ const isTranslationPhase = (fase?: string): boolean => {
   return normalized === 'translation' || normalized.includes('translat');
 };
 
+// Sticky column offsets (cumulative widths)
+const STICKY_OFFSETS = {
+  phase: 0,        // First column
+  wo: 100,         // Phase width ~100px
+  fileTranslate: 200, // Phase + WO ~100px
+  originalTitle: 320, // Phase + WO + File ~120px
+};
+
 export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTaskTableProps) {
   // Check if any task is NOT in translation phase (to show File to Adapt column)
   const hasNonTranslationTasks = tasks.some(task => !isTranslationPhase(task.fase));
@@ -72,13 +80,36 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
           <Table className="min-w-max">
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
-                <TableHead className="font-semibold whitespace-nowrap">Phase</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">WO#</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">File to Translate</TableHead>
+                {/* Sticky columns */}
+                <TableHead 
+                  className="font-semibold whitespace-nowrap sticky left-0 z-20 bg-muted/30 w-[100px]"
+                  style={{ left: STICKY_OFFSETS.phase }}
+                >
+                  Phase
+                </TableHead>
+                <TableHead 
+                  className="font-semibold whitespace-nowrap sticky z-20 bg-muted/30 w-[100px]"
+                  style={{ left: STICKY_OFFSETS.wo }}
+                >
+                  WO#
+                </TableHead>
+                <TableHead 
+                  className="font-semibold whitespace-nowrap sticky z-20 bg-muted/30 w-[120px]"
+                  style={{ left: STICKY_OFFSETS.fileTranslate }}
+                >
+                  File to Translate
+                </TableHead>
+                <TableHead 
+                  className="font-semibold whitespace-nowrap sticky z-20 bg-muted/30 w-[200px] border-r border-border/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                  style={{ left: STICKY_OFFSETS.originalTitle }}
+                >
+                  Original Title
+                </TableHead>
+                
+                {/* Scrollable columns */}
                 {hasNonTranslationTasks && (
                   <TableHead className="font-semibold whitespace-nowrap">File to Adapt</TableHead>
                 )}
-                <TableHead className="font-semibold whitespace-nowrap">Original Title</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Spanish Title</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Runtime</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap text-center">Episodes</TableHead>
@@ -109,8 +140,12 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       isDone && "opacity-60"
                     )}
                   >
-                    {/* Phase */}
-                    <TableCell onClick={() => onTaskClick(task)}>
+                    {/* Phase - Sticky */}
+                    <TableCell 
+                      onClick={() => onTaskClick(task)}
+                      className="sticky z-10 bg-card w-[100px]"
+                      style={{ left: STICKY_OFFSETS.phase }}
+                    >
                       <Badge 
                         className={cn(
                           "whitespace-nowrap text-xs rounded-md px-3 py-1",
@@ -121,21 +156,47 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       </Badge>
                     </TableCell>
 
-                    {/* WO# */}
-                    <TableCell onClick={() => onTaskClick(task)}>
+                    {/* WO# - Sticky */}
+                    <TableCell 
+                      onClick={() => onTaskClick(task)}
+                      className="sticky z-10 bg-card w-[100px]"
+                      style={{ left: STICKY_OFFSETS.wo }}
+                    >
                       <span className="text-sm font-mono whitespace-nowrap">
                         {task.workOrderNumber || '—'}
                       </span>
                     </TableCell>
 
-                    {/* File to Translate - displays "script" category (original script) */}
-                    <TableCell>
+                    {/* File to Translate - Sticky */}
+                    <TableCell
+                      className="sticky z-10 bg-card w-[120px]"
+                      style={{ left: STICKY_OFFSETS.fileTranslate }}
+                    >
                       <GuestFileCell 
                         taskId={task.id} 
                         category="script" 
                         label="Original script"
                         phase={task.fase}
                       />
+                    </TableCell>
+
+                    {/* Original Title - Sticky with shadow separator */}
+                    <TableCell 
+                      onClick={() => onTaskClick(task)}
+                      className="sticky z-10 bg-card w-[200px] border-r border-border/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                      style={{ left: STICKY_OFFSETS.originalTitle }}
+                    >
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <span className="font-medium truncate max-w-[160px]">
+                          {task.name || 'Untitled'}
+                        </span>
+                        {(task.commentCount || 0) > 0 && (
+                          <div className="flex items-center gap-1 text-primary shrink-0">
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span className="text-xs">{task.commentCount}</span>
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
 
                     {/* File to Adapt - hidden for Translation phase */}
@@ -153,21 +214,6 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                         )}
                       </TableCell>
                     )}
-
-                    {/* Original Title with Comment Icon */}
-                    <TableCell onClick={() => onTaskClick(task)}>
-                      <div className="flex items-center gap-2 whitespace-nowrap">
-                        <span className="font-medium">
-                          {task.name || 'Untitled'}
-                        </span>
-                        {(task.commentCount || 0) > 0 && (
-                          <div className="flex items-center gap-1 text-primary shrink-0">
-                            <MessageSquare className="w-3.5 h-3.5" />
-                            <span className="text-xs">{task.commentCount}</span>
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
 
                     {/* Spanish Title */}
                     <TableCell onClick={() => onTaskClick(task)}>

@@ -1,9 +1,11 @@
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, ReactRenderer } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
+import Mention from '@tiptap/extension-mention';
+import tippy, { Instance as TippyInstance } from 'tippy.js';
 import { 
   Bold, 
   Italic, 
@@ -23,7 +25,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
+import { MentionList, MentionListRef, MentionUser } from './MentionList';
 
 interface RichTextEditorProps {
   content: string;
@@ -33,17 +36,81 @@ interface RichTextEditorProps {
   isSending?: boolean;
   editable?: boolean;
   className?: string;
+  mentionUsers?: MentionUser[];
 }
 
 export function RichTextEditor({
   content,
   onChange,
   onSend,
-  placeholder = 'Write an update...',
+  placeholder = 'Write an update... Use @ to mention',
   isSending = false,
   editable = true,
   className,
+  mentionUsers = [],
 }: RichTextEditorProps) {
+  const mentionSuggestion = useMemo(() => ({
+    items: ({ query }: { query: string }) => {
+      return mentionUsers
+        .filter((user) =>
+          user.name.toLowerCase().includes(query.toLowerCase())
+        )
+        .slice(0, 8);
+    },
+    render: () => {
+      let component: ReactRenderer<MentionListRef> | null = null;
+      let popup: TippyInstance[] | null = null;
+
+      return {
+        onStart: (props: any) => {
+          component = new ReactRenderer(MentionList, {
+            props,
+            editor: props.editor,
+          });
+
+          if (!props.clientRect) {
+            return;
+          }
+
+          popup = tippy('body', {
+            getReferenceClientRect: props.clientRect,
+            appendTo: () => document.body,
+            content: component.element,
+            showOnCreate: true,
+            interactive: true,
+            trigger: 'manual',
+            placement: 'bottom-start',
+          });
+        },
+
+        onUpdate(props: any) {
+          component?.updateProps(props);
+
+          if (!props.clientRect) {
+            return;
+          }
+
+          popup?.[0]?.setProps({
+            getReferenceClientRect: props.clientRect,
+          });
+        },
+
+        onKeyDown(props: any) {
+          if (props.event.key === 'Escape') {
+            popup?.[0]?.hide();
+            return true;
+          }
+          return component?.ref?.onKeyDown(props) ?? false;
+        },
+
+        onExit() {
+          popup?.[0]?.destroy();
+          component?.destroy();
+        },
+      };
+    },
+  }), [mentionUsers]);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -61,6 +128,12 @@ export function RichTextEditor({
       Placeholder.configure({
         placeholder,
       }),
+      Mention.configure({
+        HTMLAttributes: {
+          class: 'mention bg-primary/20 text-primary rounded px-1 py-0.5 font-medium',
+        },
+        suggestion: mentionSuggestion,
+      }),
     ],
     content,
     editable,
@@ -72,7 +145,7 @@ export function RichTextEditor({
         class: 'prose prose-sm max-w-none focus:outline-none min-h-[80px] p-3 text-sm',
       },
     },
-  });
+  }, [mentionSuggestion]);
 
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
@@ -271,6 +344,7 @@ export function RichTextDisplay({ content, className }: { content: string; class
         "prose prose-sm max-w-none text-foreground/90",
         "[&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_h2]:my-2 [&_h3]:my-1.5",
         "[&_li]:my-0.5",
+        "[&_.mention]:bg-primary/20 [&_.mention]:text-primary [&_.mention]:rounded [&_.mention]:px-1 [&_.mention]:py-0.5 [&_.mention]:font-medium",
         "break-words",
         className
       )}

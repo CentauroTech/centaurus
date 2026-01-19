@@ -14,6 +14,48 @@ function getStorageKey(boardId: string): string {
   return `${STORAGE_KEY_PREFIX}${boardId}`;
 }
 
+// Clear all Miami board column orders from localStorage
+export function clearAllMiamiBoardOrders(): void {
+  if (typeof window === 'undefined') return;
+  
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith(STORAGE_KEY_PREFIX)) {
+      keysToRemove.push(key);
+    }
+  }
+  
+  keysToRemove.forEach(key => {
+    localStorage.removeItem(key);
+  });
+  
+  console.log(`Cleared ${keysToRemove.length} board column order(s) from localStorage`);
+}
+
+// Sync column order from source board to all other boards in the same workspace
+export function syncColumnOrderToWorkspace(sourceBoardId: string, allBoardIds: string[]): void {
+  if (typeof window === 'undefined') return;
+  
+  const sourceKey = getStorageKey(sourceBoardId);
+  const sourceData = localStorage.getItem(sourceKey);
+  
+  if (!sourceData) {
+    console.log('No source column order found, nothing to sync');
+    return;
+  }
+  
+  let synced = 0;
+  allBoardIds.forEach(boardId => {
+    if (boardId !== sourceBoardId) {
+      localStorage.setItem(getStorageKey(boardId), sourceData);
+      synced++;
+    }
+  });
+  
+  console.log(`Synced column order from ${sourceBoardId} to ${synced} other board(s)`);
+}
+
 export function useColumnOrder(boardId: string, workspaceName: string) {
   const { isGod, isAdmin, isTeamMember } = usePermissions();
   const { data: columnVisibility } = useColumnVisibility();
@@ -163,6 +205,7 @@ export function useColumnOrder(boardId: string, workspaceName: string) {
 
   return {
     columns: orderedColumns,
+    columnOrder: state.order,
     isLocked: state.isLocked,
     reorderColumns,
     toggleLock,

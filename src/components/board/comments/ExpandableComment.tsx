@@ -1,62 +1,37 @@
-import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { useRef, useState, useLayoutEffect } from "react";
+import { Button } from "@/components/ui/button";
 
-interface ExpandableCommentProps {
-  children: React.ReactNode;
-  maxHeight?: number;
-}
+const COLLAPSED_HEIGHT = 96; // ~5 lines
 
-export function ExpandableComment({ children, maxHeight = 600 }: ExpandableCommentProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [needsExpand, setNeedsExpand] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
+export default function ExpandableComment({ children }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [overflowing, setOverflowing] = useState(false);
 
-  useEffect(() => {
-    if (contentRef.current) {
-      const scrollHeight = contentRef.current.scrollHeight;
-      setNeedsExpand(scrollHeight > maxHeight);
-    }
-  }, [children, maxHeight]);
+  useLayoutEffect(() => {
+    if (!ref.current) return;
+    setOverflowing(ref.current.scrollHeight > COLLAPSED_HEIGHT);
+  }, [children]);
 
   return (
-    <div className="relative">
+    <div>
       <div
-        ref={contentRef}
-        className={cn(
-          "transition-all duration-200 leading-relaxed",
-          !isExpanded && needsExpand && "overflow-hidden"
-        )}
+        ref={ref}
         style={{
-          maxHeight: !isExpanded && needsExpand ? `${maxHeight}px` : undefined,
+          maxHeight: expanded ? "none" : COLLAPSED_HEIGHT,
         }}
+        className="relative overflow-hidden whitespace-pre-wrap text-sm leading-relaxed"
       >
         {children}
+
+        {!expanded && overflowing && (
+          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent" />
+        )}
       </div>
-      
-      {needsExpand && !isExpanded && (
-        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none" />
-      )}
-      
-      {needsExpand && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="mt-1 h-7 text-xs text-primary hover:text-primary/80 px-2"
-        >
-          {isExpanded ? (
-            <>
-              <ChevronUp className="w-3 h-3 mr-1" />
-              Show less
-            </>
-          ) : (
-            <>
-              <ChevronDown className="w-3 h-3 mr-1" />
-              Show more
-            </>
-          )}
+
+      {overflowing && (
+        <Button variant="ghost" size="sm" className="mt-1 px-0 text-xs" onClick={() => setExpanded((v) => !v)}>
+          {expanded ? "Show less" : "Show more"}
         </Button>
       )}
     </div>

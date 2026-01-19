@@ -262,15 +262,6 @@ export function useCompleteGuestTask() {
     }) => {
       if (!currentMember?.id) throw new Error('User not authenticated');
 
-      // Get task details for phase progression
-      const { data: taskData, error: taskError } = await supabase
-        .from('tasks')
-        .select('group_id, prueba_de_voz, fase')
-        .eq('id', taskId)
-        .single();
-
-      if (taskError) throw taskError;
-
       const currentDate = new Date().toISOString().split('T')[0];
       const now = new Date().toISOString();
 
@@ -300,13 +291,19 @@ export function useCompleteGuestTask() {
         user_id: currentMember.id,
       });
 
-      // Trigger phase progression - move task to next board
-      await triggerPhaseProgression(
-        taskId,
-        taskData.group_id,
-        taskData.prueba_de_voz,
-        currentMember.id
-      );
+      // Trigger phase progression using database function
+      // This bypasses RLS restrictions that prevent guests from reading boards
+      const { data: progressionResult, error: progressionError } = await supabase
+        .rpc('move_task_to_next_phase', {
+          p_task_id: taskId,
+          p_user_id: currentMember.id,
+        });
+
+      if (progressionError) {
+        console.error('Phase progression error:', progressionError);
+      } else {
+        console.log('Phase progression result:', progressionResult);
+      }
 
       return data?.[0] || null;
     },
@@ -316,182 +313,4 @@ export function useCompleteGuestTask() {
       queryClient.invalidateQueries({ queryKey: ['workspaces'] });
     },
   });
-}
-
-// Helper function to trigger phase progression from guest completion
-async function triggerPhaseProgression(
-  taskId: string,
-  currentGroupId: string,
-  pruebaDeVoz: string | null,
-  userId: string
-): Promise<void> {
-  // Phase progression order (normalized phase names)
-  const PHASE_ORDER = [
-    'kickoff', 'assets', 'translation', 'adapting', 'voicetests',
-    'recording', 'premix', 'qcpremix', 'retakes', 'qcretakes',
-    'mix', 'qcmix', 'mixretakes', 'deliveries',
-  ];
-
-  const normalizePhase = (phaseName: string): string => {
-    const lower = phaseName.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const variations: Record<string, string> = {
-      'kickoff': 'kickoff', 'assets': 'assets', 'translation': 'translation',
-      'traduccionad': 'translation', 'adapting': 'adapting', 'adaptacion': 'adapting',
-      'voicetests': 'voicetests', 'recording': 'recording', 'grabacion': 'recording',
-      'premix': 'premix', 'qcpremix': 'qcpremix', 'qc1': 'qcpremix',
-      'retakes': 'retakes', 'qcretakes': 'qcretakes', 'mix': 'mix',
-      'mixbogota': 'mix', 'qcmix': 'qcmix', 'mixretakes': 'mixretakes',
-      'deliveries': 'deliveries', 'entregados': 'deliveries',
-    };
-    return variations[lower] || lower;
-  };
-
-  const extractPhaseFromBoardName = (boardName: string): string => {
-    const parts = boardName.split('-');
-    return parts.length > 1 ? parts.slice(1).join('-') : boardName;
-  };
-
-  const getNextPhase = (currentPhase: string, pvz: string | null): string | null => {
-    const normalized = normalizePhase(currentPhase);
-    const currentIndex = PHASE_ORDER.indexOf(normalized);
-    if (currentIndex === -1 || currentIndex >= PHASE_ORDER.length - 1) return null;
-    if (normalized === 'adapting' && pvz !== 'Yes') return 'recording';
-    return PHASE_ORDER[currentIndex + 1];
-  };
-
-  // 1. Get current group to find board
-  const { data: currentGroup, error: groupError } = await supabase
-    .from('task_groups')
-    .select('board_id')
-    .eq('id', currentGroupId)
-    .single();
-
-  if (groupError || !currentGroup) {
-    console.error('Failed to get current group:', groupError);
-    return;
-  }
-
-  // 2. Get current board to find workspace and phase
-  const { data: currentBoard, error: boardError } = await supabase
-    .from('boards')
-    .select('workspace_id, name')
-    .eq('id', currentGroup.board_id)
-    .single();
-
-  if (boardError || !currentBoard) {
-    console.error('Failed to get current board:', boardError);
-    return;
-  }
-
-  const currentPhase = extractPhaseFromBoardName(currentBoard.name);
-  const nextPhase = getNextPhase(currentPhase, pruebaDeVoz);
-
-  if (!nextPhase) {
-    console.log('Task is at final phase, no progression needed');
-    return;
-  }
-
-  // 3. Get prefix from current board name (e.g., "Col", "Mia", "Se")
-  const prefix = currentBoard.name.split('-')[0];
-
-  // 4. Find the next phase board in the same workspace
-  const { data: workspaceBoards, error: wbError } = await supabase
-    .from('boards')
-    .select('id, name')
-    .eq('workspace_id', currentBoard.workspace_id)
-    .neq('is_hq', true);
-
-  if (wbError || !workspaceBoards) {
-    console.error('Failed to get workspace boards:', wbError);
-    return;
-  }
-
-  const nextBoard = workspaceBoards.find(b => {
-    const boardPhase = extractPhaseFromBoardName(b.name);
-    return normalizePhase(boardPhase) === nextPhase && b.name.startsWith(prefix);
-  });
-
-  if (!nextBoard) {
-    console.log(`No board found for phase: ${nextPhase}`);
-    return;
-  }
-
-  // 5. Get or create a task group in the target board
-  const { data: targetGroups, error: tgError } = await supabase
-    .from('task_groups')
-    .select('id, name')
-    .eq('board_id', nextBoard.id)
-    .order('sort_order')
-    .limit(1);
-
-  if (tgError) {
-    console.error('Failed to get target groups:', tgError);
-    return;
-  }
-
-  let targetGroupId: string;
-
-  if (targetGroups && targetGroups.length > 0) {
-    targetGroupId = targetGroups[0].id;
-  } else {
-    const { data: newGroup, error: ngError } = await supabase
-      .from('task_groups')
-      .insert({
-        board_id: nextBoard.id,
-        name: 'Tasks',
-        color: 'hsl(209, 100%, 46%)',
-      })
-      .select()
-      .single();
-
-    if (ngError || !newGroup) {
-      console.error('Failed to create target group:', ngError);
-      return;
-    }
-    targetGroupId = newGroup.id;
-  }
-
-  const nextPhaseName = extractPhaseFromBoardName(nextBoard.name);
-  const currentDate = new Date().toISOString().split('T')[0];
-  const now = new Date().toISOString();
-
-  // 6. Move the task to the new group, update phase, and reset status
-  const { error: updateError } = await supabase
-    .from('tasks')
-    .update({
-      group_id: targetGroupId,
-      status: 'default',
-      fase: nextPhaseName,
-      last_updated: now,
-      date_assigned: currentDate,
-      date_delivered: null, // Reset for new board
-    })
-    .eq('id', taskId);
-
-  if (updateError) {
-    console.error('Failed to move task:', updateError);
-    return;
-  }
-
-  // 7. Log the phase change
-  await supabase.from('activity_log').insert({
-    task_id: taskId,
-    type: 'phase_change',
-    field: 'fase',
-    old_value: currentPhase,
-    new_value: nextPhaseName,
-    user_id: userId,
-  });
-
-  // Log the board change
-  await supabase.from('activity_log').insert({
-    task_id: taskId,
-    type: 'field_change',
-    field: 'board',
-    old_value: currentBoard.name,
-    new_value: nextBoard.name,
-    user_id: userId,
-  });
-
-  console.log(`Task moved from ${currentBoard.name} to ${nextBoard.name}`);
 }

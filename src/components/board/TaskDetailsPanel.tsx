@@ -47,11 +47,19 @@ export function TaskDetailsPanel({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedKickoffRef = useRef<string>(task.kickoff_brief || '');
+  const currentTaskIdRef = useRef<string>(task.id);
 
-  // Sync kickoffBrief state when task changes
+  // Only sync kickoffBrief state when switching to a different task
   useEffect(() => {
-    setKickoffBrief(task.kickoff_brief || '');
-    setHasUnsavedChanges(false);
+    if (currentTaskIdRef.current !== task.id) {
+      // Task changed - reset to the new task's data
+      setKickoffBrief(task.kickoff_brief || '');
+      lastSavedKickoffRef.current = task.kickoff_brief || '';
+      setHasUnsavedChanges(false);
+      setIsEditingKickoff(false);
+      currentTaskIdRef.current = task.id;
+    }
   }, [task.id, task.kickoff_brief]);
 
   // Auto-save kickoff brief with debounce
@@ -65,7 +73,7 @@ export function TaskDetailsPanel({
     
     // Set new timeout for auto-save (1.5 seconds after last change)
     autoSaveTimeoutRef.current = setTimeout(async () => {
-      if (kickoffBrief === task.kickoff_brief) {
+      if (kickoffBrief === lastSavedKickoffRef.current) {
         setHasUnsavedChanges(false);
         return;
       }
@@ -76,6 +84,7 @@ export function TaskDetailsPanel({
           kickoff_brief: kickoffBrief
         } as any).eq('id', task.id);
         if (error) throw error;
+        lastSavedKickoffRef.current = kickoffBrief;
         setHasUnsavedChanges(false);
       } catch (error) {
         console.error('Auto-save failed:', error);
@@ -90,7 +99,7 @@ export function TaskDetailsPanel({
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [kickoffBrief, isEditingKickoff, hasUnsavedChanges, task.id, task.kickoff_brief]);
+  }, [kickoffBrief, isEditingKickoff, hasUnsavedChanges, task.id]);
 
   // Handle kickoff content change
   const handleKickoffChange = (content: string) => {

@@ -9,6 +9,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { GuestTaskCard } from '@/components/guest/GuestTaskCard';
 import { GuestTaskTable } from '@/components/guest/GuestTaskTable';
 import { GuestTaskView } from '@/components/guest/GuestTaskView';
+import { GuestCompleteDialog } from '@/components/guest/GuestCompleteDialog';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useGuestTasks, useUpdateGuestTask, GuestTask } from '@/hooks/useGuestTasks';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
@@ -25,6 +26,7 @@ export default function GuestDashboard() {
   const updateTask = useUpdateGuestTask();
 
   const [selectedTask, setSelectedTask] = useState<GuestTask | null>(null);
+  const [taskToComplete, setTaskToComplete] = useState<GuestTask | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   // Handle deep link from notifications
@@ -61,9 +63,9 @@ export default function GuestDashboard() {
 
   const handleStatusChange = async (taskId: string, status: 'default' | 'working' | 'done') => {
     if (status === 'done') {
-      // Open task view for delivery workflow
+      // Open complete dialog
       const task = tasks?.find(t => t.id === taskId);
-      if (task) setSelectedTask(task);
+      if (task) setTaskToComplete(task);
       return;
     }
 
@@ -302,6 +304,18 @@ export default function GuestDashboard() {
           task={selectedTask}
           isOpen={!!selectedTask}
           onClose={() => setSelectedTask(null)}
+        />
+      )}
+
+      {/* Complete task dialog */}
+      {taskToComplete && (
+        <GuestCompleteDialog
+          taskId={taskToComplete.id}
+          taskName={taskToComplete.name || 'Untitled'}
+          phase={taskToComplete.fase}
+          isOpen={!!taskToComplete}
+          onClose={() => setTaskToComplete(null)}
+          onComplete={() => setTaskToComplete(null)}
         />
       )}
     </div>

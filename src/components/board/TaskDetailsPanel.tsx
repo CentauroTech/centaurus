@@ -61,23 +61,35 @@ export default function TaskDetailsPanel({
     hasUnsavedChangesRef.current = value;
   }, []);
 
-  // Immediate save function - uses passed values or refs
-  const saveKickoffNow = useCallback(async (taskIdToSave: string, briefToSave: string) => {
-    if (!taskIdToSave || briefToSave === undefined) return;
+  // Immediate save function
+  const saveKickoffNow = useCallback(async (taskIdToSave: string, briefToSave: string): Promise<boolean> => {
+    if (!taskIdToSave) {
+      console.warn("saveKickoffNow called without taskId");
+      return false;
+    }
 
+    console.log("Attempting to save kickoff brief:", { taskIdToSave, briefLength: briefToSave?.length });
     setIsSaving(true);
+    
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("tasks")
-        .update({ kickoff_brief: briefToSave } as any)
-        .eq("id", taskIdToSave);
+        .update({ kickoff_brief: briefToSave || null })
+        .eq("id", taskIdToSave)
+        .select("id, kickoff_brief");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+      
+      console.log("Kickoff brief saved successfully:", data);
       updateHasUnsavedChanges(false);
-      console.log("Kickoff brief saved successfully for task:", taskIdToSave);
+      return true;
     } catch (error) {
       console.error("Failed to save kickoff brief:", error);
       toast.error("Failed to save kickoff brief");
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -138,7 +150,7 @@ export default function TaskDetailsPanel({
     }, 1500);
   }, [updateKickoffBrief, updateHasUnsavedChanges, saveKickoffNow]);
 
-  // Cleanup on unmount - use sendBeacon for reliability
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (autoSaveTimeoutRef.current) {
@@ -146,12 +158,16 @@ export default function TaskDetailsPanel({
       }
       // Fire-and-forget save on unmount
       if (hasUnsavedChangesRef.current && currentTaskIdRef.current) {
+        const taskId = currentTaskIdRef.current;
+        const brief = kickoffBriefRef.current;
+        console.log("Saving on unmount:", { taskId, briefLength: brief?.length });
         supabase
           .from("tasks")
-          .update({ kickoff_brief: kickoffBriefRef.current } as any)
-          .eq("id", currentTaskIdRef.current)
-          .then(({ error }) => {
+          .update({ kickoff_brief: brief || null })
+          .eq("id", taskId)
+          .then(({ data, error }) => {
             if (error) console.error("Failed to save on unmount:", error);
+            else console.log("Saved on unmount:", data);
           });
       }
     };

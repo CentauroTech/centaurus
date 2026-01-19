@@ -59,27 +59,29 @@ export function OwnerCell({ owner, onOwnerChange, disabled = false }: OwnerCellP
   return (
     <div className="relative" ref={dropdownRef}>
       {owner ? (
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 group"
-        >
-          <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium text-white"
-            style={{ backgroundColor: owner.color }}
+        <div className="flex items-center gap-2 group">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center gap-2"
           >
-            {owner.initials}
-          </div>
-          <span className="text-sm text-inherit">{owner.name}</span>
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium text-white"
+              style={{ backgroundColor: owner.color }}
+            >
+              {owner.initials}
+            </div>
+            <span className="text-sm text-inherit">{owner.name}</span>
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onOwnerChange(undefined);
             }}
-            className="opacity-0 group-hover:opacity-100 transition-smooth"
+            className="opacity-0 group-hover:opacity-100 transition-smooth p-0.5 rounded hover:bg-accent"
           >
             <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
           </button>
-        </button>
+        </div>
       ) : (
         <button
           onClick={() => setIsOpen(!isOpen)}

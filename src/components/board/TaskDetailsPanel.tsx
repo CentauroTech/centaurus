@@ -44,12 +44,59 @@ export function TaskDetailsPanel({
   const [kickoffBrief, setKickoffBrief] = useState(task.kickoff_brief || '');
   const [isEditingKickoff, setIsEditingKickoff] = useState(false);
   const [isSavingKickoff, setIsSavingKickoff] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync kickoffBrief state when task changes
   useEffect(() => {
     setKickoffBrief(task.kickoff_brief || '');
+    setHasUnsavedChanges(false);
   }, [task.id, task.kickoff_brief]);
+
+  // Auto-save kickoff brief with debounce
+  useEffect(() => {
+    if (!isEditingKickoff || !hasUnsavedChanges) return;
+    
+    // Clear existing timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    
+    // Set new timeout for auto-save (1.5 seconds after last change)
+    autoSaveTimeoutRef.current = setTimeout(async () => {
+      if (kickoffBrief === task.kickoff_brief) {
+        setHasUnsavedChanges(false);
+        return;
+      }
+      
+      setIsSavingKickoff(true);
+      try {
+        const { error } = await supabase.from('tasks').update({
+          kickoff_brief: kickoffBrief
+        } as any).eq('id', task.id);
+        if (error) throw error;
+        setHasUnsavedChanges(false);
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+      } finally {
+        setIsSavingKickoff(false);
+      }
+    }, 1500);
+    
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [kickoffBrief, isEditingKickoff, hasUnsavedChanges, task.id, task.kickoff_brief]);
+
+  // Handle kickoff content change
+  const handleKickoffChange = (content: string) => {
+    setKickoffBrief(content);
+    setHasUnsavedChanges(true);
+  };
   const {
     role,
     isAdmin
@@ -324,30 +371,21 @@ export function TaskDetailsPanel({
               )}
               {isEditingKickoff && !isGuest ? (
                 <div className="space-y-3">
-                  <RichTextEditor content={kickoffBrief} onChange={setKickoffBrief} placeholder="Enter the full brief/kickoff information..." />
-                  <div className="flex justify-end gap-2">
+                  <RichTextEditor content={kickoffBrief} onChange={handleKickoffChange} placeholder="Enter the full brief/kickoff information..." />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      {isSavingKickoff ? 'Saving...' : hasUnsavedChanges ? 'Unsaved changes' : 'All changes saved'}
+                    </span>
                     <Button variant="outline" size="sm" onClick={() => {
+                      // Clear any pending auto-save
+                      if (autoSaveTimeoutRef.current) {
+                        clearTimeout(autoSaveTimeoutRef.current);
+                      }
                       setKickoffBrief(task.kickoff_brief || '');
+                      setHasUnsavedChanges(false);
                       setIsEditingKickoff(false);
                     }}>
-                      Cancel
-                    </Button>
-                    <Button size="sm" disabled={isSavingKickoff} onClick={async () => {
-                      setIsSavingKickoff(true);
-                      try {
-                        const { error } = await supabase.from('tasks').update({
-                          kickoff_brief: kickoffBrief
-                        } as any).eq('id', task.id);
-                        if (error) throw error;
-                        toast.success('Kickoff brief saved');
-                        setIsEditingKickoff(false);
-                      } catch (error) {
-                        toast.error('Failed to save kickoff brief');
-                      } finally {
-                        setIsSavingKickoff(false);
-                      }
-                    }}>
-                      {isSavingKickoff ? 'Saving...' : 'Save'}
+                      Done
                     </Button>
                   </div>
                 </div>

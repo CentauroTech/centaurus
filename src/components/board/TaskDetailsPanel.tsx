@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Edit2, Check } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTaskFiles, useUploadTaskFile, useToggleFileAccessibility, useDeleteTaskFile, FileCategory } from "@/hooks/useTaskFiles";
 import { useActivityLog } from "@/hooks/useActivityLog";
@@ -31,6 +32,7 @@ export default function TaskDetailsPanel({
   users = [],
   boardId = "",
 }: TaskDetailsPanelProps) {
+  const queryClient = useQueryClient();
   const [isEditingKickoff, setIsEditingKickoff] = useState(false);
   const [kickoffBrief, setKickoffBrief] = useState(task.kickoff_brief || "");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -39,6 +41,7 @@ export default function TaskDetailsPanel({
   const kickoffBriefRef = useRef<string>(task.kickoff_brief || "");
   const hasUnsavedChangesRef = useRef<boolean>(false);
   const currentTaskIdRef = useRef<string>(task.id);
+  const currentBoardIdRef = useRef<string>(boardId);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: files = [] } = useTaskFiles(task.id);
@@ -62,7 +65,7 @@ export default function TaskDetailsPanel({
   }, []);
 
   // Immediate save function
-  const saveKickoffNow = useCallback(async (taskIdToSave: string, briefToSave: string): Promise<boolean> => {
+  const saveKickoffNow = useCallback(async (taskIdToSave: string, briefToSave: string, boardIdForInvalidation?: string): Promise<boolean> => {
     if (!taskIdToSave) {
       console.warn("saveKickoffNow called without taskId");
       return false;
@@ -85,6 +88,13 @@ export default function TaskDetailsPanel({
       
       console.log("Kickoff brief saved successfully:", data);
       updateHasUnsavedChanges(false);
+      
+      // Invalidate the board query to refresh task data
+      const invalidateBoardId = boardIdForInvalidation || currentBoardIdRef.current;
+      if (invalidateBoardId) {
+        queryClient.invalidateQueries({ queryKey: ['board', invalidateBoardId] });
+      }
+      
       return true;
     } catch (error) {
       console.error("Failed to save kickoff brief:", error);
@@ -93,7 +103,7 @@ export default function TaskDetailsPanel({
     } finally {
       setIsSaving(false);
     }
-  }, [updateHasUnsavedChanges]);
+  }, [updateHasUnsavedChanges, queryClient]);
 
   // Handle panel close - save first then close
   const handlePanelClose = useCallback(async () => {
@@ -106,6 +116,11 @@ export default function TaskDetailsPanel({
     }
     onClose();
   }, [onClose, saveKickoffNow]);
+
+  // Keep boardId ref in sync
+  useEffect(() => {
+    currentBoardIdRef.current = boardId;
+  }, [boardId]);
 
   // When task changes, save current and reset for new task
   useEffect(() => {
@@ -152,6 +167,7 @@ export default function TaskDetailsPanel({
 
   // Cleanup on unmount
   useEffect(() => {
+    const boardIdOnMount = boardId;
     return () => {
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
@@ -167,11 +183,14 @@ export default function TaskDetailsPanel({
           .eq("id", taskId)
           .then(({ data, error }) => {
             if (error) console.error("Failed to save on unmount:", error);
-            else console.log("Saved on unmount:", data);
+            else {
+              console.log("Saved on unmount:", data);
+              // Can't use queryClient here as component is unmounting
+            }
           });
       }
     };
-  }, []);
+  }, [boardId]);
 
   // Group files by category
   const filesByCategory = files.reduce((acc, file) => {

@@ -23,7 +23,16 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+
+export interface MentionUser {
+  id: string;
+  name: string;
+  initials: string;
+  color: string;
+}
 
 interface RichTextEditorProps {
   content: string;
@@ -33,7 +42,7 @@ interface RichTextEditorProps {
   isSending?: boolean;
   editable?: boolean;
   className?: string;
-  mentionUsers?: Array<{ id: string; name: string; initials: string; color: string }>;
+  mentionUsers?: MentionUser[];
 }
 
 export function RichTextEditor({
@@ -44,7 +53,18 @@ export function RichTextEditor({
   isSending = false,
   editable = true,
   className,
+  mentionUsers = [],
 }: RichTextEditorProps) {
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filteredUsers = mentionUsers.filter((user) =>
+    user.name.toLowerCase().includes(mentionQuery.toLowerCase())
+  ).slice(0, 8);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -67,13 +87,97 @@ export function RichTextEditor({
     editable,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
+      checkForMention(editor);
     },
     editorProps: {
       attributes: {
         class: 'prose prose-sm max-w-none focus:outline-none min-h-[80px] p-3 text-sm',
       },
+      handleKeyDown: (view, event) => {
+        if (showMentions) {
+          if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            setSelectedIndex((prev) => (prev + 1) % filteredUsers.length);
+            return true;
+          }
+          if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            setSelectedIndex((prev) => (prev - 1 + filteredUsers.length) % filteredUsers.length);
+            return true;
+          }
+          if (event.key === 'Enter' && filteredUsers.length > 0) {
+            event.preventDefault();
+            insertMention(filteredUsers[selectedIndex]);
+            return true;
+          }
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            setShowMentions(false);
+            return true;
+          }
+        }
+        return false;
+      },
     },
   });
+
+  const checkForMention = useCallback((editorInstance: any) => {
+    if (!editorInstance || mentionUsers.length === 0) return;
+
+    const { state } = editorInstance;
+    const { selection } = state;
+    const { $from } = selection;
+    
+    // Get text before cursor
+    const textBefore = $from.parent.textContent.slice(0, $from.parentOffset);
+    const mentionMatch = textBefore.match(/@(\w*)$/);
+
+    if (mentionMatch) {
+      setMentionQuery(mentionMatch[1]);
+      setSelectedIndex(0);
+      
+      // Get cursor position for dropdown
+      const coords = editorInstance.view.coordsAtPos(selection.from);
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      
+      if (containerRect) {
+        setMentionPosition({
+          top: coords.bottom - containerRect.top + 4,
+          left: coords.left - containerRect.left,
+        });
+      }
+      setShowMentions(true);
+    } else {
+      setShowMentions(false);
+    }
+  }, [mentionUsers.length]);
+
+  const insertMention = useCallback((user: MentionUser) => {
+    if (!editor) return;
+
+    const { state } = editor;
+    const { selection } = state;
+    const { $from } = selection;
+    
+    // Find the @ symbol position
+    const textBefore = $from.parent.textContent.slice(0, $from.parentOffset);
+    const mentionMatch = textBefore.match(/@(\w*)$/);
+    
+    if (mentionMatch) {
+      const start = $from.pos - mentionMatch[0].length;
+      const end = $from.pos;
+      
+      // Insert mention as styled span
+      editor
+        .chain()
+        .focus()
+        .deleteRange({ from: start, to: end })
+        .insertContent(`<span class="mention" data-id="${user.id}">@${user.name}</span>&nbsp;`)
+        .run();
+    }
+    
+    setShowMentions(false);
+  }, [editor]);
 
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
@@ -93,7 +197,7 @@ export function RichTextEditor({
   }
 
   return (
-    <div className={cn("border border-border rounded-lg bg-background overflow-hidden", className)} onKeyDown={handleKeyDown}>
+    <div ref={containerRef} className={cn("border border-border rounded-lg bg-background overflow-hidden relative", className)} onKeyDown={handleKeyDown}>
       {/* Toolbar */}
       {editable && (
         <div className="flex items-center gap-0.5 p-1.5 border-b border-border bg-muted/30 flex-wrap">
@@ -259,6 +363,40 @@ export function RichTextEditor({
       
       {/* Editor Content */}
       <EditorContent editor={editor} />
+
+      {/* Mention Dropdown */}
+      {showMentions && filteredUsers.length > 0 && (
+        <div
+          className="absolute z-50 min-w-[200px] max-h-[200px] overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+          style={{
+            top: mentionPosition.top,
+            left: mentionPosition.left,
+          }}
+        >
+          {filteredUsers.map((user, index) => (
+            <button
+              key={user.id}
+              onClick={() => insertMention(user)}
+              className={cn(
+                "flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-sm outline-none transition-colors",
+                index === selectedIndex
+                  ? "bg-accent text-accent-foreground"
+                  : "hover:bg-accent/50"
+              )}
+            >
+              <Avatar className="h-6 w-6">
+                <AvatarFallback
+                  style={{ backgroundColor: user.color }}
+                  className="text-white text-xs"
+                >
+                  {user.initials}
+                </AvatarFallback>
+              </Avatar>
+              <span>{user.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

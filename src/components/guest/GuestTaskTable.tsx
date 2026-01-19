@@ -1,4 +1,4 @@
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, ChevronRight } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -75,32 +75,40 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
   return (
     <TooltipProvider>
       <div className="border rounded-lg bg-card overflow-hidden">
+        {/* Scroll hint message */}
+        <div className="flex justify-end px-4 py-2 border-b bg-muted/20">
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            Scroll to the right for more information
+            <ChevronRight className="w-3 h-3" />
+          </span>
+        </div>
+        
         {/* Horizontal scroll container with visible scrollbar */}
         <div className="overflow-x-auto custom-scrollbar">
           <Table className="min-w-max">
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
-                {/* Sticky columns */}
+                {/* Sticky columns - z-30 to stay above body cells */}
                 <TableHead 
-                  className="font-semibold whitespace-nowrap sticky left-0 z-20 bg-muted/30 w-[100px]"
+                  className="font-semibold whitespace-nowrap sticky z-30 bg-muted w-[100px]"
                   style={{ left: STICKY_OFFSETS.phase }}
                 >
                   Phase
                 </TableHead>
                 <TableHead 
-                  className="font-semibold whitespace-nowrap sticky z-20 bg-muted/30 w-[100px]"
+                  className="font-semibold whitespace-nowrap sticky z-30 bg-muted w-[100px]"
                   style={{ left: STICKY_OFFSETS.wo }}
                 >
                   WO#
                 </TableHead>
                 <TableHead 
-                  className="font-semibold whitespace-nowrap sticky z-20 bg-muted/30 w-[120px]"
+                  className="font-semibold whitespace-nowrap sticky z-30 bg-muted w-[120px]"
                   style={{ left: STICKY_OFFSETS.fileTranslate }}
                 >
                   File to Translate
                 </TableHead>
                 <TableHead 
-                  className="font-semibold whitespace-nowrap sticky z-20 bg-muted/30 w-[200px] border-r border-border/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                  className="font-semibold whitespace-nowrap sticky z-30 bg-muted w-[200px] border-r border-border shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]"
                   style={{ left: STICKY_OFFSETS.originalTitle }}
                 >
                   Original Title
@@ -108,19 +116,19 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                 
                 {/* Scrollable columns */}
                 {hasNonTranslationTasks && (
-                  <TableHead className="font-semibold whitespace-nowrap">File to Adapt</TableHead>
+                  <TableHead className="font-semibold whitespace-nowrap bg-muted/30">File to Adapt</TableHead>
                 )}
-                <TableHead className="font-semibold whitespace-nowrap">Spanish Title</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">Runtime</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap text-center">Episodes</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">Date Assigned</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">Delivery</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">Due Date</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">Status</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">Last Updated</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">Translator</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">Adapter</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">Date Delivered</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap bg-muted/30">Spanish Title</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap bg-muted/30">Runtime</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap text-center bg-muted/30">Episodes</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap bg-muted/30">Date Assigned</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap bg-muted/30">Delivery</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap bg-muted/30">Due Date</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap bg-muted/30">Status</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap bg-muted/30">Last Updated</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap bg-muted/30">Translator</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap bg-muted/30">Adapter</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap bg-muted/30">Date Delivered</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -140,10 +148,10 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       isDone && "opacity-60"
                     )}
                   >
-                    {/* Phase - Sticky */}
+                    {/* Phase - Sticky z-20 (below header z-30) */}
                     <TableCell 
                       onClick={() => onTaskClick(task)}
-                      className="sticky z-10 bg-card w-[100px]"
+                      className="sticky z-20 bg-card w-[100px]"
                       style={{ left: STICKY_OFFSETS.phase }}
                     >
                       <Badge 
@@ -159,7 +167,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                     {/* WO# - Sticky */}
                     <TableCell 
                       onClick={() => onTaskClick(task)}
-                      className="sticky z-10 bg-card w-[100px]"
+                      className="sticky z-20 bg-card w-[100px]"
                       style={{ left: STICKY_OFFSETS.wo }}
                     >
                       <span className="text-sm font-mono whitespace-nowrap">
@@ -169,7 +177,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
 
                     {/* File to Translate - Sticky */}
                     <TableCell
-                      className="sticky z-10 bg-card w-[120px]"
+                      className="sticky z-20 bg-card w-[120px]"
                       style={{ left: STICKY_OFFSETS.fileTranslate }}
                     >
                       <GuestFileCell 
@@ -183,7 +191,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                     {/* Original Title - Sticky with shadow separator */}
                     <TableCell 
                       onClick={() => onTaskClick(task)}
-                      className="sticky z-10 bg-card w-[200px] border-r border-border/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                      className="sticky z-20 bg-card w-[200px] border-r border-border shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]"
                       style={{ left: STICKY_OFFSETS.originalTitle }}
                     >
                       <div className="flex items-center gap-2 whitespace-nowrap">

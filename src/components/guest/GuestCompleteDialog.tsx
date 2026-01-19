@@ -212,10 +212,11 @@ export function GuestCompleteDialog({
         });
       }
 
-      // Complete the task
+      // Complete the task and save to permanent history
       await completeTask.mutateAsync({
         taskId,
         deliveryComment: comment.trim() || (droppedFile ? `Delivered: ${droppedFile.name}` : undefined),
+        phase: phase,
       });
 
       toast.success('Task completed successfully!');

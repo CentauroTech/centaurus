@@ -205,6 +205,72 @@ export type Database = {
           },
         ]
       }
+      guest_completed_tasks: {
+        Row: {
+          cantidad_episodios: number | null
+          completed_at: string
+          created_at: string
+          delivery_comment: string | null
+          id: string
+          locked_runtime: string | null
+          phase: string
+          role_performed: string
+          task_id: string
+          task_name: string
+          team_member_id: string
+          titulo_aprobado_espanol: string | null
+          work_order_number: string | null
+          workspace_name: string | null
+        }
+        Insert: {
+          cantidad_episodios?: number | null
+          completed_at?: string
+          created_at?: string
+          delivery_comment?: string | null
+          id?: string
+          locked_runtime?: string | null
+          phase: string
+          role_performed: string
+          task_id: string
+          task_name: string
+          team_member_id: string
+          titulo_aprobado_espanol?: string | null
+          work_order_number?: string | null
+          workspace_name?: string | null
+        }
+        Update: {
+          cantidad_episodios?: number | null
+          completed_at?: string
+          created_at?: string
+          delivery_comment?: string | null
+          id?: string
+          locked_runtime?: string | null
+          phase?: string
+          role_performed?: string
+          task_id?: string
+          task_name?: string
+          team_member_id?: string
+          titulo_aprobado_espanol?: string | null
+          work_order_number?: string | null
+          workspace_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_completed_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_completed_tasks_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           bell_assignments: boolean

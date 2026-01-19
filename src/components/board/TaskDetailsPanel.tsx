@@ -393,7 +393,7 @@ export function TaskDetailsPanel({
           <TabsContent value="updates" className="flex-1 flex flex-col m-0 overflow-hidden">
             {isGuest ?
           // Guests only see guest-visible comments in a single section
-          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          <div className=""flex-1 min-h-0 overflow-y-auto"">
                 <CommentSection title="Updates" icon="guest" comments={guestComments} isLoading={commentsLoading} onSendComment={handleSendToSection} teamMembers={teamMembers || []} isGuestVisible={true} emptyMessage="No updates yet" />
               </div> :
           // Team members see both sections

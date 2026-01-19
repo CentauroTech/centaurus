@@ -5,7 +5,7 @@ import { Task, User, Phase, Status, ColumnConfig, STUDIO_OPTIONS_MIAMI } from '@
 import { StatusBadge } from './StatusBadge';
 import { OwnerCell } from './OwnerCell';
 import { DateCell } from './DateCell';
-import { TaskDetailsPanel } from './TaskDetailsPanel';
+import TaskDetailsPanel from './TaskDetailsPanel';
 import { TextCell } from './cells/TextCell';
 import { NumberCell } from './cells/NumberCell';
 import { BooleanCell } from './cells/BooleanCell';

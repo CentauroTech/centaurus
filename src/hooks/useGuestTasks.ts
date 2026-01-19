@@ -262,16 +262,18 @@ export function useCompleteGuestTask() {
     }) => {
       if (!currentMember?.id) throw new Error('User not authenticated');
 
-      // Update task to done
-      const { error: updateError } = await supabase
+      // Update task to done and make public in one call
+      const { data, error: updateError } = await supabase
         .from('tasks')
         .update({
           status: 'done',
           completed_at: new Date().toISOString(),
           delivery_comment: deliveryComment || null,
           last_updated: new Date().toISOString(),
+          is_private: false,
         })
-        .eq('id', taskId);
+        .eq('id', taskId)
+        .select();
 
       if (updateError) throw updateError;
 
@@ -284,17 +286,7 @@ export function useCompleteGuestTask() {
 
       if (viewerError) throw viewerError;
 
-      // Make task public again
-      const { data, error: publicError } = await supabase
-        .from('tasks')
-        .update({ is_private: false })
-        .eq('id', taskId)
-        .select()
-        .single();
-
-      if (publicError) throw publicError;
-
-      return data;
+      return data?.[0] || null;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['guest-tasks'] });

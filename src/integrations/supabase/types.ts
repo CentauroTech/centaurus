@@ -806,6 +806,10 @@ export type Database = {
       is_guest: { Args: never; Returns: boolean }
       is_project_manager: { Args: never; Returns: boolean }
       is_team_member: { Args: never; Returns: boolean }
+      move_task_to_next_phase: {
+        Args: { p_task_id: string; p_user_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

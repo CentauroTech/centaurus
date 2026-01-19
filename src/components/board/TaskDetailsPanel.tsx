@@ -232,18 +232,22 @@ export function TaskDetailsPanel({
               <MessageSquare className="w-4 h-4 mr-2" />
               Updates
             </TabsTrigger>
-            <TabsTrigger value="files" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none">
-              <FileText className="w-4 h-4 mr-2" />
-              Files
-            </TabsTrigger>
-          <TabsTrigger value="kickoff" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none">
-              <Rocket className="w-4 h-4 mr-2" />
-              Kickoff
-            </TabsTrigger>
-            <TabsTrigger value="activity" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none">
-              <Clock className="w-4 h-4 mr-2" />
-              Activity
-            </TabsTrigger>
+            {!isGuest && (
+              <>
+                <TabsTrigger value="files" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Files
+                </TabsTrigger>
+                <TabsTrigger value="kickoff" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none">
+                  <Rocket className="w-4 h-4 mr-2" />
+                  Kickoff
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none">
+                  <Clock className="w-4 h-4 mr-2" />
+                  Activity
+                </TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           {/* Updates Tab */}
@@ -307,13 +311,16 @@ export function TaskDetailsPanel({
 
           {/* Kickoff Tab */}
           <TabsContent value="kickoff" className="m-0 overflow-auto max-h-[calc(100vh-200px)]">
-            <div className="px-4 pt-2">
+            <div className="px-4 pt-2 relative">
               {!isGuest && !isEditingKickoff && (
-                <div className="flex justify-end mb-2">
-                  <Button variant="outline" size="sm" onClick={() => setIsEditingKickoff(true)}>
-                    Edit
-                  </Button>
-                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setIsEditingKickoff(true)}
+                  className="absolute top-2 right-4 z-10"
+                >
+                  Edit
+                </Button>
               )}
               {isEditingKickoff && !isGuest ? (
                 <div className="space-y-3">

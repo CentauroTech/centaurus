@@ -7,15 +7,25 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import centaurusLogo from '@/assets/centaurus-logo.jpeg';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
+import { ROLE_TYPES, ROLE_LABELS, RoleType } from '@/hooks/useTeamMemberRoles';
 
-const authSchema = z.object({
+const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+const signupSchema = z.object({
+  firstName: z.string().min(1, 'First name is required').max(50, 'First name too long'),
+  lastName: z.string().min(1, 'Last name is required').max(50, 'Last name too long'),
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  role: z.string().min(1, 'Please select a role'),
 });
 
 const emailSchema = z.object({
@@ -30,11 +40,25 @@ const passwordSchema = z.object({
   path: ["confirmPassword"],
 });
 
+// Helper to generate initials from name
+function generateInitials(firstName: string, lastName: string): string {
+  return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+}
+
+// Helper to generate a random color
+function generateColor(): string {
+  const hue = Math.floor(Math.random() * 360);
+  return `hsl(${hue}, 70%, 50%)`;
+}
+
 export default function Auth() {
   const navigate = useNavigate();
   const { user, loading, signIn, signUp } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [selectedRole, setSelectedRole] = useState<RoleType | ''>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
@@ -69,9 +93,9 @@ export default function Auth() {
     }
   }, [user, loading, navigate, isPasswordRecovery]);
 
-  const handleSubmit = async (mode: 'login' | 'signup') => {
+  const handleLogin = async () => {
     try {
-      const validation = authSchema.safeParse({ email, password });
+      const validation = loginSchema.safeParse({ email, password });
       if (!validation.success) {
         toast.error(validation.error.errors[0].message);
         return;
@@ -79,31 +103,96 @@ export default function Auth() {
 
       setIsSubmitting(true);
 
-      if (mode === 'login') {
-        const { error } = await signIn(email, password);
-        if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast.error('Invalid email or password');
-          } else {
-            toast.error(error.message);
-          }
+      const { error } = await signIn(email, password);
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('Invalid email or password');
         } else {
-          toast.success('Welcome back!');
-          navigate('/');
+          toast.error(error.message);
         }
       } else {
-        const { error } = await signUp(email, password);
-        if (error) {
-          if (error.message.includes('already registered')) {
-            toast.error('This email is already registered. Try logging in instead.');
-          } else {
-            toast.error(error.message);
-          }
+        toast.success('Welcome back!');
+        navigate('/');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSignup = async () => {
+    try {
+      const validation = signupSchema.safeParse({ 
+        firstName, 
+        lastName, 
+        email, 
+        password, 
+        role: selectedRole 
+      });
+      if (!validation.success) {
+        toast.error(validation.error.errors[0].message);
+        return;
+      }
+
+      setIsSubmitting(true);
+
+      // First, create the auth user
+      const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
+        email: email.toLowerCase().trim(),
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+        }
+      });
+
+      if (signUpError) {
+        if (signUpError.message.includes('already registered')) {
+          toast.error('This email is already registered. Try logging in instead.');
         } else {
-          toast.success('Account created successfully!');
-          navigate('/');
+          toast.error(signUpError.message);
+        }
+        return;
+      }
+
+      // Create team member record
+      const fullName = `${firstName.trim()} ${lastName.trim()}`;
+      const initials = generateInitials(firstName, lastName);
+      const color = generateColor();
+
+      const { data: teamMember, error: teamMemberError } = await supabase
+        .from('team_members')
+        .insert({
+          name: fullName,
+          initials,
+          color,
+          email: email.toLowerCase().trim(),
+          role: 'member', // Default role for the team_members table
+        })
+        .select()
+        .single();
+
+      if (teamMemberError) {
+        console.error('Error creating team member:', teamMemberError);
+        toast.error('Account created but profile setup failed. Contact support.');
+        return;
+      }
+
+      // Create team member role
+      if (selectedRole && teamMember) {
+        const { error: roleError } = await supabase
+          .from('team_member_roles')
+          .insert({
+            team_member_id: teamMember.id,
+            role_type: selectedRole,
+          });
+
+        if (roleError) {
+          console.error('Error creating team member role:', roleError);
+          // Don't block signup for role creation failure
         }
       }
+
+      toast.success('Account created successfully!');
+      navigate('/');
     } finally {
       setIsSubmitting(false);
     }
@@ -250,7 +339,7 @@ export default function Auth() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit('login')}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                 />
               </div>
               <div className="space-y-2">
@@ -273,12 +362,12 @@ export default function Auth() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit('login')}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                 />
               </div>
               <Button
                 className="w-full"
-                onClick={() => handleSubmit('login')}
+                onClick={handleLogin}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -293,6 +382,28 @@ export default function Auth() {
             </TabsContent>
             
             <TabsContent value="signup" className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-firstname">First Name</Label>
+                  <Input
+                    id="signup-firstname"
+                    type="text"
+                    placeholder="John"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-lastname">Last Name</Label>
+                  <Input
+                    id="signup-lastname"
+                    type="text"
+                    placeholder="Doe"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="signup-email">Email</Label>
                 <Input
@@ -301,7 +412,6 @@ export default function Auth() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit('signup')}
                 />
               </div>
               <div className="space-y-2">
@@ -312,12 +422,26 @@ export default function Auth() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit('signup')}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signup-role">Role</Label>
+                <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as RoleType)}>
+                  <SelectTrigger id="signup-role">
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ROLE_TYPES.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {ROLE_LABELS[role]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <Button
                 className="w-full"
-                onClick={() => handleSubmit('signup')}
+                onClick={handleSignup}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

@@ -352,9 +352,9 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       )}
                     </TableCell>
 
-                    {/* Date Delivered (automatically set when status = done) */}
+                    {/* Date Delivered (only shows when task is done with completedAt) */}
                     <TableCell onClick={() => onTaskClick(task)}>
-                      {task.completedAt ? (
+                      {isDone && task.completedAt ? (
                         <span className="text-sm text-green-600 whitespace-nowrap">
                           {format(new Date(task.completedAt), 'MMM d, yyyy')}
                         </span>

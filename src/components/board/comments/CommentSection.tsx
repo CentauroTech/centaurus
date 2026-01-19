@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useComments, useAddComment, useDeleteComment } from "@/hooks/useComments";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { usePermissions } from "@/hooks/usePermissions";
-import { useTeamMembers } from "@/hooks/useWorkspaces";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trash2, Eye, EyeOff } from "lucide-react";
@@ -10,7 +9,6 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { RichTextEditor, RichTextDisplay } from "./RichTextEditor";
-import { MentionUser } from "./MentionList";
 
 interface CommentSectionProps {
   taskId: string;
@@ -34,20 +32,11 @@ export default function CommentSection({ taskId, boardId = "" }: CommentSectionP
   
   const { data: comments = [], isLoading } = useComments(taskId);
   const { data: currentUser } = useCurrentTeamMember();
-  const { data: teamMembers = [] } = useTeamMembers();
   const { role } = usePermissions();
   const addCommentMutation = useAddComment(taskId, boardId);
   const deleteCommentMutation = useDeleteComment(taskId, boardId);
 
   const isGuest = role === "guest";
-
-  // Convert team members to MentionUser format
-  const mentionUsers: MentionUser[] = teamMembers.map((member) => ({
-    id: member.id,
-    name: member.name,
-    initials: member.initials,
-    color: member.color,
-  }));
 
   const handleSendComment = async () => {
     const textContent = newComment.replace(/<[^>]*>/g, '').trim();
@@ -165,9 +154,8 @@ export default function CommentSection({ taskId, boardId = "" }: CommentSectionP
             content={newComment}
             onChange={setNewComment}
             onSend={handleSendComment}
-            placeholder="Write a message... Use @ to mention"
+            placeholder="Write a message..."
             isSending={addCommentMutation.isPending}
-            mentionUsers={mentionUsers}
           />
           <p className="text-xs text-muted-foreground mt-1">Ctrl+Enter to send</p>
         </div>
@@ -211,11 +199,10 @@ export default function CommentSection({ taskId, boardId = "" }: CommentSectionP
           onSend={handleSendComment}
           placeholder={
             activeTab === "guest"
-              ? "Write to guest... Use @ to mention"
-              : "Write a team update... Use @ to mention"
+              ? "Write to guest..."
+              : "Write a team update..."
           }
           isSending={addCommentMutation.isPending}
-          mentionUsers={mentionUsers}
         />
         <p className="text-xs text-muted-foreground mt-1">
           {activeTab === "guest"

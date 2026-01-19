@@ -1,12 +1,12 @@
 import { useState, useRef } from 'react';
 import { Send, AtSign, MessageSquare, Users, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { CommentWithUser } from '@/hooks/useComments';
-import { RichTextEditor, RichTextDisplay } from './RichTextEditor';
 
 interface CommentSectionProps {
   title: string;
@@ -39,12 +39,12 @@ export function CommentSection({
     mentionSearch === '' || member.name.toLowerCase().includes(mentionSearch.toLowerCase())
   ).slice(0, 6) || [];
 
-  // Extract mentions from HTML content
-  const extractMentionsFromHtml = (html: string): string[] => {
+  // Extract mentions from plain text content
+  const extractMentions = (text: string): string[] => {
     const mentionPattern = /@([\w]+(?:\s[\w]+)?)/g;
     const mentionedNames: string[] = [];
     let match;
-    while ((match = mentionPattern.exec(html)) !== null) {
+    while ((match = mentionPattern.exec(text)) !== null) {
       mentionedNames.push(match[1]);
     }
 
@@ -64,15 +64,14 @@ export function CommentSection({
   };
 
   const handleSendComment = async () => {
-    // Strip HTML tags for empty check
-    const textContent = newComment.replace(/<[^>]*>/g, '').trim();
+    const textContent = newComment.trim();
     if (!textContent || isSending) return;
 
-    const mentionedUserIds = extractMentionsFromHtml(newComment);
+    const mentionedUserIds = extractMentions(newComment);
 
     setIsSending(true);
     try {
-      await onSendComment(newComment.trim(), mentionedUserIds, isGuestVisible);
+      await onSendComment(textContent, mentionedUserIds, isGuestVisible);
       setNewComment('');
       setShowMentions(false);
     } finally {
@@ -81,30 +80,17 @@ export function CommentSection({
   };
 
   const insertMention = (user: { id: string; name: string }) => {
-    // Insert mention at the end of current content
-    const mentionHtml = `<span class="text-primary font-medium bg-primary/10 px-1 rounded">@${user.name}</span>&nbsp;`;
-    setNewComment(prev => {
-      // Remove empty paragraph at end if exists
-      const cleaned = prev.replace(/<p><\/p>$/, '');
-      return cleaned + mentionHtml;
-    });
+    setNewComment(prev => prev + `@${user.name} `);
     setShowMentions(false);
     setMentionSearch('');
   };
 
   const renderCommentContent = (content: string): React.ReactNode => {
-    // Check if content is HTML (has tags)
-    if (content.includes('<')) {
-      // Process mentions in HTML content
-      const processedContent = content.replace(
-        /@([\w]+(?:\s[\w]+)?)/g,
-        '<span class="text-primary font-medium bg-primary/10 px-1 rounded">@$1</span>'
-      );
-      return <RichTextDisplay content={processedContent} />;
-    }
+    // Strip HTML tags if any exist (for legacy content)
+    const plainText = content.replace(/<[^>]*>/g, '');
     
-    // Plain text fallback - render with mention highlighting
-    const parts = content.split(/(@[\w]+(?:\s[\w]+)?)/g);
+    // Render with mention highlighting
+    const parts = plainText.split(/(@[\w]+(?:\s[\w]+)?)/g);
     return (
       <div className="text-sm text-foreground/90 whitespace-pre-wrap break-words">
         {parts.map((part, index) => {
@@ -176,25 +162,38 @@ export function CommentSection({
 
       <div className="p-3 border-t border-border bg-card shrink-0">
         <div className="relative">
-          <RichTextEditor
-            content={newComment}
-            onChange={setNewComment}
-            onSend={handleSendComment}
-            placeholder={`Write ${isGuestVisible ? 'to guest' : 'a team update'}... Use @ to mention`}
-            isSending={isSending}
-          />
-          
-          {/* Mention button */}
-          <div className="absolute top-1.5 right-24 z-10">
-            <Button
-              ref={mentionButtonRef}
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => setShowMentions(!showMentions)}
-            >
-              <AtSign className="w-4 h-4" />
-            </Button>
+          <div className="flex gap-2">
+            <Textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder={`Write ${isGuestVisible ? 'to guest' : 'a team update'}... Use @ to mention`}
+              className="min-h-[80px] resize-none flex-1"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                  e.preventDefault();
+                  handleSendComment();
+                }
+              }}
+            />
+            <div className="flex flex-col gap-1">
+              <Button
+                ref={mentionButtonRef}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowMentions(!showMentions)}
+              >
+                <AtSign className="w-4 h-4" />
+              </Button>
+              <Button
+                size="icon"
+                onClick={handleSendComment}
+                disabled={isSending || !newComment.trim()}
+                className="h-8 w-8"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
 
           {showMentions && filteredMentionUsers.length > 0 && (

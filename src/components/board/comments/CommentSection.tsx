@@ -2,34 +2,33 @@ import { useState } from "react";
 import { useComments, useAddComment, useDeleteComment } from "@/hooks/useComments";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { usePermissions } from "@/hooks/usePermissions";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Send, Trash2, Eye, EyeOff } from "lucide-react";
+import { Trash2, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { RichTextEditor, RichTextDisplay } from "./RichTextEditor";
 
 interface CommentSectionProps {
   taskId: string;
   boardId?: string;
 }
 
-// Extract @mentions from plain text
-function extractMentions(text: string): string[] {
-  const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
+// Extract @mentions from HTML content
+function extractMentionsFromHtml(html: string): string[] {
+  const mentionRegex = /data-id="([^"]+)"/g;
   const mentions: string[] = [];
   let match;
-  while ((match = mentionRegex.exec(text)) !== null) {
-    mentions.push(match[2]); // The ID is in the second capture group
+  while ((match = mentionRegex.exec(html)) !== null) {
+    mentions.push(match[1]);
   }
   return mentions;
 }
 
 export default function CommentSection({ taskId, boardId = "" }: CommentSectionProps) {
   const [newComment, setNewComment] = useState("");
-  const [isGuestVisible, setIsGuestVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<"team" | "guest">("team");
   
   const { data: comments = [], isLoading } = useComments(taskId);
@@ -41,10 +40,10 @@ export default function CommentSection({ taskId, boardId = "" }: CommentSectionP
   const isGuest = role === "guest";
 
   const handleSendComment = async () => {
-    const textContent = newComment.trim();
+    const textContent = newComment.replace(/<[^>]*>/g, '').trim();
     if (!textContent || !currentUser?.id) return;
 
-    const mentionedUserIds = extractMentions(newComment);
+    const mentionedUserIds = extractMentionsFromHtml(newComment);
     
     // Guest comments are always guest-visible
     // Team comments in guest tab are guest-visible
@@ -52,7 +51,7 @@ export default function CommentSection({ taskId, boardId = "" }: CommentSectionP
 
     try {
       await addCommentMutation.mutateAsync({
-        content: textContent,
+        content: newComment,
         userId: currentUser.id,
         mentionedUserIds,
         isGuestVisible: shouldBeGuestVisible,
@@ -135,9 +134,7 @@ export default function CommentSection({ taskId, boardId = "" }: CommentSectionP
                     </button>
                   )}
                 </div>
-                <p className="text-sm mt-1 whitespace-pre-wrap break-words">
-                  {comment.content}
-                </p>
+                <RichTextDisplay content={comment.content} className="mt-1" />
               </div>
             </div>
           </div>
@@ -154,27 +151,13 @@ export default function CommentSection({ taskId, boardId = "" }: CommentSectionP
           {renderCommentList(guestComments)}
         </div>
         <div className="border-t p-3 bg-background">
-          <div className="flex gap-2">
-            <Textarea
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Write a message..."
-              className="min-h-[60px] resize-none flex-1"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && e.ctrlKey) {
-                  e.preventDefault();
-                  handleSendComment();
-                }
-              }}
-            />
-            <Button
-              size="icon"
-              onClick={handleSendComment}
-              disabled={!newComment.trim() || addCommentMutation.isPending}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
+          <RichTextEditor
+            content={newComment}
+            onChange={setNewComment}
+            onSend={handleSendComment}
+            placeholder="Write a message..."
+            isSending={addCommentMutation.isPending}
+          />
           <p className="text-xs text-muted-foreground mt-1">Ctrl+Enter to send</p>
         </div>
       </div>
@@ -211,31 +194,17 @@ export default function CommentSection({ taskId, boardId = "" }: CommentSectionP
       </Tabs>
 
       <div className="border-t p-3 bg-background">
-        <div className="flex gap-2">
-          <Textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder={
-              activeTab === "guest"
-                ? "Write to guest..."
-                : "Write a team update..."
-            }
-            className="min-h-[60px] resize-none flex-1"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && e.ctrlKey) {
-                e.preventDefault();
-                handleSendComment();
-              }
-            }}
-          />
-          <Button
-            size="icon"
-            onClick={handleSendComment}
-            disabled={!newComment.trim() || addCommentMutation.isPending}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
+        <RichTextEditor
+          content={newComment}
+          onChange={setNewComment}
+          onSend={handleSendComment}
+          placeholder={
+            activeTab === "guest"
+              ? "Write to guest..."
+              : "Write a team update..."
+          }
+          isSending={addCommentMutation.isPending}
+        />
         <p className="text-xs text-muted-foreground mt-1">
           {activeTab === "guest"
             ? "This message will be visible to guests • Ctrl+Enter to send"

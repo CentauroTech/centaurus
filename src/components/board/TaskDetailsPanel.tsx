@@ -1,14 +1,7 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Edit2, Check } from "lucide-react";
 import { format } from "date-fns";
-import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useTaskFiles, useUploadTaskFile, useToggleFileAccessibility, useDeleteTaskFile, FileCategory } from "@/hooks/useTaskFiles";
 import { useActivityLog } from "@/hooks/useActivityLog";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -32,18 +25,6 @@ export default function TaskDetailsPanel({
   users = [],
   boardId = "",
 }: TaskDetailsPanelProps) {
-  const queryClient = useQueryClient();
-  const [isEditingKickoff, setIsEditingKickoff] = useState(false);
-  const [kickoffBrief, setKickoffBrief] = useState(task.kickoff_brief || "");
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  
-  const kickoffBriefRef = useRef<string>(task.kickoff_brief || "");
-  const hasUnsavedChangesRef = useRef<boolean>(false);
-  const currentTaskIdRef = useRef<string>(task.id);
-  const currentBoardIdRef = useRef<string>(boardId);
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   const { data: files = [] } = useTaskFiles(task.id);
   const { data: activityLogs = [] } = useActivityLog(task.id);
   const { role } = usePermissions();
@@ -52,145 +33,6 @@ export default function TaskDetailsPanel({
   const uploadFileMutation = useUploadTaskFile(task.id);
   const toggleAccessMutation = useToggleFileAccessibility(task.id);
   const deleteFileMutation = useDeleteTaskFile(task.id);
-
-  // Sync state and ref together
-  const updateKickoffBrief = useCallback((value: string) => {
-    setKickoffBrief(value);
-    kickoffBriefRef.current = value;
-  }, []);
-
-  const updateHasUnsavedChanges = useCallback((value: boolean) => {
-    setHasUnsavedChanges(value);
-    hasUnsavedChangesRef.current = value;
-  }, []);
-
-  // Immediate save function
-  const saveKickoffNow = useCallback(async (taskIdToSave: string, briefToSave: string, boardIdForInvalidation?: string): Promise<boolean> => {
-    if (!taskIdToSave) {
-      console.warn("saveKickoffNow called without taskId");
-      return false;
-    }
-
-    console.log("Attempting to save kickoff brief:", { taskIdToSave, briefLength: briefToSave?.length });
-    setIsSaving(true);
-    
-    try {
-      const { data, error } = await supabase
-        .from("tasks")
-        .update({ kickoff_brief: briefToSave || null })
-        .eq("id", taskIdToSave)
-        .select("id, kickoff_brief");
-
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
-      }
-      
-      console.log("Kickoff brief saved successfully:", data);
-      updateHasUnsavedChanges(false);
-      
-      // Invalidate the board query to refresh task data
-      const invalidateBoardId = boardIdForInvalidation || currentBoardIdRef.current;
-      if (invalidateBoardId) {
-        queryClient.invalidateQueries({ queryKey: ['board', invalidateBoardId] });
-      }
-      
-      return true;
-    } catch (error) {
-      console.error("Failed to save kickoff brief:", error);
-      toast.error("Failed to save kickoff brief");
-      return false;
-    } finally {
-      setIsSaving(false);
-    }
-  }, [updateHasUnsavedChanges, queryClient]);
-
-  // Handle panel close - save first then close
-  const handlePanelClose = useCallback(async () => {
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-      autoSaveTimeoutRef.current = null;
-    }
-    if (hasUnsavedChangesRef.current) {
-      await saveKickoffNow(currentTaskIdRef.current, kickoffBriefRef.current);
-    }
-    onClose();
-  }, [onClose, saveKickoffNow]);
-
-  // Keep boardId ref in sync
-  useEffect(() => {
-    currentBoardIdRef.current = boardId;
-  }, [boardId]);
-
-  // When task changes, save current and reset for new task
-  useEffect(() => {
-    if (currentTaskIdRef.current !== task.id) {
-      // Save the previous task's changes synchronously before switching
-      if (hasUnsavedChangesRef.current) {
-        const previousTaskId = currentTaskIdRef.current;
-        const previousBrief = kickoffBriefRef.current;
-        saveKickoffNow(previousTaskId, previousBrief);
-      }
-
-      // Reset for new task
-      currentTaskIdRef.current = task.id;
-      kickoffBriefRef.current = task.kickoff_brief || "";
-      hasUnsavedChangesRef.current = false;
-      setKickoffBrief(task.kickoff_brief || "");
-      setHasUnsavedChanges(false);
-      setIsEditingKickoff(false);
-    }
-  }, [task.id, task.kickoff_brief, saveKickoffNow]);
-
-  // Also sync when task.kickoff_brief changes externally (same task)
-  useEffect(() => {
-    if (currentTaskIdRef.current === task.id && !hasUnsavedChangesRef.current) {
-      kickoffBriefRef.current = task.kickoff_brief || "";
-      setKickoffBrief(task.kickoff_brief || "");
-    }
-  }, [task.kickoff_brief, task.id]);
-
-  // Auto-save with debounce
-  const handleKickoffChange = useCallback((value: string) => {
-    updateKickoffBrief(value);
-    updateHasUnsavedChanges(true);
-
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-
-    autoSaveTimeoutRef.current = setTimeout(async () => {
-      await saveKickoffNow(currentTaskIdRef.current, kickoffBriefRef.current);
-      autoSaveTimeoutRef.current = null;
-    }, 1500);
-  }, [updateKickoffBrief, updateHasUnsavedChanges, saveKickoffNow]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    const boardIdOnMount = boardId;
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-      // Fire-and-forget save on unmount
-      if (hasUnsavedChangesRef.current && currentTaskIdRef.current) {
-        const taskId = currentTaskIdRef.current;
-        const brief = kickoffBriefRef.current;
-        console.log("Saving on unmount:", { taskId, briefLength: brief?.length });
-        supabase
-          .from("tasks")
-          .update({ kickoff_brief: brief || null })
-          .eq("id", taskId)
-          .then(({ data, error }) => {
-            if (error) console.error("Failed to save on unmount:", error);
-            else {
-              console.log("Saved on unmount:", data);
-              // Can't use queryClient here as component is unmounting
-            }
-          });
-      }
-    };
-  }, [boardId]);
 
   // Group files by category
   const filesByCategory = files.reduce((acc, file) => {
@@ -238,7 +80,7 @@ export default function TaskDetailsPanel({
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => !open && handlePanelClose()}>
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="w-[480px] sm:max-w-[480px] p-0 flex flex-col">
         <SheetHeader className="p-4 border-b border-border shrink-0">
           <SheetTitle className="text-lg font-semibold truncate pr-8">
@@ -253,9 +95,6 @@ export default function TaskDetailsPanel({
             </TabsTrigger>
             <TabsTrigger value="files" className="data-[state=active]:bg-muted">
               Files
-            </TabsTrigger>
-            <TabsTrigger value="kickoff" className="data-[state=active]:bg-muted">
-              Kickoff
             </TabsTrigger>
             <TabsTrigger value="activity" className="data-[state=active]:bg-muted">
               Activity
@@ -293,65 +132,6 @@ export default function TaskDetailsPanel({
                       onDelete={handleDeleteFile}
                     />
                   ))
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="kickoff" className="h-full m-0 overflow-y-auto">
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-medium">Kickoff Brief</h3>
-                  {!isGuest && (
-                    !isEditingKickoff ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsEditingKickoff(true)}
-                        className="gap-1.5"
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                        Edit
-                      </Button>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          {hasUnsavedChanges ? "Saving..." : "Saved"}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={async () => {
-                            if (autoSaveTimeoutRef.current) {
-                              clearTimeout(autoSaveTimeoutRef.current);
-                              autoSaveTimeoutRef.current = null;
-                            }
-                            await saveKickoffNow(currentTaskIdRef.current, kickoffBriefRef.current);
-                            setIsEditingKickoff(false);
-                          }}
-                          className="gap-1.5"
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                          Done
-                        </Button>
-                      </div>
-                    )
-                  )}
-                </div>
-                {isEditingKickoff ? (
-                  <Textarea
-                    value={kickoffBrief}
-                    onChange={(e) => handleKickoffChange(e.target.value)}
-                    placeholder="Enter kickoff brief details..."
-                    className="min-h-[300px] resize-none"
-                  />
-                ) : (
-                  <div className="whitespace-pre-wrap leading-relaxed text-sm bg-muted/30 rounded-md p-4 min-h-[100px]">
-                    {kickoffBrief || (
-                      <span className="text-muted-foreground italic">
-                        No kickoff brief added yet.{!isGuest && " Click Edit to add one."}
-                      </span>
-                    )}
-                  </div>
                 )}
               </div>
             </TabsContent>

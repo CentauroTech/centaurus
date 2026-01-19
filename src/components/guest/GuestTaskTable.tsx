@@ -3,7 +3,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { GuestTask } from '@/hooks/useGuestTasks';
 import { GuestStatusBadge } from './GuestStatusBadge';
 import { GuestFileCell } from './GuestFileCell';
@@ -68,24 +67,27 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
   return (
     <TooltipProvider>
       <div className="border rounded-lg bg-card overflow-hidden">
-        <ScrollArea className="w-full">
-          <Table>
+        {/* Horizontal scroll container with visible scrollbar */}
+        <div className="overflow-x-auto custom-scrollbar">
+          <Table className="min-w-max">
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
-                <TableHead className="font-semibold whitespace-nowrap">Phase</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">WO#</TableHead>
+                {/* Core columns - always visible */}
+                <TableHead className="font-semibold whitespace-nowrap w-24">Phase</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap w-28">WO#</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap w-48">Original Title</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap w-20">Due Date</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap w-32">Status</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap w-24">Delivery</TableHead>
+                {/* Scrollable columns */}
                 <TableHead className="font-semibold whitespace-nowrap">File to Translate</TableHead>
                 {hasNonTranslationTasks && (
                   <TableHead className="font-semibold whitespace-nowrap">File to Adapt</TableHead>
                 )}
-                <TableHead className="font-semibold whitespace-nowrap">Original Title</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Spanish Title</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Runtime</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap text-center">Episodes</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Date Assigned</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">Delivery</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">Due Date</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">Status</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Last Updated</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Translator</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Adapter</TableHead>
@@ -105,15 +107,15 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                     key={task.id}
                     className={cn(
                       "cursor-pointer hover:bg-muted/50 transition-colors",
-                      isDelayed && "bg-red-500/5",
+                      isDelayed && "bg-destructive/5",
                       isDone && "opacity-60"
                     )}
                   >
                     {/* Phase */}
-                    <TableCell onClick={() => onTaskClick(task)}>
+                    <TableCell onClick={() => onTaskClick(task)} className="w-24">
                       <Badge 
                         className={cn(
-                          "whitespace-nowrap text-xs rounded-md px-3 py-1",
+                          "whitespace-nowrap text-xs rounded-md px-2 py-0.5",
                           PHASE_COLORS[task.fase] || PHASE_COLORS[task.currentPhase || ''] || 'bg-gray-200 text-gray-800'
                         )}
                       >
@@ -122,10 +124,57 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                     </TableCell>
 
                     {/* WO# */}
-                    <TableCell onClick={() => onTaskClick(task)}>
+                    <TableCell onClick={() => onTaskClick(task)} className="w-28">
                       <span className="text-sm font-mono whitespace-nowrap">
                         {task.workOrderNumber || '—'}
                       </span>
+                    </TableCell>
+
+                    {/* Original Title with Comment Icon */}
+                    <TableCell onClick={() => onTaskClick(task)} className="w-48">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <span className="font-medium truncate max-w-[160px]">
+                          {task.name || 'Untitled'}
+                        </span>
+                        {(task.commentCount || 0) > 0 && (
+                          <div className="flex items-center gap-1 text-primary shrink-0">
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span className="text-xs">{task.commentCount}</span>
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+
+                    {/* Due Date */}
+                    <TableCell onClick={() => onTaskClick(task)} className="w-20">
+                      {task.guestDueDate ? (
+                        <span className={cn(
+                          "text-sm whitespace-nowrap",
+                          isDelayed && "text-destructive font-medium"
+                        )}>
+                          {format(new Date(task.guestDueDate), 'MMM d')}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+
+                    {/* Status */}
+                    <TableCell className="w-32">
+                      <GuestStatusBadge
+                        status={task.status}
+                        guestDueDate={task.guestDueDate}
+                        onChange={(status) => onStatusChange(task.id, status)}
+                        disabled={isDone}
+                      />
+                    </TableCell>
+
+                    {/* Delivery - File Upload */}
+                    <TableCell className="w-24">
+                      <GuestDeliveryCell 
+                        taskId={task.id}
+                        disabled={isDone}
+                      />
                     </TableCell>
 
                     {/* File to Translate - displays "script" category (original script) */}
@@ -153,21 +202,6 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                         )}
                       </TableCell>
                     )}
-
-                    {/* Original Title with Comment Icon */}
-                    <TableCell onClick={() => onTaskClick(task)}>
-                      <div className="flex items-center gap-2 whitespace-nowrap">
-                        <span className="font-medium">
-                          {task.name || 'Untitled'}
-                        </span>
-                        {(task.commentCount || 0) > 0 && (
-                          <div className="flex items-center gap-1 text-primary shrink-0">
-                            <MessageSquare className="w-3.5 h-3.5" />
-                            <span className="text-xs">{task.commentCount}</span>
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
 
                     {/* Spanish Title */}
                     <TableCell onClick={() => onTaskClick(task)}>
@@ -199,38 +233,6 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
-                    </TableCell>
-
-                    {/* Delivery - File Upload */}
-                    <TableCell>
-                      <GuestDeliveryCell 
-                        taskId={task.id}
-                        disabled={isDone}
-                      />
-                    </TableCell>
-
-                    {/* Due Date */}
-                    <TableCell onClick={() => onTaskClick(task)}>
-                      {task.guestDueDate ? (
-                        <span className={cn(
-                          "text-sm whitespace-nowrap",
-                          isDelayed && "text-red-600 font-medium"
-                        )}>
-                          {format(new Date(task.guestDueDate), 'MMM d, yyyy')}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-
-                    {/* Status */}
-                    <TableCell>
-                      <GuestStatusBadge
-                        status={task.status}
-                        guestDueDate={task.guestDueDate}
-                        onChange={(status) => onStatusChange(task.id, status)}
-                        disabled={isDone}
-                      />
                     </TableCell>
 
                     {/* Last Updated */}
@@ -322,7 +324,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
               })}
             </TableBody>
           </Table>
-        </ScrollArea>
+        </div>
       </div>
     </TooltipProvider>
   );

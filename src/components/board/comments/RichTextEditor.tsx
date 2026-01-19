@@ -5,7 +5,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import Mention from '@tiptap/extension-mention';
-import tippy, { Instance as TippyInstance } from 'tippy.js';
+import { SuggestionProps, SuggestionKeyDownProps } from '@tiptap/suggestion';
 import { 
   Bold, 
   Italic, 
@@ -25,8 +25,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useEffect, useCallback, useMemo } from 'react';
-import { MentionList, MentionListRef, MentionUser } from './MentionList';
+import { useEffect, useCallback, useMemo, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { MentionUser } from './MentionList';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface RichTextEditorProps {
   content: string;
@@ -39,6 +41,63 @@ interface RichTextEditorProps {
   mentionUsers?: MentionUser[];
 }
 
+// Inline mention dropdown component
+function MentionDropdown({
+  items,
+  command,
+  selectedIndex,
+  clientRect,
+}: {
+  items: MentionUser[];
+  command: (item: { id: string; label: string }) => void;
+  selectedIndex: number;
+  clientRect: (() => DOMRect | null) | null;
+}) {
+  const rect = clientRect?.();
+  if (!rect) return null;
+
+  return createPortal(
+    <div
+      className="z-[9999] min-w-[200px] max-h-[200px] overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+      style={{
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+      }}
+    >
+      {items.length === 0 ? (
+        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+          No users found
+        </div>
+      ) : (
+        items.map((item, index) => (
+          <button
+            key={item.id}
+            onClick={() => command({ id: item.id, label: item.name })}
+            className={cn(
+              "flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-sm outline-none transition-colors",
+              index === selectedIndex
+                ? "bg-accent text-accent-foreground"
+                : "hover:bg-accent/50"
+            )}
+          >
+            <Avatar className="h-6 w-6">
+              <AvatarFallback
+                style={{ backgroundColor: item.color }}
+                className="text-white text-xs"
+              >
+                {item.initials}
+              </AvatarFallback>
+            </Avatar>
+            <span>{item.name}</span>
+          </button>
+        ))
+      )}
+    </div>,
+    document.body
+  );
+}
+
 export function RichTextEditor({
   content,
   onChange,
@@ -49,6 +108,20 @@ export function RichTextEditor({
   className,
   mentionUsers = [],
 }: RichTextEditorProps) {
+  const [mentionState, setMentionState] = useState<{
+    isOpen: boolean;
+    items: MentionUser[];
+    selectedIndex: number;
+    command: ((item: { id: string; label: string }) => void) | null;
+    clientRect: (() => DOMRect | null) | null;
+  }>({
+    isOpen: false,
+    items: [],
+    selectedIndex: 0,
+    command: null,
+    clientRect: null,
+  });
+
   const mentionSuggestion = useMemo(() => ({
     items: ({ query }: { query: string }) => {
       return mentionUsers
@@ -58,58 +131,57 @@ export function RichTextEditor({
         .slice(0, 8);
     },
     render: () => {
-      let component: ReactRenderer<MentionListRef> | null = null;
-      let popup: TippyInstance[] | null = null;
-
       return {
-        onStart: (props: any) => {
-          component = new ReactRenderer(MentionList, {
-            props,
-            editor: props.editor,
-          });
-
-          if (!props.clientRect) {
-            return;
-          }
-
-          popup = tippy('body', {
-            getReferenceClientRect: props.clientRect,
-            appendTo: () => document.body,
-            content: component.element,
-            showOnCreate: true,
-            interactive: true,
-            trigger: 'manual',
-            placement: 'bottom-start',
+        onStart: (props: SuggestionProps<MentionUser>) => {
+          setMentionState({
+            isOpen: true,
+            items: props.items,
+            selectedIndex: 0,
+            command: props.command,
+            clientRect: props.clientRect,
           });
         },
-
-        onUpdate(props: any) {
-          component?.updateProps(props);
-
-          if (!props.clientRect) {
-            return;
-          }
-
-          popup?.[0]?.setProps({
-            getReferenceClientRect: props.clientRect,
-          });
+        onUpdate: (props: SuggestionProps<MentionUser>) => {
+          setMentionState((prev) => ({
+            ...prev,
+            items: props.items,
+            clientRect: props.clientRect,
+          }));
         },
-
-        onKeyDown(props: any) {
+        onKeyDown: (props: SuggestionKeyDownProps) => {
           if (props.event.key === 'Escape') {
-            popup?.[0]?.hide();
+            setMentionState((prev) => ({ ...prev, isOpen: false }));
             return true;
           }
-          return component?.ref?.onKeyDown(props) ?? false;
+          if (props.event.key === 'ArrowUp') {
+            setMentionState((prev) => ({
+              ...prev,
+              selectedIndex: (prev.selectedIndex + prev.items.length - 1) % prev.items.length,
+            }));
+            return true;
+          }
+          if (props.event.key === 'ArrowDown') {
+            setMentionState((prev) => ({
+              ...prev,
+              selectedIndex: (prev.selectedIndex + 1) % prev.items.length,
+            }));
+            return true;
+          }
+          if (props.event.key === 'Enter') {
+            const item = mentionState.items[mentionState.selectedIndex];
+            if (item && mentionState.command) {
+              mentionState.command({ id: item.id, label: item.name });
+              return true;
+            }
+          }
+          return false;
         },
-
-        onExit() {
-          popup?.[0]?.destroy();
-          component?.destroy();
+        onExit: () => {
+          setMentionState((prev) => ({ ...prev, isOpen: false }));
         },
       };
     },
-  }), [mentionUsers]);
+  }), [mentionUsers, mentionState.items, mentionState.selectedIndex, mentionState.command]);
 
   const editor = useEditor({
     extensions: [
@@ -331,13 +403,22 @@ export function RichTextEditor({
       
       {/* Editor Content */}
       <EditorContent editor={editor} />
+
+      {/* Mention Dropdown */}
+      {mentionState.isOpen && mentionState.command && (
+        <MentionDropdown
+          items={mentionState.items}
+          command={mentionState.command}
+          selectedIndex={mentionState.selectedIndex}
+          clientRect={mentionState.clientRect}
+        />
+      )}
     </div>
   );
 }
 
 // Read-only display component for rich text content
 export function RichTextDisplay({ content, className }: { content: string; className?: string }) {
-  // Render HTML content with proper styling - no height restrictions
   return (
     <div 
       className={cn(

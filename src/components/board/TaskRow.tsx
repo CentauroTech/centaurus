@@ -282,7 +282,7 @@ export function TaskRow({
       case 'number':
         return <NumberCell value={value as number} onChange={val => handleUpdate(column.field, val)} disabled={disabled} />;
       case 'date':
-        return <DateCell date={value as Date} onDateChange={val => handleUpdate(column.field, val)} disabled={disabled} />;
+        return <DateCell date={value as Date} onDateChange={val => handleUpdate(column.field, val)} disabled={disabled} isPrivate={isPrivate} />;
       case 'person':
         // Use ProjectManagerCell for project manager field
         if (column.field === 'projectManager') {

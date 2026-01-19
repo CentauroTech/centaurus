@@ -9,6 +9,7 @@ interface DateCellProps {
   date?: Date | string;
   onDateChange: (date: string | undefined) => void;
   disabled?: boolean;
+  isPrivate?: boolean;
 }
 
 // Parse date string as local date (not UTC) to avoid timezone shift
@@ -32,7 +33,7 @@ function formatDateForDB(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-export function DateCell({ date, onDateChange, disabled = false }: DateCellProps) {
+export function DateCell({ date, onDateChange, disabled = false, isPrivate = false }: DateCellProps) {
   const [open, setOpen] = useState(false);
 
   // Handle both Date objects and string dates - parse strings as local dates
@@ -59,7 +60,9 @@ export function DateCell({ date, onDateChange, disabled = false }: DateCellProps
       <div
         className={cn(
           "flex items-center gap-2 px-2 py-1 rounded text-sm w-full opacity-60 cursor-not-allowed",
-          isValidDate ? "text-foreground" : "text-slate-400"
+          isPrivate 
+            ? (isValidDate ? "text-slate-200" : "text-slate-400")
+            : (isValidDate ? "text-foreground" : "text-slate-400")
         )}
       >
         <CalendarIcon className="w-4 h-4 flex-shrink-0" />
@@ -73,8 +76,13 @@ export function DateCell({ date, onDateChange, disabled = false }: DateCellProps
       <PopoverTrigger asChild>
         <button
           className={cn(
-            "flex items-center gap-2 px-2 py-1 rounded text-sm transition-smooth hover:bg-muted/50 w-full",
-            isValidDate ? "text-foreground" : "text-slate-400"
+            "flex items-center gap-2 px-2 py-1 rounded text-sm transition-smooth w-full",
+            isPrivate 
+              ? "hover:bg-slate-700/50" 
+              : "hover:bg-muted/50",
+            isPrivate
+              ? (isValidDate ? "text-slate-100" : "text-slate-400")
+              : (isValidDate ? "text-foreground" : "text-slate-400")
           )}
         >
           <CalendarIcon className="w-4 h-4 flex-shrink-0" />

@@ -80,7 +80,7 @@ export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled 
     <div className="relative" ref={dropdownRef}>
       <div className="flex items-center gap-1">
         {owner ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 group/cell">
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="flex items-center gap-2 hover:bg-accent rounded px-1 py-0.5 transition-smooth"
@@ -100,7 +100,7 @@ export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled 
                 e.stopPropagation();
                 onOwnerChange(undefined);
               }}
-              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-accent transition-smooth"
+              className="opacity-0 group-hover/cell:opacity-100 p-0.5 rounded hover:bg-accent transition-smooth"
             >
               <X className="w-3 h-3 text-muted-foreground" />
             </button>

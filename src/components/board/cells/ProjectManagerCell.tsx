@@ -52,16 +52,17 @@ export function ProjectManagerCell({
     );
   }
   return <div className="relative" ref={dropdownRef}>
-      {owner ? <button onClick={() => setIsOpen(!isOpen)} className="gap-2 group flex items-center justify-start">
-          
-          <span className="text-sm text-inherit px-[10px]">{owner.name}</span>
+      {owner ? <div className="gap-2 group flex items-center justify-start">
+          <button onClick={() => setIsOpen(!isOpen)} className="flex items-center">
+            <span className="text-sm text-inherit px-[10px]">{owner.name}</span>
+          </button>
           <button onClick={e => {
         e.stopPropagation();
         onOwnerChange(undefined);
-      }} className="opacity-0 group-hover:opacity-100 transition-smooth">
+      }} className="opacity-0 group-hover:opacity-100 transition-smooth p-0.5 rounded hover:bg-accent">
             <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
           </button>
-        </button> : <button onClick={() => setIsOpen(!isOpen)} className="w-7 h-7 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-muted-foreground transition-smooth">
+        </div> : <button onClick={() => setIsOpen(!isOpen)} className="w-7 h-7 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-muted-foreground transition-smooth">
           <Plus className="w-4 h-4 text-muted-foreground" />
         </button>}
 

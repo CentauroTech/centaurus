@@ -5,6 +5,7 @@ import { Task, User, Phase, Status, ColumnConfig } from '@/types/board';
 import { StatusBadge } from './StatusBadge';
 import { OwnerCell } from './OwnerCell';
 import { DateCell } from './DateCell';
+import { StudioAssignedDateCell } from './cells/StudioAssignedDateCell';
 import TaskDetailsPanel from './TaskDetailsPanel';
 import { TextCell } from './cells/TextCell';
 import { NumberCell } from './cells/NumberCell';
@@ -48,6 +49,7 @@ const FIELD_TO_DB_COLUMN: Record<string, string> = {
   isPrivate: 'is_private',
   status: 'status',
   dateAssigned: 'date_assigned',
+  studioAssigned: 'studio_assigned',
   dateDelivered: 'date_delivered',
   branch: 'branch',
   clientName: 'client_name',
@@ -241,6 +243,16 @@ export const MemoizedTaskRow = memo(function MemoizedTaskRow({
       case 'number':
         return <NumberCell value={value as number} onChange={val => handleUpdate(column.field, val)} />;
       case 'date':
+        // Use StudioAssignedDateCell for studioAssigned field to show WO warning
+        if (column.field === 'studioAssigned') {
+          const hasWorkOrder = !!(getTaskValue(task, 'workOrderNumber') as string);
+          return <StudioAssignedDateCell 
+            date={value as Date} 
+            onDateChange={val => handleUpdate(column.field, val)} 
+            isPrivate={isPrivate}
+            hasWorkOrder={hasWorkOrder}
+          />;
+        }
         return <DateCell date={value as Date} onDateChange={val => handleUpdate(column.field, val)} />;
       case 'person':
         if (column.field === 'projectManager') {

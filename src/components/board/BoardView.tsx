@@ -116,6 +116,7 @@ function BoardViewContent({
         commentCount: t.comment_count || 0,
         currentPhase: t.currentPhase || boardPhase,
         dateAssigned: t.date_assigned || undefined,
+        studioAssigned: t.studio_assigned || undefined,
         branch: t.branch,
         projectManager: getTeamMember(t.project_manager_id),
         clientName: t.client_name,
@@ -193,6 +194,7 @@ function BoardViewContent({
       }
     }
     if (updates.dateAssigned !== undefined) dbUpdates.date_assigned = updates.dateAssigned;
+    if (updates.studioAssigned !== undefined) dbUpdates.studio_assigned = updates.studioAssigned;
     if (updates.dateDelivered !== undefined) dbUpdates.date_delivered = updates.dateDelivered;
     if (updates.branch !== undefined) dbUpdates.branch = updates.branch;
     if (updates.clientName !== undefined) dbUpdates.client_name = updates.clientName;

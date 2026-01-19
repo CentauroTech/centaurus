@@ -68,6 +68,7 @@ export interface TaskTemplate {
   aor_needed?: boolean;
   entrega_final_script_items?: string[];
   entrega_final_dub_audio_items?: string[];
+  studio_assigned?: string;
   // Delivery dates
   entrega_cliente?: string;
   entrega_miami_start?: string;
@@ -135,7 +136,7 @@ const TEMPLATE_COLUMNS = COLUMNS.filter(col =>
 const COLUMN_CATEGORIES = {
   basic: {
     label: 'Basic Info',
-    columns: TEMPLATE_COLUMNS.filter(c => ['clientName', 'branch', 'genre'].includes(c.id)),
+    columns: TEMPLATE_COLUMNS.filter(c => ['clientName', 'branch', 'genre', 'studioAssigned'].includes(c.id)),
   },
   language: {
     label: 'Language & Title',

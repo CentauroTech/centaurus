@@ -34,6 +34,7 @@ export function useAddMultipleTasks(boardId: string) {
         // Required fields - the trigger will generate WO# from these
         branch: template.branch,
         project_manager_id: template.project_manager_id,
+        studio_assigned: template.studio_assigned || null,
         // Optional fields from template
         client_name: template.client_name || null,
         servicios: template.servicios || null,

@@ -49,29 +49,44 @@ export function TaskDetailsPanel({
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedKickoffRef = useRef<string>(task.kickoff_brief || '');
   const currentTaskIdRef = useRef<string>(task.id);
-  const kickoffBriefRef = useRef<string>(kickoffBrief);
+  // Use refs initialized from state for access in cleanup
+  const kickoffBriefRef = useRef<string>(task.kickoff_brief || '');
   const hasUnsavedChangesRef = useRef<boolean>(false);
 
-  // Keep refs in sync with state
-  useEffect(() => {
-    kickoffBriefRef.current = kickoffBrief;
-  }, [kickoffBrief]);
+  // Keep refs in sync with state - update immediately, not via effect
+  const updateKickoffBrief = (value: string) => {
+    setKickoffBrief(value);
+    kickoffBriefRef.current = value;
+  };
 
-  useEffect(() => {
-    hasUnsavedChangesRef.current = hasUnsavedChanges;
-  }, [hasUnsavedChanges]);
+  const updateHasUnsavedChanges = (value: boolean) => {
+    setHasUnsavedChanges(value);
+    hasUnsavedChangesRef.current = value;
+  };
 
-  // Immediate save function (no debounce)
-  const saveKickoffNow = async () => {
-    if (!hasUnsavedChangesRef.current) return;
-    if (kickoffBriefRef.current === lastSavedKickoffRef.current) return;
+  // Immediate save function (no debounce) - uses refs for stable access
+  const saveKickoffNow = async (taskIdOverride?: string) => {
+    const taskIdToSave = taskIdOverride || currentTaskIdRef.current;
+    const contentToSave = kickoffBriefRef.current;
+    const lastSaved = lastSavedKickoffRef.current;
+    
+    // Skip if nothing changed
+    if (contentToSave === lastSaved) {
+      hasUnsavedChangesRef.current = false;
+      setHasUnsavedChanges(false);
+      return;
+    }
     
     try {
+      console.log('Saving kickoff brief:', { taskId: taskIdToSave, content: contentToSave.substring(0, 50) });
       const { error } = await supabase.from('tasks').update({
-        kickoff_brief: kickoffBriefRef.current
-      } as any).eq('id', currentTaskIdRef.current);
+        kickoff_brief: contentToSave
+      } as any).eq('id', taskIdToSave);
+      
       if (error) throw error;
-      lastSavedKickoffRef.current = kickoffBriefRef.current;
+      
+      console.log('Kickoff brief saved successfully');
+      lastSavedKickoffRef.current = contentToSave;
       hasUnsavedChangesRef.current = false;
       setHasUnsavedChanges(false);
     } catch (error) {
@@ -79,15 +94,29 @@ export function TaskDetailsPanel({
     }
   };
 
-  // Save on unmount or when panel closes
+  // Handle panel close - save before closing
+  const handlePanelClose = async () => {
+    // Clear pending auto-save
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+      autoSaveTimeoutRef.current = null;
+    }
+    // Save if there are unsaved changes
+    if (hasUnsavedChangesRef.current) {
+      await saveKickoffNow();
+    }
+    onClose();
+  };
+
+  // Save on unmount (as backup)
   useEffect(() => {
     return () => {
-      // Clear pending auto-save
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
       }
-      // Save immediately on unmount if there are unsaved changes
+      // Fire-and-forget save on unmount
       if (hasUnsavedChangesRef.current && kickoffBriefRef.current !== lastSavedKickoffRef.current) {
+        console.log('Saving on unmount');
         supabase.from('tasks').update({
           kickoff_brief: kickoffBriefRef.current
         } as any).eq('id', currentTaskIdRef.current);
@@ -95,26 +124,20 @@ export function TaskDetailsPanel({
     };
   }, []);
 
-  // Save when panel closes
-  useEffect(() => {
-    if (!isOpen && hasUnsavedChangesRef.current) {
-      saveKickoffNow();
-    }
-  }, [isOpen]);
-
   // Only sync kickoffBrief state when switching to a different task
   useEffect(() => {
     if (currentTaskIdRef.current !== task.id) {
       // Save current changes before switching
       if (hasUnsavedChangesRef.current) {
+        console.log('Saving before task switch');
         supabase.from('tasks').update({
           kickoff_brief: kickoffBriefRef.current
         } as any).eq('id', currentTaskIdRef.current);
       }
       // Task changed - reset to the new task's data
-      setKickoffBrief(task.kickoff_brief || '');
+      updateKickoffBrief(task.kickoff_brief || '');
       lastSavedKickoffRef.current = task.kickoff_brief || '';
-      setHasUnsavedChanges(false);
+      updateHasUnsavedChanges(false);
       setIsEditingKickoff(false);
       currentTaskIdRef.current = task.id;
     }
@@ -131,19 +154,21 @@ export function TaskDetailsPanel({
     
     // Set new timeout for auto-save (1.5 seconds after last change)
     autoSaveTimeoutRef.current = setTimeout(async () => {
-      if (kickoffBrief === lastSavedKickoffRef.current) {
-        setHasUnsavedChanges(false);
+      if (kickoffBriefRef.current === lastSavedKickoffRef.current) {
+        updateHasUnsavedChanges(false);
         return;
       }
       
       setIsSavingKickoff(true);
       try {
+        console.log('Auto-saving kickoff brief');
         const { error } = await supabase.from('tasks').update({
-          kickoff_brief: kickoffBrief
+          kickoff_brief: kickoffBriefRef.current
         } as any).eq('id', task.id);
         if (error) throw error;
-        lastSavedKickoffRef.current = kickoffBrief;
-        setHasUnsavedChanges(false);
+        lastSavedKickoffRef.current = kickoffBriefRef.current;
+        updateHasUnsavedChanges(false);
+        console.log('Auto-save successful');
       } catch (error) {
         console.error('Auto-save failed:', error);
       } finally {
@@ -161,8 +186,8 @@ export function TaskDetailsPanel({
 
   // Handle kickoff content change
   const handleKickoffChange = (content: string) => {
-    setKickoffBrief(content);
-    setHasUnsavedChanges(true);
+    updateKickoffBrief(content);
+    updateHasUnsavedChanges(true);
   };
   const {
     role,
@@ -330,7 +355,7 @@ export function TaskDetailsPanel({
       inputRef.current?.setSelectionRange(newCursorPos, newCursorPos);
     }, 0);
   };
-  return <Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
+  return <Sheet open={isOpen} onOpenChange={open => !open && handlePanelClose()}>
       <SheetContent className="w-[480px] sm:max-w-[480px] p-0 flex flex-col">
         <SheetHeader className="p-4 border-b border-border">
           <div className="flex items-center justify-between">
@@ -447,6 +472,7 @@ export function TaskDetailsPanel({
                       // Clear any pending auto-save
                       if (autoSaveTimeoutRef.current) {
                         clearTimeout(autoSaveTimeoutRef.current);
+                        autoSaveTimeoutRef.current = null;
                       }
                       // Save immediately before closing
                       await saveKickoffNow();

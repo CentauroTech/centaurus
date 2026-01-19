@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy } from 'lucide-react';
+import { addBusinessDays } from '@/lib/businessDays';
 import { Button } from '@/components/ui/button';
 import { TaskGroup } from './TaskGroup';
 import { Task, User, TaskGroup as TaskGroupType } from '@/types/board';
@@ -241,6 +242,20 @@ function BoardViewContent({
     if (updates.traductor !== undefined) dbUpdates.traductor_id = updates.traductor?.id || null;
     if (updates.adaptador !== undefined) dbUpdates.adaptador_id = updates.adaptador?.id || null;
 
+    // Check if a guest is being assigned to a role field on a private task
+    const roleFields = ['traductor', 'adaptador', 'mixerMiami', 'qc1', 'qcMix'] as const;
+    const isTaskPrivate = rawTask?.is_private;
+
+    if (isTaskPrivate) {
+      for (const roleField of roleFields) {
+        const newPerson = updates[roleField as keyof typeof updates] as User | null | undefined;
+        if (newPerson && newPerson.id) {
+          // Check if this person is a guest (non-Centauro email)
+          await addGuestViewerIfNeeded(taskId, newPerson.id);
+        }
+      }
+    }
+
     // Handle people updates separately
     if (updates.people !== undefined) {
       const oldPeople = rawTask?.people || [];
@@ -250,6 +265,51 @@ function BoardViewContent({
       const realGroupId = rawTask?.group_id;
       updateTask(taskId, dbUpdates, realGroupId, rawTask?.prueba_de_voz, rawTask?.status);
     }
+  };
+
+  // Helper function to add a guest as viewer when assigned to role field on private task
+  const addGuestViewerIfNeeded = async (taskId: string, teamMemberId: string) => {
+    // Check if this team member is a guest (non-Centauro email)
+    const { data: member, error: memberError } = await supabase
+      .from('team_members')
+      .select('email, name')
+      .eq('id', teamMemberId)
+      .single();
+
+    if (memberError || !member) return;
+
+    const isGuest = member.email && !member.email.endsWith('@centauro.com');
+    if (!isGuest) return;
+
+    // Check if already a viewer
+    const { data: existingViewer } = await supabase
+      .from('task_viewers')
+      .select('id')
+      .eq('task_id', taskId)
+      .eq('team_member_id', teamMemberId)
+      .maybeSingle();
+
+    if (existingViewer) return; // Already a viewer
+
+    // Add as viewer
+    await supabase.from('task_viewers').insert({
+      task_id: taskId,
+      team_member_id: teamMemberId,
+    });
+
+    // Set guest assignment dates
+    const today = new Date().toISOString().split('T')[0];
+    const dueDate = addBusinessDays(new Date(), 1).toISOString().split('T')[0];
+
+    await supabase
+      .from('tasks')
+      .update({
+        date_assigned: today,
+        guest_due_date: dueDate,
+      })
+      .eq('id', taskId);
+
+    console.log(`Guest ${member.name} auto-added as viewer to private task`);
   };
 
   // Handle people updates (junction table)

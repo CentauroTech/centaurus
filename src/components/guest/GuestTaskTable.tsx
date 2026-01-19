@@ -54,7 +54,17 @@ const PHASE_COLORS: Record<string, string> = {
   'Adaptation': 'bg-teal-500 text-white',
 };
 
+// Helper to check if phase is Translation
+const isTranslationPhase = (fase?: string): boolean => {
+  if (!fase) return false;
+  const normalized = fase.toLowerCase();
+  return normalized === 'translation' || normalized.includes('translat');
+};
+
 export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTaskTableProps) {
+  // Check if any task is NOT in translation phase (to show File to Adapt column)
+  const hasNonTranslationTasks = tasks.some(task => !isTranslationPhase(task.fase));
+
   return (
     <TooltipProvider>
       <div className="border rounded-lg bg-card overflow-hidden">
@@ -65,18 +75,21 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                 <TableHead className="font-semibold whitespace-nowrap">Phase</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">WO#</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">File to Translate</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">File to Adapt</TableHead>
+                {hasNonTranslationTasks && (
+                  <TableHead className="font-semibold whitespace-nowrap">File to Adapt</TableHead>
+                )}
                 <TableHead className="font-semibold whitespace-nowrap">Original Title</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Spanish Title</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Runtime</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap text-center">Episodes</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Date Assigned</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Delivery</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">Due Date</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Status</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">Last Updated</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Translator</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap">Adapter</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">Completed</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap">Last Updated</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap">Date Delivered</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -85,6 +98,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                 const isDelayed = task.guestDueDate && 
                   !isDone && 
                   new Date(task.guestDueDate) < new Date();
+                const isTranslation = isTranslationPhase(task.fase);
 
                 return (
                   <TableRow 
@@ -114,25 +128,31 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       </span>
                     </TableCell>
 
-                    {/* File to Translate */}
+                    {/* File to Translate - displays "script" category (original script) */}
                     <TableCell>
                       <GuestFileCell 
                         taskId={task.id} 
-                        category="source" 
-                        label="Source file"
+                        category="script" 
+                        label="Original script"
                         phase={task.fase}
                       />
                     </TableCell>
 
-                    {/* File to Adapt */}
-                    <TableCell>
-                      <GuestFileCell 
-                        taskId={task.id} 
-                        category="translated" 
-                        label="Translated file"
-                        phase={task.fase}
-                      />
-                    </TableCell>
+                    {/* File to Adapt - hidden for Translation phase */}
+                    {hasNonTranslationTasks && (
+                      <TableCell>
+                        {isTranslation ? (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        ) : (
+                          <GuestFileCell 
+                            taskId={task.id} 
+                            category="translated" 
+                            label="Translated file"
+                            phase={task.fase}
+                          />
+                        )}
+                      </TableCell>
+                    )}
 
                     {/* Original Title with Comment Icon */}
                     <TableCell onClick={() => onTaskClick(task)}>
@@ -189,6 +209,20 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       />
                     </TableCell>
 
+                    {/* Due Date */}
+                    <TableCell onClick={() => onTaskClick(task)}>
+                      {task.guestDueDate ? (
+                        <span className={cn(
+                          "text-sm whitespace-nowrap",
+                          isDelayed && "text-red-600 font-medium"
+                        )}>
+                          {format(new Date(task.guestDueDate), 'MMM d, yyyy')}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+
                     {/* Status */}
                     <TableCell>
                       <GuestStatusBadge
@@ -197,6 +231,24 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                         onChange={(status) => onStatusChange(task.id, status)}
                         disabled={isDone}
                       />
+                    </TableCell>
+
+                    {/* Last Updated */}
+                    <TableCell onClick={() => onTaskClick(task)}>
+                      {task.lastUpdated ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">
+                              {formatDistanceToNow(new Date(task.lastUpdated), { addSuffix: true })}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{format(new Date(task.lastUpdated), 'PPpp')}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
 
                     {/* Translator */}
@@ -255,30 +307,12 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       )}
                     </TableCell>
 
-                    {/* Date Completed */}
+                    {/* Date Delivered (automatically set when status = done) */}
                     <TableCell onClick={() => onTaskClick(task)}>
                       {task.completedAt ? (
-                        <span className="text-sm text-green-600">
+                        <span className="text-sm text-green-600 whitespace-nowrap">
                           {format(new Date(task.completedAt), 'MMM d, yyyy')}
                         </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-
-                    {/* Last Updated */}
-                    <TableCell onClick={() => onTaskClick(task)}>
-                      {task.lastUpdated ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="text-sm text-muted-foreground">
-                              {formatDistanceToNow(new Date(task.lastUpdated), { addSuffix: true })}
-                            </span>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{format(new Date(task.lastUpdated), 'PPpp')}</p>
-                          </TooltipContent>
-                        </Tooltip>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}

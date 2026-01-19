@@ -390,7 +390,8 @@ export function TaskDetailsPanel({
                       if (autoSaveTimeoutRef.current) {
                         clearTimeout(autoSaveTimeoutRef.current);
                       }
-                      setKickoffBrief(task.kickoff_brief || '');
+                      // Don't reset kickoffBrief - it was already auto-saved
+                      // Just close the editor
                       setHasUnsavedChanges(false);
                       setIsEditingKickoff(false);
                     }}>

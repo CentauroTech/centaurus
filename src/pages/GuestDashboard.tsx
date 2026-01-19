@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { LogOut, CheckCircle, Clock, AlertTriangle, Table, LayoutGrid } from 'lucide-react';
+import { LogOut, CheckCircle, Clock, AlertTriangle, Table, LayoutGrid, History, FileText, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toggle } from '@/components/ui/toggle';
+import { Badge } from '@/components/ui/badge';
 import { GuestTaskCard } from '@/components/guest/GuestTaskCard';
 import { GuestTaskTable } from '@/components/guest/GuestTaskTable';
 import { GuestTaskView } from '@/components/guest/GuestTaskView';
 import { GuestCompleteDialog } from '@/components/guest/GuestCompleteDialog';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useGuestTasks, useUpdateGuestTask, GuestTask } from '@/hooks/useGuestTasks';
+import { useGuestCompletedHistory } from '@/hooks/useGuestCompletedHistory';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 import centaurusLogo from '@/assets/centaurus-logo.jpeg';
 
 export default function GuestDashboard() {
@@ -23,6 +26,7 @@ export default function GuestDashboard() {
   const { signOut, user } = useAuth();
   const { data: currentMember } = useCurrentTeamMember();
   const { data: tasks, isLoading } = useGuestTasks();
+  const { data: completedHistory, isLoading: historyLoading } = useGuestCompletedHistory();
   const updateTask = useUpdateGuestTask();
 
   const [selectedTask, setSelectedTask] = useState<GuestTask | null>(null);
@@ -199,6 +203,10 @@ export default function GuestDashboard() {
               <CheckCircle className="w-4 h-4" />
               Completed ({completedTasks.length})
             </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <History className="w-4 h-4" />
+              History ({completedHistory?.length || 0})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="active">
@@ -227,7 +235,7 @@ export default function GuestDashboard() {
                 {/* Delayed tasks first */}
                 {delayedTasks.length > 0 && (
                   <div className="mb-4">
-                    <h3 className="text-sm font-medium text-red-500 mb-3 flex items-center gap-2">
+                    <h3 className="text-sm font-medium text-destructive mb-3 flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4" />
                       Overdue ({delayedTasks.length})
                     </h3>
@@ -292,6 +300,101 @@ export default function GuestDashboard() {
                     onClick={() => setSelectedTask(task)}
                   />
                 ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* History Tab - Permanent record for invoicing */}
+          <TabsContent value="history">
+            {historyLoading ? (
+              <div className="text-center py-12 text-muted-foreground">
+                Loading history...
+              </div>
+            ) : !completedHistory || completedHistory.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <History className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No completion history</h3>
+                  <p className="text-muted-foreground">
+                    Your completed tasks will be permanently recorded here for invoicing.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground mb-4">
+                  This is your permanent completion record for invoicing purposes. These records persist even after tasks move to the next phase.
+                </p>
+                <div className="overflow-x-auto border rounded-lg">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-3 font-medium">WO#</th>
+                        <th className="text-left p-3 font-medium">Project</th>
+                        <th className="text-left p-3 font-medium">Phase</th>
+                        <th className="text-left p-3 font-medium">Role</th>
+                        <th className="text-left p-3 font-medium">Runtime</th>
+                        <th className="text-left p-3 font-medium">Completed</th>
+                        <th className="text-left p-3 font-medium">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {completedHistory.map((record) => (
+                        <tr key={record.id} className="hover:bg-muted/30">
+                          <td className="p-3">
+                            {record.workOrderNumber ? (
+                              <div className="flex items-center gap-1">
+                                <Hash className="w-3 h-3 text-muted-foreground" />
+                                <span className="font-mono text-xs">{record.workOrderNumber}</span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            <div>
+                              <p className="font-medium">{record.taskName}</p>
+                              {record.tituloAprobadoEspanol && (
+                                <p className="text-xs text-muted-foreground">{record.tituloAprobadoEspanol}</p>
+                              )}
+                              {record.workspaceName && (
+                                <p className="text-xs text-muted-foreground">{record.workspaceName}</p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <Badge variant="secondary" className="text-xs">
+                              {record.phase}
+                            </Badge>
+                          </td>
+                          <td className="p-3">
+                            <span className="capitalize">{record.rolePerformed}</span>
+                          </td>
+                          <td className="p-3">
+                            {record.lockedRuntime || '-'}
+                          </td>
+                          <td className="p-3">
+                            <div>
+                              <p>{format(new Date(record.completedAt), 'MMM d, yyyy')}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(record.completedAt), 'h:mm a')}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="p-3 max-w-[200px]">
+                            {record.deliveryComment ? (
+                              <p className="truncate text-muted-foreground" title={record.deliveryComment}>
+                                {record.deliveryComment}
+                              </p>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </TabsContent>

@@ -255,18 +255,106 @@ export function useCompleteGuestTask() {
   return useMutation({
     mutationFn: async ({ 
       taskId, 
-      deliveryComment 
+      deliveryComment,
+      phase,
+      rolePerformed,
     }: { 
       taskId: string; 
       deliveryComment?: string;
+      phase?: string;
+      rolePerformed?: string;
     }) => {
       if (!currentMember?.id) throw new Error('User not authenticated');
 
       const currentDate = new Date().toISOString().split('T')[0];
       const now = new Date().toISOString();
 
+      // Fetch task details for the completion record
+      const { data: taskDetails, error: taskError } = await supabase
+        .from('tasks')
+        .select(`
+          name,
+          work_order_number,
+          titulo_aprobado_espanol,
+          locked_runtime,
+          cantidad_episodios,
+          fase,
+          traductor_id,
+          adaptador_id,
+          group_id
+        `)
+        .eq('id', taskId)
+        .single();
+
+      if (taskError) throw taskError;
+
+      // Determine role performed based on assignment
+      let detectedRole = rolePerformed || 'general';
+      const taskPhase = phase || taskDetails?.fase || 'unknown';
+      
+      if (!rolePerformed) {
+        if (taskDetails?.traductor_id === currentMember.id) {
+          detectedRole = 'translator';
+        } else if (taskDetails?.adaptador_id === currentMember.id) {
+          detectedRole = 'adapter';
+        }
+      }
+
+      // Get workspace name
+      let workspaceName = '';
+      if (taskDetails?.group_id) {
+        const { data: groupData } = await supabase
+          .from('task_groups')
+          .select('board_id')
+          .eq('id', taskDetails.group_id)
+          .single();
+
+        if (groupData?.board_id) {
+          const { data: boardData } = await supabase
+            .from('boards')
+            .select('workspace_id')
+            .eq('id', groupData.board_id)
+            .single();
+
+          if (boardData?.workspace_id) {
+            const { data: wsData } = await supabase
+              .from('workspaces')
+              .select('name')
+              .eq('id', boardData.workspace_id)
+              .single();
+
+            workspaceName = wsData?.name || '';
+          }
+        }
+      }
+
+      // Insert permanent completion record for invoice history
+      const { error: historyError } = await supabase
+        .from('guest_completed_tasks')
+        .upsert({
+          task_id: taskId,
+          team_member_id: currentMember.id,
+          phase: taskPhase,
+          role_performed: detectedRole,
+          completed_at: now,
+          delivery_comment: deliveryComment || null,
+          work_order_number: taskDetails?.work_order_number || null,
+          task_name: taskDetails?.name || 'Untitled',
+          titulo_aprobado_espanol: taskDetails?.titulo_aprobado_espanol || null,
+          locked_runtime: taskDetails?.locked_runtime || null,
+          cantidad_episodios: taskDetails?.cantidad_episodios || null,
+          workspace_name: workspaceName || null,
+        }, {
+          onConflict: 'task_id,team_member_id,phase,role_performed',
+        });
+
+      if (historyError) {
+        console.error('Failed to insert completion history:', historyError);
+        // Don't throw - completion record is secondary to actual task completion
+      }
+
       // Update task to done - keep private status and viewer assignment
-      // so task remains visible to guest in "Completed" tab
+      // so task remains visible to guest in "Completed" tab until phase progression
       const { data, error: updateError } = await supabase
         .from('tasks')
         .update({
@@ -309,6 +397,7 @@ export function useCompleteGuestTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['guest-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['guest-completed-history'] });
       queryClient.invalidateQueries({ queryKey: ['board'] });
       queryClient.invalidateQueries({ queryKey: ['workspaces'] });
     },

@@ -246,11 +246,28 @@ export const MemoizedTaskRow = memo(function MemoizedTaskRow({
         // Use StudioAssignedDateCell for studioAssigned field to show WO warning
         if (column.field === 'studioAssigned') {
           const hasWorkOrder = !!(getTaskValue(task, 'workOrderNumber') as string);
+          const currentWO = (getTaskValue(task, 'workOrderNumber') as string) || '';
+          const branch = (getTaskValue(task, 'branch') as string) || '';
+          const pm = getTaskValue(task, 'projectManager') as User | undefined;
+          const pmInitials = pm?.initials || '';
+          
+          // Map branch names to codes
+          const branchCodeMap: Record<string, string> = {
+            'Miami': 'M',
+            'Bogota': 'B',
+            'Buenos Aires': 'A',
+            'Mexico': 'X'
+          };
+          const branchCode = branchCodeMap[branch] || branch.charAt(0).toUpperCase();
+          
           return <StudioAssignedDateCell 
             date={value as Date} 
             onDateChange={val => handleUpdate(column.field, val)} 
             isPrivate={isPrivate}
             hasWorkOrder={hasWorkOrder}
+            currentWorkOrder={currentWO}
+            branchCode={branchCode}
+            pmInitials={pmInitials}
           />;
         }
         return <DateCell date={value as Date} onDateChange={val => handleUpdate(column.field, val)} />;

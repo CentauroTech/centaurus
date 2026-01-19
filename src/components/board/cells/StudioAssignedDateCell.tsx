@@ -21,6 +21,9 @@ interface StudioAssignedDateCellProps {
   disabled?: boolean;
   isPrivate?: boolean;
   hasWorkOrder?: boolean;
+  currentWorkOrder?: string;
+  branchCode?: string;
+  pmInitials?: string;
 }
 
 // Parse date string as local date (not UTC) to avoid timezone shift
@@ -43,12 +46,28 @@ function formatDateForDB(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+// Generate preview of what the new WO# would look like
+function generateWOPreview(date: Date, branchCode?: string, pmInitials?: string): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = String(date.getFullYear()).slice(-2);
+  const dateStr = `${month}${day}${year}`;
+  
+  const branch = branchCode || '??';
+  const initials = pmInitials || '??';
+  
+  return `${branch}${initials}${dateStr}##`;
+}
+
 export function StudioAssignedDateCell({ 
   date, 
   onDateChange, 
   disabled = false, 
   isPrivate = false,
-  hasWorkOrder = false 
+  hasWorkOrder = false,
+  currentWorkOrder = '',
+  branchCode = '',
+  pmInitials = ''
 }: StudioAssignedDateCellProps) {
   const [open, setOpen] = useState(false);
   const [pendingDate, setPendingDate] = useState<Date | undefined>(undefined);
@@ -146,11 +165,23 @@ export function StudioAssignedDateCell({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Change Work Order Format?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Changing the <strong>Studio Assigned</strong> date will update the Work Order (WO#) format. 
-              The WO# uses this date in its naming convention: <code>[Branch][PM Initials][MMDDYY][##]</code>.
-              <br /><br />
-              Are you sure you want to change this date?
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Changing the <strong>Studio Assigned</strong> date will update the Work Order (WO#) format.
+              </p>
+              {currentWorkOrder && (
+                <p>
+                  Current WO#: <code className="bg-muted px-1.5 py-0.5 rounded">{currentWorkOrder}</code>
+                </p>
+              )}
+              {pendingDate && (
+                <p>
+                  New WO# will be: <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">{generateWOPreview(pendingDate, branchCode, pmInitials)}</code>
+                </p>
+              )}
+              <p className="text-muted-foreground text-sm mt-2">
+                Are you sure you want to change this date?
+              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

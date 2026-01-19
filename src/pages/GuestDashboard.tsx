@@ -81,7 +81,7 @@ export default function GuestDashboard() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="container flex h-16 items-center justify-between px-4">
+        <div className="flex h-16 items-center justify-between px-2 sm:px-4">
           <div className="flex items-center gap-3">
             <img 
               src={centaurusLogo} 
@@ -118,7 +118,7 @@ export default function GuestDashboard() {
         </div>
       </header>
 
-      <main className="container px-4 py-6">
+      <main className="px-2 sm:px-4 py-6 max-w-full">
         {/* Welcome & View Toggle */}
         <div className="flex items-start justify-between mb-8">
           <div>

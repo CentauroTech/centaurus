@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { LogOut, CheckCircle, Clock, AlertTriangle, Table, LayoutGrid, History, FileText, Hash } from 'lucide-react';
+import { LogOut, CheckCircle, Clock, AlertTriangle, Table, LayoutGrid, FileText, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
@@ -201,11 +201,7 @@ export default function GuestDashboard() {
             </TabsTrigger>
             <TabsTrigger value="completed" className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
-              Completed ({completedTasks.length})
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
-              <History className="w-4 h-4" />
-              History ({completedHistory?.length || 0})
+              Completed ({completedHistory?.length || 0})
             </TabsTrigger>
           </TabsList>
 
@@ -274,47 +270,17 @@ export default function GuestDashboard() {
             )}
           </TabsContent>
 
+          {/* Completed Tab - Permanent record for invoicing */}
           <TabsContent value="completed">
-            {completedTasks.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Clock className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No completed tasks</h3>
-                  <p className="text-muted-foreground">
-                    Tasks you complete will appear here.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : viewMode === 'table' ? (
-              <GuestTaskTable
-                tasks={completedTasks}
-                onTaskClick={setSelectedTask}
-                onStatusChange={handleStatusChange}
-              />
-            ) : (
-              <div className="grid gap-3">
-                {completedTasks.map(task => (
-                  <GuestTaskCard
-                    key={task.id}
-                    task={task}
-                    onClick={() => setSelectedTask(task)}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* History Tab - Permanent record for invoicing */}
-          <TabsContent value="history">
             {historyLoading ? (
               <div className="text-center py-12 text-muted-foreground">
-                Loading history...
+                Loading completed tasks...
               </div>
             ) : !completedHistory || completedHistory.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
-                  <History className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No completion history</h3>
+                  <CheckCircle className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No completed tasks</h3>
                   <p className="text-muted-foreground">
                     Your completed tasks will be permanently recorded here for invoicing.
                   </p>

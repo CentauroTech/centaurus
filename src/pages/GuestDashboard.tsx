@@ -38,6 +38,16 @@ export default function GuestDashboard() {
     }
   }, [searchParams, tasks]);
 
+  // Sync selectedTask with fresh data when tasks update
+  useEffect(() => {
+    if (selectedTask && tasks) {
+      const updatedTask = tasks.find(t => t.id === selectedTask.id);
+      if (updatedTask && JSON.stringify(updatedTask) !== JSON.stringify(selectedTask)) {
+        setSelectedTask(updatedTask);
+      }
+    }
+  }, [tasks]);
+
   const activeTasks = tasks?.filter(t => t.status !== 'done') || [];
   const completedTasks = tasks?.filter(t => t.status === 'done') || [];
   const delayedTasks = activeTasks.filter(t => 

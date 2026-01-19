@@ -54,6 +54,7 @@ export interface Task {
   isPrivate?: boolean;
   commentCount?: number;
   dateAssigned?: Date | string;
+  studioAssigned?: Date | string;
   branch?: string;
   projectManager?: User;
   clientName?: string;
@@ -285,7 +286,8 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'isPrivate', label: '', type: 'privacy', width: 'w-8', field: 'isPrivate' },
   { id: 'name', label: 'Project Name', type: 'text', width: 'w-96', field: 'name' },
   { id: 'workOrderNumber', label: 'WO#', type: 'text', width: 'w-32', field: 'workOrderNumber' },
-  { id: 'dateAssigned', label: 'Studio Assigned', type: 'date', width: 'w-28', field: 'dateAssigned' },
+  { id: 'studioAssigned', label: 'Studio Assigned', type: 'date', width: 'w-28', field: 'studioAssigned' },
+  { id: 'dateAssigned', label: 'Date Assigned', type: 'date', width: 'w-28', field: 'dateAssigned' },
   { id: 'projectManager', label: 'Project Manager', type: 'person', width: 'w-32', field: 'projectManager' },
   { id: 'clientName', label: 'Client', type: 'combobox', width: 'w-32', field: 'clientName', options: CLIENT_OPTIONS },
   { id: 'cantidadEpisodios', label: 'Episodes', type: 'number', width: 'w-20', field: 'cantidadEpisodios' },

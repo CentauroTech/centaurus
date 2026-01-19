@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { FileText, Download, Upload, Calendar, Clock, Users, CheckCircle, ExternalLink } from 'lucide-react';
+import { FileText, Download, Upload, Calendar, Clock, Users, CheckCircle, ExternalLink, MessageSquare } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -43,11 +42,12 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                 <TableHead className="w-[100px] font-semibold">Phase</TableHead>
                 <TableHead className="w-[120px] font-semibold">File to Translate</TableHead>
                 <TableHead className="w-[120px] font-semibold">File to Adapt</TableHead>
-                <TableHead className="w-[180px] font-semibold">Original Title</TableHead>
+                <TableHead className="w-[200px] font-semibold">Original Title</TableHead>
                 <TableHead className="w-[180px] font-semibold">Spanish Title</TableHead>
                 <TableHead className="w-[80px] font-semibold">Runtime</TableHead>
                 <TableHead className="w-[60px] font-semibold text-center">Episodes</TableHead>
-                <TableHead className="w-[100px] font-semibold">Assigned</TableHead>
+                <TableHead className="w-[100px] font-semibold">Studio Assigned</TableHead>
+                <TableHead className="w-[100px] font-semibold">Date Assigned</TableHead>
                 <TableHead className="w-[80px] font-semibold">People</TableHead>
                 <TableHead className="w-[140px] font-semibold">Delivery</TableHead>
                 <TableHead className="w-[120px] font-semibold">Status</TableHead>
@@ -100,18 +100,26 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       />
                     </TableCell>
 
-                    {/* Original Title */}
+                    {/* Original Title with Comment Icon */}
                     <TableCell onClick={() => onTaskClick(task)}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="truncate block max-w-[180px] font-medium">
-                            {task.name || 'Untitled'}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{task.name}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <div className="flex items-center gap-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="truncate block max-w-[160px] font-medium">
+                              {task.name || 'Untitled'}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{task.name}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        {(task.commentCount || 0) > 0 && (
+                          <div className="flex items-center gap-1 text-primary shrink-0">
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span className="text-xs">{task.commentCount}</span>
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
 
                     {/* Spanish Title */}
@@ -142,7 +150,18 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       </span>
                     </TableCell>
 
-                    {/* Date Assigned */}
+                    {/* Studio Assigned (manual) */}
+                    <TableCell onClick={() => onTaskClick(task)}>
+                      {task.studioAssigned ? (
+                        <span className="text-sm">
+                          {format(new Date(task.studioAssigned), 'MMM d, yyyy')}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+
+                    {/* Date Assigned (auto) */}
                     <TableCell onClick={() => onTaskClick(task)}>
                       {task.dateAssigned ? (
                         <span className="text-sm">

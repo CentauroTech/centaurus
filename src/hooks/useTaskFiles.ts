@@ -191,6 +191,7 @@ export function useDeleteTaskFile(taskId: string) {
 // File categories for categorization
 export const FILE_CATEGORIES = [
   { value: 'source', label: 'Source Material' },
+  { value: 'script', label: 'Script' },
   { value: 'translated', label: 'Translated' },
   { value: 'adapted', label: 'Adapted' },
   { value: 'retake_list', label: 'Retake List' },

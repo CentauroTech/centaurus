@@ -16,6 +16,7 @@ export interface GuestTask {
   currentPhase: string;
   fase: string;
   dateAssigned?: string;
+  studioAssigned?: string;
   guestDueDate?: string;
   startedAt?: string;
   completedAt?: string;
@@ -29,6 +30,7 @@ export interface GuestTask {
   isPrivate: boolean;
   boardName?: string;
   workspaceName?: string;
+  commentCount?: number;
   // Role assignments
   translator?: GuestAssignedPerson;
   adapter?: GuestAssignedPerson;
@@ -65,6 +67,7 @@ export function useGuestTasks() {
           status,
           fase,
           date_assigned,
+          studio_assigned,
           guest_due_date,
           started_at,
           completed_at,
@@ -81,6 +84,19 @@ export function useGuestTasks() {
           adaptador_id
         `)
         .in('id', viewerTaskIds);
+
+      // Fetch comment counts for guest-visible comments
+      const { data: commentCounts } = await supabase
+        .from('comments')
+        .select('task_id')
+        .in('task_id', viewerTaskIds)
+        .eq('is_guest_visible', true);
+
+      // Create comment count map
+      const commentCountMap = new Map<string, number>();
+      commentCounts?.forEach(c => {
+        commentCountMap.set(c.task_id, (commentCountMap.get(c.task_id) || 0) + 1);
+      });
 
       if (tasksError) throw tasksError;
 
@@ -183,6 +199,7 @@ export function useGuestTasks() {
           fase: task.fase || 'pre_production',
           currentPhase,
           dateAssigned: task.date_assigned,
+          studioAssigned: task.studio_assigned,
           guestDueDate: task.guest_due_date,
           startedAt: task.started_at,
           completedAt: task.completed_at,
@@ -196,6 +213,7 @@ export function useGuestTasks() {
           isPrivate: task.is_private,
           boardName,
           workspaceName: workspaceName || '',
+          commentCount: commentCountMap.get(task.id) || 0,
           translator: task.traductor_id ? memberMap.get(task.traductor_id) : undefined,
           adapter: task.adaptador_id ? memberMap.get(task.adaptador_id) : undefined,
           people: taskPeopleMap.get(task.id) || [],

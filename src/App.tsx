@@ -28,6 +28,11 @@ const App = () => (
                 <Index />
               </ProtectedRoute>
             } />
+            <Route path="/:boardSlug" element={
+              <ProtectedRoute>
+                <Index />
+              </ProtectedRoute>
+            } />
             <Route path="/guest-dashboard" element={
               <ProtectedRoute>
                 <GuestDashboard />

@@ -192,31 +192,44 @@ export function GuestCompleteDialog({
     }
 
     try {
+      let uploadedFileUrl: string | undefined;
+      let uploadedFileName: string | undefined;
+
       // Upload file if provided
       if (droppedFile) {
         const category = getFileCategory();
-        await uploadFile.mutateAsync({
+        const uploadResult = await uploadFile.mutateAsync({
           file: droppedFile,
           category,
           isGuestAccessible: true,
         });
+        
+        // Get the uploaded file URL for the completion record
+        if (uploadResult) {
+          uploadedFileUrl = uploadResult.url;
+          uploadedFileName = droppedFile.name;
+        }
       }
 
-      // Add comment if provided (to guest-visible communication)
+      // Add comment if provided (to guest-visible communication with phase/viewer isolation)
       if (comment.trim()) {
         await addComment.mutateAsync({
           content: comment.trim(),
           userId: currentMember.id,
           mentionedUserIds: mentionedUserIds,
           isGuestVisible: true,
+          phase: phase,
+          viewerId: currentMember.id,
         });
       }
 
-      // Complete the task and save to permanent history
+      // Complete the task and save to permanent history (with file info)
       await completeTask.mutateAsync({
         taskId,
         deliveryComment: comment.trim() || (droppedFile ? `Delivered: ${droppedFile.name}` : undefined),
         phase: phase,
+        deliveryFileUrl: uploadedFileUrl,
+        deliveryFileName: uploadedFileName,
       });
 
       toast.success('Task completed successfully!');

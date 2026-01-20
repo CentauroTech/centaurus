@@ -166,27 +166,33 @@ export type Database = {
           created_at: string
           id: string
           is_guest_visible: boolean
+          phase: string | null
           task_id: string
           updated_at: string
           user_id: string
+          viewer_id: string | null
         }
         Insert: {
           content: string
           created_at?: string
           id?: string
           is_guest_visible?: boolean
+          phase?: string | null
           task_id: string
           updated_at?: string
           user_id: string
+          viewer_id?: string | null
         }
         Update: {
           content?: string
           created_at?: string
           id?: string
           is_guest_visible?: boolean
+          phase?: string | null
           task_id?: string
           updated_at?: string
           user_id?: string
+          viewer_id?: string | null
         }
         Relationships: [
           {
@@ -203,6 +209,13 @@ export type Database = {
             referencedRelation: "team_members"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "comments_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
         ]
       }
       guest_completed_tasks: {
@@ -211,6 +224,8 @@ export type Database = {
           completed_at: string
           created_at: string
           delivery_comment: string | null
+          delivery_file_name: string | null
+          delivery_file_url: string | null
           id: string
           locked_runtime: string | null
           phase: string
@@ -227,6 +242,8 @@ export type Database = {
           completed_at?: string
           created_at?: string
           delivery_comment?: string | null
+          delivery_file_name?: string | null
+          delivery_file_url?: string | null
           id?: string
           locked_runtime?: string | null
           phase: string
@@ -243,6 +260,8 @@ export type Database = {
           completed_at?: string
           created_at?: string
           delivery_comment?: string | null
+          delivery_file_name?: string | null
+          delivery_file_url?: string | null
           id?: string
           locked_runtime?: string | null
           phase?: string
@@ -314,6 +333,7 @@ export type Database = {
       }
       notifications: {
         Row: {
+          board_name: string | null
           created_at: string
           id: string
           is_read: boolean
@@ -326,6 +346,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          board_name?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
@@ -338,6 +359,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          board_name?: string | null
           created_at?: string
           id?: string
           is_read?: boolean

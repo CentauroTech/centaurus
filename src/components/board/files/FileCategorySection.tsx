@@ -13,6 +13,7 @@ import {
 
 interface FileCategorySectionProps {
   title: string;
+  description?: string;
   files: TaskFileRecord[];
   isGuest: boolean;
   onToggleAccess?: (fileId: string, isAccessible: boolean) => void;
@@ -21,6 +22,7 @@ interface FileCategorySectionProps {
 
 export function FileCategorySection({ 
   title, 
+  description,
   files, 
   isGuest,
   onToggleAccess,
@@ -51,9 +53,14 @@ export function FileCategorySection({
 
   return (
     <div className="space-y-2">
-      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-        {title}
-      </h4>
+      <div>
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          {title}
+        </h4>
+        {description && (
+          <p className="text-xs text-muted-foreground/70 mt-0.5">{description}</p>
+        )}
+      </div>
       <div className="space-y-1">
         {files.map((file) => (
           <div

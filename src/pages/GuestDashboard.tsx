@@ -17,6 +17,7 @@ import { useGuestCompletedHistory } from '@/hooks/useGuestCompletedHistory';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useAuth } from '@/hooks/useAuth';
 import { getSignedFileUrl } from '@/hooks/useSignedUrl';
+import { useGuestTasksRealtime } from '@/hooks/useRealtimeSubscriptions';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import centaurusLogo from '@/assets/centaurus-logo.jpeg';
@@ -29,6 +30,9 @@ export default function GuestDashboard() {
   const { data: tasks, isLoading } = useGuestTasks();
   const { data: completedHistory, isLoading: historyLoading } = useGuestCompletedHistory();
   const updateTask = useUpdateGuestTask();
+
+  // Real-time subscriptions for guest tasks
+  useGuestTasksRealtime(true);
 
   const [selectedTask, setSelectedTask] = useState<GuestTask | null>(null);
   const [taskToComplete, setTaskToComplete] = useState<GuestTask | null>(null);

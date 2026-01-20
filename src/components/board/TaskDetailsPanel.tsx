@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { useTaskFiles, useUploadTaskFile, useToggleFileAccessibility, useDeleteTaskFile, FileCategory, FILE_CATEGORIES } from "@/hooks/useTaskFiles";
 import { useActivityLog } from "@/hooks/useActivityLog";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useCommentsRealtime } from "@/hooks/useRealtimeSubscriptions";
 import CommentSection from "./comments/CommentSection";
 import { FileCategorySection } from "./files/FileCategorySection";
 import { FileUploadButton } from "./files/FileUploadButton";
@@ -29,6 +30,9 @@ export default function TaskDetailsPanel({
   const { data: activityLogs = [] } = useActivityLog(task.id);
   const { role } = usePermissions();
   const isGuest = role === "guest";
+
+  // Real-time subscription for comments
+  useCommentsRealtime(task.id, isOpen);
 
   const uploadFileMutation = useUploadTaskFile(task.id);
   const toggleAccessMutation = useToggleFileAccessibility(task.id);

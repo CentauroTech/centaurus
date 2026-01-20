@@ -15,6 +15,7 @@ import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useTaskFiles, FILE_CATEGORIES, TaskFileRecord } from '@/hooks/useTaskFiles';
 import { useTeamMembers } from '@/hooks/useWorkspaces';
 import { getSignedFileUrl } from '@/hooks/useSignedUrl';
+import { useCommentsRealtime } from '@/hooks/useRealtimeSubscriptions';
 import { RichTextEditor, RichTextDisplay, MentionUser } from '@/components/board/comments/RichTextEditor';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -56,6 +57,9 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
   const { data: teamMembers = [] } = useTeamMembers();
   const updateTask = useUpdateGuestTask();
   const addComment = useAddComment(task.id, '');
+
+  // Real-time subscription for comments
+  useCommentsRealtime(task.id, isOpen);
 
   // Convert team members to MentionUser format
   const mentionUsers: MentionUser[] = teamMembers.map((member) => ({

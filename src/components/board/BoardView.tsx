@@ -15,6 +15,7 @@ import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useAddMultipleTasks } from '@/hooks/useAddMultipleTasks';
 import { useColumnOrder, syncColumnOrderToWorkspace } from '@/hooks/useColumnOrder';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useBoardRealtime } from '@/hooks/useRealtimeSubscriptions';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -53,6 +54,9 @@ function BoardViewContent({
   const currentUserId = currentTeamMember?.id || null;
   const queryClient = useQueryClient();
   const [isMultipleWODialogOpen, setIsMultipleWODialogOpen] = useState(false);
+
+  // Real-time subscriptions for this board
+  useBoardRealtime(boardId);
 
   // Permissions
   const {

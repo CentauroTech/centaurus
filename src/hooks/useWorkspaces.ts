@@ -342,15 +342,19 @@ export function useUpdateTask(boardId: string, currentUserId?: string | null) {
 
   return useMutation({
     mutationFn: async ({ taskId, updates }: { taskId: string; updates: Record<string, any> }) => {
-      // Check if we need to fetch current task for logging
-      // Only fetch for personnel fields that need name resolution
+      // Handle _checkStartedAt flag - this is NOT a database field
+      const shouldCheckStartedAt = updates._checkStartedAt;
+      delete updates._checkStartedAt;
+      
+      // Check if we need to fetch current task for logging or started_at check
       const hasPersonnelFields = Object.keys(updates).some(key => personnelFields.includes(key));
+      const needsFetch = hasPersonnelFields || shouldCheckStartedAt;
       
       let currentTask: Record<string, any> | null = null;
       let personnelNames = new Map<string, string>();
       
-      if (hasPersonnelFields) {
-        // Fetch current task values only for personnel fields
+      if (needsFetch) {
+        // Fetch current task values
         const { data, error: fetchError } = await supabase
           .from('tasks')
           .select('*')
@@ -359,26 +363,33 @@ export function useUpdateTask(boardId: string, currentUserId?: string | null) {
 
         if (fetchError) throw fetchError;
         currentTask = data;
-
-        // Collect all personnel IDs that need name resolution
-        const personnelIdsToResolve = new Set<string>();
         
-        for (const [key, newValue] of Object.entries(updates)) {
-          if (personnelFields.includes(key)) {
-            const oldValue = currentTask[key];
-            if (oldValue) personnelIdsToResolve.add(oldValue);
-            if (newValue) personnelIdsToResolve.add(newValue);
-          }
+        // Set started_at if changing to 'working' and not already set
+        if (shouldCheckStartedAt && !currentTask.started_at) {
+          updates.started_at = new Date().toISOString();
         }
 
-        // Fetch names for all personnel IDs at once
-        if (personnelIdsToResolve.size > 0) {
-          const { data: members } = await supabase
-            .from('team_members')
-            .select('id, name')
-            .in('id', Array.from(personnelIdsToResolve));
+        // Collect all personnel IDs that need name resolution
+        if (hasPersonnelFields) {
+          const personnelIdsToResolve = new Set<string>();
           
-          members?.forEach(m => personnelNames.set(m.id, m.name));
+          for (const [key, newValue] of Object.entries(updates)) {
+            if (personnelFields.includes(key)) {
+              const oldValue = currentTask[key];
+              if (oldValue) personnelIdsToResolve.add(oldValue);
+              if (newValue) personnelIdsToResolve.add(newValue);
+            }
+          }
+
+          // Fetch names for all personnel IDs at once
+          if (personnelIdsToResolve.size > 0) {
+            const { data: members } = await supabase
+              .from('team_members')
+              .select('id, name')
+              .in('id', Array.from(personnelIdsToResolve));
+            
+            members?.forEach(m => personnelNames.set(m.id, m.name));
+          }
         }
       }
 

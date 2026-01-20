@@ -3,17 +3,19 @@ import { useComments, useAddComment, useDeleteComment } from "@/hooks/useComment
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useTeamMembers } from "@/hooks/useWorkspaces";
+import { useWorkspaceTeamMembers } from "@/hooks/useWorkspaceTeamMembers";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trash2, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { RichTextEditor, RichTextDisplay, MentionUser } from "./RichTextEditor";
+import { RichTextEditor, RichTextDisplay, MentionUser, EVERYONE_MENTION } from "./RichTextEditor";
 
 interface CommentSectionProps {
   taskId: string;
   boardId?: string;
+  workspaceName?: string; // Optional workspace name for @everyone feature
 }
 
 // Extract @mentions from HTML content
@@ -27,7 +29,7 @@ function extractMentionsFromHtml(html: string): string[] {
   return mentions;
 }
 
-export default function CommentSection({ taskId, boardId = "" }: CommentSectionProps) {
+export default function CommentSection({ taskId, boardId = "", workspaceName }: CommentSectionProps) {
   const [newComment, setNewComment] = useState("");
   const [activeTab, setActiveTab] = useState<"team" | "guest">("team");
   
@@ -37,6 +39,9 @@ export default function CommentSection({ taskId, boardId = "" }: CommentSectionP
   const { role } = usePermissions();
   const addCommentMutation = useAddComment(taskId, boardId);
   const deleteCommentMutation = useDeleteComment(taskId, boardId);
+  
+  // Get workspace team members for @everyone feature
+  const workspaceMembers = useWorkspaceTeamMembers(workspaceName);
 
   const isGuest = role === "guest";
 
@@ -52,7 +57,18 @@ export default function CommentSection({ taskId, boardId = "" }: CommentSectionP
     const textContent = newComment.replace(/<[^>]*>/g, '').trim();
     if (!textContent || !currentUser?.id) return;
 
-    const mentionedUserIds = extractMentionsFromHtml(newComment);
+    let mentionedUserIds = extractMentionsFromHtml(newComment);
+    
+    // Check if @everyone was used - expand to all workspace team members
+    const hasEveryoneMention = mentionedUserIds.includes('everyone');
+    if (hasEveryoneMention && workspaceMembers.length > 0) {
+      // Remove 'everyone' and add all workspace member IDs (except current user)
+      mentionedUserIds = mentionedUserIds.filter(id => id !== 'everyone');
+      const workspaceMemberIds = workspaceMembers
+        .filter(m => m.id !== currentUser.id) // Don't notify yourself
+        .map(m => m.id);
+      mentionedUserIds = [...new Set([...mentionedUserIds, ...workspaceMemberIds])];
+    }
     
     // Guest comments are always guest-visible
     // Team comments in guest tab are guest-visible
@@ -167,6 +183,7 @@ export default function CommentSection({ taskId, boardId = "" }: CommentSectionP
             placeholder="Write a message... Use @ to mention"
             isSending={addCommentMutation.isPending}
             mentionUsers={mentionUsers}
+            showEveryoneOption={!!workspaceName && !isGuest}
           />
           <p className="text-xs text-muted-foreground mt-1">Ctrl+Enter to send</p>
         </div>
@@ -215,6 +232,7 @@ export default function CommentSection({ taskId, boardId = "" }: CommentSectionP
           }
           isSending={addCommentMutation.isPending}
           mentionUsers={mentionUsers}
+          showEveryoneOption={!!workspaceName}
         />
         <p className="text-xs text-muted-foreground mt-1">
           {activeTab === "guest"

@@ -19,6 +19,7 @@ interface TaskDetailsPanelProps {
   onClose: () => void;
   users?: User[];
   boardId?: string;
+  workspaceName?: string;
 }
 
 export default function TaskDetailsPanel({
@@ -27,6 +28,7 @@ export default function TaskDetailsPanel({
   onClose,
   users = [],
   boardId = "",
+  workspaceName,
 }: TaskDetailsPanelProps) {
   const { data: files = [] } = useTaskFiles(task.id);
   const { data: activityLogs = [] } = useActivityLog(task.id);
@@ -112,7 +114,7 @@ export default function TaskDetailsPanel({
 
           <div className="flex-1 min-h-0 overflow-hidden">
             <TabsContent value="updates" className="h-full m-0">
-              <CommentSection taskId={task.id} boardId={boardId} />
+              <CommentSection taskId={task.id} boardId={boardId} workspaceName={workspaceName} />
             </TabsContent>
 
             <TabsContent value="files" className="h-full m-0 overflow-y-auto">

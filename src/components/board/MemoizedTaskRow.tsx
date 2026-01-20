@@ -459,7 +459,8 @@ export const MemoizedTaskRow = memo(function MemoizedTaskRow({
         isOpen={isDetailsPanelOpen} 
         onClose={() => setIsDetailsPanelOpen(false)} 
         users={mockUsers} 
-        boardId={boardId} 
+        boardId={boardId}
+        workspaceName={workspaceName}
       />
     </>
   );

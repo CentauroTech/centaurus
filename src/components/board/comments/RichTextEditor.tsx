@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useEffect, useCallback, useState, useRef } from 'react';
+import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
@@ -32,7 +32,17 @@ export interface MentionUser {
   name: string;
   initials: string;
   color: string;
+  isEveryone?: boolean; // Special flag for @everyone option
 }
+
+// Special "Everyone" mention user
+export const EVERYONE_MENTION: MentionUser = {
+  id: 'everyone',
+  name: 'Everyone',
+  initials: 'ALL',
+  color: '#6366f1', // Indigo color for distinction
+  isEveryone: true,
+};
 
 interface RichTextEditorProps {
   content: string;
@@ -43,6 +53,7 @@ interface RichTextEditorProps {
   editable?: boolean;
   className?: string;
   mentionUsers?: MentionUser[];
+  showEveryoneOption?: boolean; // Whether to show @everyone option
 }
 
 export function RichTextEditor({
@@ -54,6 +65,7 @@ export function RichTextEditor({
   editable = true,
   className,
   mentionUsers = [],
+  showEveryoneOption = false,
 }: RichTextEditorProps) {
   const [showMentions, setShowMentions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
@@ -61,7 +73,15 @@ export function RichTextEditor({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const filteredUsers = mentionUsers.filter((user) =>
+  // Build mention list with optional @everyone at the top
+  const allMentionUsers = useMemo(() => {
+    if (showEveryoneOption) {
+      return [EVERYONE_MENTION, ...mentionUsers];
+    }
+    return mentionUsers;
+  }, [mentionUsers, showEveryoneOption]);
+
+  const filteredUsers = allMentionUsers.filter((user) =>
     user.name.toLowerCase().includes(mentionQuery.toLowerCase())
   ).slice(0, 8);
 
@@ -122,7 +142,7 @@ export function RichTextEditor({
   });
 
   const checkForMention = useCallback((editorInstance: any) => {
-    if (!editorInstance || mentionUsers.length === 0) return;
+    if (!editorInstance || allMentionUsers.length === 0) return;
 
     const { state } = editorInstance;
     const { selection } = state;

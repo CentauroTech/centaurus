@@ -434,6 +434,11 @@ export default function GuestDashboard() {
               </div>
             )}
           </TabsContent>
+
+          {/* Invoices Tab */}
+          <TabsContent value="invoices">
+            <InvoicesTab />
+          </TabsContent>
         </Tabs>
       </main>
 

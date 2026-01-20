@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { format, addDays } from 'date-fns';
 import { ArrowLeft, Plus, Trash2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useGuestCompletedHistory, GuestCompletedTask } from '@/hooks/useGuestCompletedHistory';
 import { useCreateInvoice, CreateInvoiceData, createItemsFromCompletedTasks } from '@/hooks/useInvoices';
+import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -33,9 +35,11 @@ interface LineItem {
 
 export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
   const { data: completedTasks } = useGuestCompletedHistory();
+  const { data: currentMember } = useCurrentTeamMember();
+  const { user } = useAuth();
   const createInvoice = useCreateInvoice();
 
-  // Billing info
+  // Billing info - pre-filled from current user
   const [billingName, setBillingName] = useState('');
   const [billingAddress, setBillingAddress] = useState('');
   const [billingCity, setBillingCity] = useState('');
@@ -54,6 +58,13 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
   // Task selection
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
+
+  // Pre-fill billing name from current member
+  useEffect(() => {
+    if (currentMember?.name && !billingName) {
+      setBillingName(currentMember.name);
+    }
+  }, [currentMember?.name]);
 
   // Calculate totals
   const subtotal = useMemo(() => 

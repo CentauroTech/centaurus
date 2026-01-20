@@ -3,12 +3,33 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentTeamMember } from './useCurrentTeamMember';
 
-export interface ChatMessage {
+export interface Conversation {
   id: string;
-  user_id: string;
-  content: string;
   created_at: string;
-  user?: {
+  updated_at: string;
+  otherParticipant?: {
+    id: string;
+    name: string;
+    initials: string;
+    color: string;
+    role: string;
+  };
+  lastMessage?: {
+    content: string;
+    created_at: string;
+    sender_id: string;
+  };
+  unreadCount: number;
+}
+
+export interface DirectMessage {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+  sender?: {
     id: string;
     name: string;
     initials: string;
@@ -16,71 +37,129 @@ export interface ChatMessage {
   };
 }
 
-export function useChat() {
+export interface TeamMemberContact {
+  id: string;
+  name: string;
+  initials: string;
+  color: string;
+  role: string;
+  email: string | null;
+}
+
+// Fetch all team members for contact list
+export function useContacts() {
+  const { data: currentUser } = useCurrentTeamMember();
+
+  return useQuery({
+    queryKey: ['chat-contacts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('id, name, initials, color, role, email')
+        .order('name');
+
+      if (error) throw error;
+      return (data || []).filter(m => m.id !== currentUser?.id) as TeamMemberContact[];
+    },
+    enabled: !!currentUser?.id,
+  });
+}
+
+// Fetch user's conversations with last message and unread count
+export function useConversations() {
   const queryClient = useQueryClient();
   const { data: currentUser } = useCurrentTeamMember();
 
-  // Fetch recent messages
-  const { data: messages = [], isLoading } = useQuery({
-    queryKey: ['chat-messages'],
+  const query = useQuery({
+    queryKey: ['conversations'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('chat_messages')
+      if (!currentUser?.id) return [];
+
+      // Get all conversations the user is part of
+      const { data: participations, error: partError } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('team_member_id', currentUser.id);
+
+      if (partError) throw partError;
+      if (!participations?.length) return [];
+
+      const conversationIds = participations.map(p => p.conversation_id);
+
+      // Get conversation details with other participants
+      const { data: conversations, error: convError } = await supabase
+        .from('conversations')
+        .select('id, created_at, updated_at')
+        .in('id', conversationIds)
+        .order('updated_at', { ascending: false });
+
+      if (convError) throw convError;
+      if (!conversations?.length) return [];
+
+      // Get all participants for these conversations
+      const { data: allParticipants, error: allPartError } = await supabase
+        .from('conversation_participants')
         .select(`
-          id,
-          user_id,
-          content,
-          created_at,
-          user:team_members!chat_messages_user_id_fkey(
-            id,
-            name,
-            initials,
-            color
-          )
+          conversation_id,
+          team_member:team_members(id, name, initials, color, role)
         `)
-        .order('created_at', { ascending: true })
-        .limit(100);
+        .in('conversation_id', conversationIds);
 
-      if (error) throw error;
-      return (data || []) as ChatMessage[];
-    },
-  });
+      if (allPartError) throw allPartError;
 
-  // Send message mutation
-  const sendMessage = useMutation({
-    mutationFn: async (content: string) => {
-      if (!currentUser?.id) throw new Error('User not found');
-      
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .insert({
-          user_id: currentUser.id,
-          content: content.trim(),
+      // Get last message for each conversation
+      const conversationsWithDetails: Conversation[] = await Promise.all(
+        conversations.map(async (conv) => {
+          // Find the other participant
+          const otherParticipant = allParticipants?.find(
+            p => p.conversation_id === conv.id && (p.team_member as any)?.id !== currentUser.id
+          );
+
+          // Get last message
+          const { data: lastMessages } = await supabase
+            .from('direct_messages')
+            .select('content, created_at, sender_id')
+            .eq('conversation_id', conv.id)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          // Get unread count
+          const { count } = await supabase
+            .from('direct_messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', conv.id)
+            .eq('is_read', false)
+            .neq('sender_id', currentUser.id);
+
+          return {
+            ...conv,
+            otherParticipant: otherParticipant?.team_member as Conversation['otherParticipant'],
+            lastMessage: lastMessages?.[0],
+            unreadCount: count || 0,
+          };
         })
-        .select()
-        .single();
+      );
 
-      if (error) throw error;
-      return data;
+      return conversationsWithDetails;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chat-messages'] });
-    },
+    enabled: !!currentUser?.id,
   });
 
   // Subscribe to real-time updates
   useEffect(() => {
+    if (!currentUser?.id) return;
+
     const channel = supabase
-      .channel('chat-messages-realtime')
+      .channel('conversations-realtime')
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
-          table: 'chat_messages',
+          table: 'direct_messages',
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['chat-messages'] });
+          queryClient.invalidateQueries({ queryKey: ['conversations'] });
         }
       )
       .subscribe();
@@ -88,13 +167,212 @@ export function useChat() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient]);
+  }, [currentUser?.id, queryClient]);
 
-  return {
-    messages,
-    isLoading,
-    sendMessage: sendMessage.mutate,
-    isSending: sendMessage.isPending,
-    currentUserId: currentUser?.id,
-  };
+  return query;
+}
+
+// Fetch messages for a specific conversation
+export function useDirectMessages(conversationId: string | null) {
+  const queryClient = useQueryClient();
+  const { data: currentUser } = useCurrentTeamMember();
+
+  const query = useQuery({
+    queryKey: ['direct-messages', conversationId],
+    queryFn: async () => {
+      if (!conversationId) return [];
+
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .select(`
+          id,
+          conversation_id,
+          sender_id,
+          content,
+          is_read,
+          created_at,
+          sender:team_members!direct_messages_sender_id_fkey(
+            id, name, initials, color
+          )
+        `)
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as DirectMessage[];
+    },
+    enabled: !!conversationId,
+  });
+
+  // Mark messages as read when viewing conversation
+  useEffect(() => {
+    if (!conversationId || !currentUser?.id) return;
+
+    const markAsRead = async () => {
+      await supabase
+        .from('direct_messages')
+        .update({ is_read: true })
+        .eq('conversation_id', conversationId)
+        .neq('sender_id', currentUser.id)
+        .eq('is_read', false);
+    };
+
+    markAsRead();
+  }, [conversationId, currentUser?.id, query.data]);
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const channel = supabase
+      .channel(`dm-${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'direct_messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['direct-messages', conversationId] });
+          queryClient.invalidateQueries({ queryKey: ['conversations'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, queryClient]);
+
+  return query;
+}
+
+// Send a direct message
+export function useSendMessage() {
+  const queryClient = useQueryClient();
+  const { data: currentUser } = useCurrentTeamMember();
+
+  return useMutation({
+    mutationFn: async ({ conversationId, content }: { conversationId: string; content: string }) => {
+      if (!currentUser?.id) throw new Error('User not found');
+
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: currentUser.id,
+          content: content.trim(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update conversation's updated_at
+      await supabase
+        .from('conversations')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', conversationId);
+
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['direct-messages', variables.conversationId] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+  });
+}
+
+// Start a new conversation with a contact
+export function useStartConversation() {
+  const queryClient = useQueryClient();
+  const { data: currentUser } = useCurrentTeamMember();
+
+  return useMutation({
+    mutationFn: async (otherUserId: string) => {
+      if (!currentUser?.id) throw new Error('User not found');
+
+      // Check if conversation already exists
+      const { data: existingParticipations } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('team_member_id', currentUser.id);
+
+      if (existingParticipations?.length) {
+        // Check each conversation to see if other user is also a participant
+        for (const part of existingParticipations) {
+          const { data: otherPart } = await supabase
+            .from('conversation_participants')
+            .select('id')
+            .eq('conversation_id', part.conversation_id)
+            .eq('team_member_id', otherUserId)
+            .single();
+
+          if (otherPart) {
+            // Conversation already exists, return it
+            return part.conversation_id;
+          }
+        }
+      }
+
+      // Create new conversation
+      const { data: newConv, error: convError } = await supabase
+        .from('conversations')
+        .insert({})
+        .select()
+        .single();
+
+      if (convError) throw convError;
+
+      // Add both participants
+      const { error: partError } = await supabase
+        .from('conversation_participants')
+        .insert([
+          { conversation_id: newConv.id, team_member_id: currentUser.id },
+          { conversation_id: newConv.id, team_member_id: otherUserId },
+        ]);
+
+      if (partError) throw partError;
+
+      return newConv.id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+  });
+}
+
+// Get total unread message count
+export function useUnreadCount() {
+  const { data: currentUser } = useCurrentTeamMember();
+
+  return useQuery({
+    queryKey: ['unread-dm-count'],
+    queryFn: async () => {
+      if (!currentUser?.id) return 0;
+
+      // Get conversations the user is in
+      const { data: participations } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('team_member_id', currentUser.id);
+
+      if (!participations?.length) return 0;
+
+      const conversationIds = participations.map(p => p.conversation_id);
+
+      const { count } = await supabase
+        .from('direct_messages')
+        .select('*', { count: 'exact', head: true })
+        .in('conversation_id', conversationIds)
+        .eq('is_read', false)
+        .neq('sender_id', currentUser.id);
+
+      return count || 0;
+    },
+    enabled: !!currentUser?.id,
+    refetchInterval: 30000, // Refresh every 30s
+  });
 }

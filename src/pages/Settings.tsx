@@ -47,6 +47,7 @@ import {
 import { COLUMNS } from '@/types/board';
 import { toast } from 'sonner';
 import { PhaseAutomationsTab } from '@/components/settings/PhaseAutomationsTab';
+import { EditableEmailCell } from '@/components/settings/EditableEmailCell';
 
 const BRANCH_COLORS: Record<Branch, string> = {
   Colombia: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
@@ -639,9 +640,11 @@ export default function Settings() {
                                 </Avatar>
                                 <div>
                                   <div className="font-medium">{member.name}</div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {member.email || 'No email'}
-                                  </div>
+                                  <EditableEmailCell
+                                    memberId={member.id}
+                                    email={member.email}
+                                    canEdit={canManageTeamMembers}
+                                  />
                                 </div>
                               </div>
                             </td>

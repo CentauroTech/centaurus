@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { fetchPhaseAutomations } from '@/hooks/usePhaseAutomations';
+import { getLocalDateString } from '@/lib/businessDays';
 
 // Phase progression order (normalized phase names)
 const PHASE_ORDER = [
@@ -237,7 +238,7 @@ export function useMoveToNextPhase(boardId: string, currentUserId?: string | nul
       if (taskError) throw taskError;
 
       const nextPhaseName = extractPhaseFromBoardName(nextBoard.name);
-      const currentDate = new Date().toISOString().split('T')[0];
+      const currentDate = getLocalDateString();
       const now = new Date().toISOString();
 
       // 6.5 Set date_delivered on current task BEFORE moving (stamps delivery from current board)

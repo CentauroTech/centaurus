@@ -56,10 +56,19 @@ export function ProjectManagerCell({
           <button onClick={() => setIsOpen(!isOpen)} className="flex items-center">
             <span className="text-sm text-inherit px-[10px]">{owner.name}</span>
           </button>
-          <button onClick={e => {
-        e.stopPropagation();
-        onOwnerChange(undefined);
-      }} className="opacity-0 group-hover:opacity-100 transition-smooth p-0.5 rounded hover:bg-accent">
+          <button 
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onOwnerChange(undefined);
+            }} 
+            className="opacity-0 group-hover:opacity-100 transition-smooth p-0.5 rounded hover:bg-accent"
+          >
             <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
           </button>
         </div> : <button onClick={() => setIsOpen(!isOpen)} className="w-7 h-7 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-muted-foreground transition-smooth">

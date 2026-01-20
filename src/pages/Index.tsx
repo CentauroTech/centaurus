@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { AppHeader } from '@/components/layout/AppHeader';
 import { BoardView } from '@/components/board/BoardView';
+import { ChatWidget } from '@/components/chat/ChatWidget';
 import { useBoard } from '@/hooks/useWorkspaces';
 import { useAccessibleWorkspaces } from '@/hooks/useAccessibleWorkspaces';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -130,6 +131,9 @@ const Index = () => {
           </div>
         )}
       </div>
+
+      {/* Real-time team chat widget */}
+      <ChatWidget />
     </div>
   );
 };

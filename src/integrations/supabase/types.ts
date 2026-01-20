@@ -16,6 +16,8 @@ export type Database = {
     Tables: {
       activity_log: {
         Row: {
+          context_board: string | null
+          context_phase: string | null
           created_at: string
           field: string | null
           id: string
@@ -26,6 +28,8 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          context_board?: string | null
+          context_phase?: string | null
           created_at?: string
           field?: string | null
           id?: string
@@ -36,6 +40,8 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          context_board?: string | null
+          context_phase?: string | null
           created_at?: string
           field?: string | null
           id?: string

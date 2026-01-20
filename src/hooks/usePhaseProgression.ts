@@ -68,16 +68,17 @@ async function applyPhaseAutomation(
     return;
   }
 
-  // Log the assignment
+  // Log the assignment with semantic type
   const assignedNames = teamMembers?.map(tm => tm.name).join(', ') || '';
   if (assignedNames) {
     await supabase.from('activity_log').insert({
       task_id: taskId,
-      type: 'field_change',
+      type: 'people_added',
       field: 'people',
       old_value: null,
       new_value: assignedNames,
       user_id: currentUserId || null,
+      context_phase: normalizedPhase,
     });
   }
 }
@@ -247,14 +248,16 @@ export function useMoveToNextPhase(boardId: string, currentUserId?: string | nul
         .update({ date_delivered: currentDate })
         .eq('id', taskId);
 
-      // Log date_delivered for the current board
+      // Log date_delivered for the current board with semantic type
       await supabase.from('activity_log').insert({
         task_id: taskId,
-        type: 'field_change',
+        type: 'task_delivered',
         field: 'date_delivered',
         old_value: currentTask.date_delivered,
         new_value: currentDate,
         user_id: currentUserId || null,
+        context_board: currentBoard.name,
+        context_phase: currentPhase,
       });
 
       // 7. Move the task to the new group, update phase, and reset status
@@ -277,34 +280,28 @@ export function useMoveToNextPhase(boardId: string, currentUserId?: string | nul
       // 8. Apply phase automation (assign people based on phase)
       await applyPhaseAutomation(taskId, nextPhase, currentUserId);
 
-      // 9. Log the date_assigned change for new board
+      // 9. Log the date_assigned change for new board with semantic type
       await supabase.from('activity_log').insert({
         task_id: taskId,
-        type: 'field_change',
+        type: 'date_set',
         field: 'date_assigned',
         old_value: currentTask.date_assigned,
         new_value: currentDate,
         user_id: currentUserId || null,
+        context_board: nextBoard.name,
+        context_phase: nextPhaseName,
       });
 
-      // 10. Log the phase change in activity_log
+      // 10. Log the phase change in activity_log with semantic type
       await supabase.from('activity_log').insert({
         task_id: taskId,
-        type: 'phase_change',
+        type: 'task_moved',
         field: 'fase',
-        old_value: currentTask.fase || currentPhase,
+        old_value: currentPhase,
         new_value: nextPhaseName,
         user_id: currentUserId || null,
-      });
-
-      // Log the group/board change
-      await supabase.from('activity_log').insert({
-        task_id: taskId,
-        type: 'field_change',
-        field: 'board',
-        old_value: currentBoard.name,
-        new_value: nextBoard.name,
-        user_id: currentUserId || null,
+        context_board: nextBoard.name,
+        context_phase: nextPhaseName,
       });
 
       return { 

@@ -69,16 +69,17 @@ async function applyPhaseAutomation(
     return;
   }
 
-  // Log the assignment
+  // Log the assignment with semantic type
   const assignedNames = teamMembers?.map(tm => tm.name).join(', ') || '';
   if (assignedNames) {
     await supabase.from('activity_log').insert({
       task_id: taskId,
-      type: 'field_change',
+      type: 'people_added',
       field: 'people',
       old_value: null,
       new_value: assignedNames,
       user_id: currentUserId || null,
+      context_phase: normalizedPhase,
     });
   }
 }
@@ -254,15 +255,17 @@ export function useBulkMoveToPhase(boardId: string, currentUserId?: string | nul
         await applyPhaseAutomation(taskId, normalizedPhase, currentUserId);
       }
 
-      // Log activity for each task with user attribution
+      // Log activity for each task with user attribution and semantic type
       for (const taskId of taskIds) {
         await supabase.from('activity_log').insert({
           task_id: taskId,
-          type: 'phase_change',
+          type: 'task_moved',
           field: 'fase',
           old_value: currentBoard.name,
           new_value: targetPhase,
           user_id: currentUserId || null,
+          context_board: targetBoard.name,
+          context_phase: targetPhase,
         });
       }
 
@@ -378,14 +381,16 @@ export function useMoveTaskToPhase(boardId: string, currentUserId?: string | nul
       const normalizedPhase = normalizePhase(targetPhase);
       await applyPhaseAutomation(taskId, normalizedPhase, currentUserId);
 
-      // Log activity with user attribution
+      // Log activity with user attribution and semantic type
       await supabase.from('activity_log').insert({
         task_id: taskId,
-        type: 'phase_change',
+        type: 'task_moved',
         field: 'fase',
         old_value: currentBoard.name,
         new_value: targetPhase,
         user_id: currentUserId || null,
+        context_board: targetBoard.name,
+        context_phase: targetPhase,
       });
 
       return { targetPhase };

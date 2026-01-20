@@ -424,10 +424,18 @@ export function useUpdateTask(boardId: string, currentUserId?: string | null) {
           const oldStr = oldValue ? personnelNames.get(oldValue) || null : null;
           const newStr = newValue ? personnelNames.get(newValue) || null : null;
           
+          // Use semantic type based on whether assigning or unassigning
+          let activityType = 'field_change';
+          if (newStr && !oldStr) {
+            activityType = 'task_assigned';
+          } else if (!newStr && oldStr) {
+            activityType = 'task_unassigned';
+          }
+          
           activityLogs.push({
             task_id: taskId,
-            type: 'field_change',
-            field: fieldName,
+            type: activityType,
+            field: key, // Store the raw field name for the formatter
             old_value: oldStr,
             new_value: newStr,
             user_id: currentUserId || null,

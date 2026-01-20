@@ -8,6 +8,8 @@ export interface ActivityLogEntry {
   field: string | null;
   old_value: string | null;
   new_value: string | null;
+  context_board: string | null;
+  context_phase: string | null;
   user_id: string | null;
   created_at: string;
   user: {
@@ -48,8 +50,10 @@ export function useActivityLog(taskId: string, enabled: boolean = true) {
       // Map logs with user data
       return logs?.map(log => ({
         ...log,
+        context_board: (log as any).context_board || null,
+        context_phase: (log as any).context_phase || null,
         user: log.user_id ? usersMap.get(log.user_id) || null : null,
-      })) || [];
+      })) as ActivityLogEntry[] || [];
     },
     enabled: enabled && !!taskId,
   });

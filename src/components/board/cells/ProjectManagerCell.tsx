@@ -53,9 +53,9 @@ export function ProjectManagerCell({
   }
   return <div className="relative" ref={dropdownRef}>
       {owner ? <div className="gap-2 group flex items-center justify-start">
-          <button onClick={() => setIsOpen(!isOpen)} className="flex items-center">
+          <div onClick={() => setIsOpen(!isOpen)} className="flex items-center cursor-pointer">
             <span className="text-sm text-inherit px-[10px]">{owner.name}</span>
-          </button>
+          </div>
           <button 
             type="button"
             onMouseDown={(e) => {
@@ -71,9 +71,9 @@ export function ProjectManagerCell({
           >
             <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
           </button>
-        </div> : <button onClick={() => setIsOpen(!isOpen)} className="w-7 h-7 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-muted-foreground transition-smooth">
+        </div> : <div onClick={() => setIsOpen(!isOpen)} className="w-7 h-7 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-muted-foreground transition-smooth cursor-pointer">
           <Plus className="w-4 h-4 text-muted-foreground" />
-        </button>}
+        </div>}
 
       {isOpen && <div className="absolute z-[9999] mt-1 left-0 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg shadow-dropdown border border-border py-1 min-w-[180px] animate-fade-in">
           {users.length === 0 ? <div className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">

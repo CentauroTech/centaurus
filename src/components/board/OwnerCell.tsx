@@ -60,9 +60,9 @@ export function OwnerCell({ owner, onOwnerChange, disabled = false }: OwnerCellP
     <div className="relative" ref={dropdownRef}>
       {owner ? (
         <div className="flex items-center gap-2 group">
-          <button
+          <div
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 cursor-pointer"
           >
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium text-white"
@@ -71,7 +71,7 @@ export function OwnerCell({ owner, onOwnerChange, disabled = false }: OwnerCellP
               {owner.initials}
             </div>
             <span className="text-sm text-inherit">{owner.name}</span>
-          </button>
+          </div>
           <button
             type="button"
             onMouseDown={(e) => {
@@ -89,12 +89,12 @@ export function OwnerCell({ owner, onOwnerChange, disabled = false }: OwnerCellP
           </button>
         </div>
       ) : (
-        <button
+        <div
           onClick={() => setIsOpen(!isOpen)}
-          className="w-7 h-7 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-muted-foreground transition-smooth"
+          className="w-7 h-7 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-muted-foreground transition-smooth cursor-pointer"
         >
           <Plus className="w-4 h-4 text-muted-foreground" />
-        </button>
+        </div>
       )}
 
       {isOpen && (

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { LogOut, CheckCircle, Clock, AlertTriangle, Table, LayoutGrid, FileText, Hash, Download, Loader2 } from 'lucide-react';
+import { LogOut, CheckCircle, Clock, AlertTriangle, Table, LayoutGrid, FileText, Hash, Download, Loader2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
@@ -323,84 +323,105 @@ export default function GuestDashboard() {
                         <th className="text-left p-3 font-medium">Completed</th>
                         <th className="text-left p-3 font-medium">Delivered File</th>
                         <th className="text-left p-3 font-medium">Notes</th>
+                        <th className="text-left p-3 font-medium">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {completedHistory.map((record) => (
-                        <tr key={record.id} className="hover:bg-muted/30">
-                          <td className="p-3">
-                            {record.workOrderNumber ? (
-                              <div className="flex items-center gap-1">
-                                <Hash className="w-3 h-3 text-muted-foreground" />
-                                <span className="font-mono text-xs">{record.workOrderNumber}</span>
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                          <td className="p-3">
-                            <div>
-                              <p className="font-medium">{record.taskName}</p>
-                              {record.tituloAprobadoEspanol && (
-                                <p className="text-xs text-muted-foreground">{record.tituloAprobadoEspanol}</p>
+                      {completedHistory.map((record) => {
+                        // Find the matching task from the tasks array to enable viewing
+                        const matchingTask = tasks?.find(t => t.id === record.taskId);
+                        
+                        return (
+                          <tr key={record.id} className="hover:bg-muted/30">
+                            <td className="p-3">
+                              {record.workOrderNumber ? (
+                                <div className="flex items-center gap-1">
+                                  <Hash className="w-3 h-3 text-muted-foreground" />
+                                  <span className="font-mono text-xs">{record.workOrderNumber}</span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
                               )}
-                              {record.workspaceName && (
-                                <p className="text-xs text-muted-foreground">{record.workspaceName}</p>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <Badge variant="secondary" className="text-xs">
-                              {record.phase}
-                            </Badge>
-                          </td>
-                          <td className="p-3">
-                            <span className="capitalize">{record.rolePerformed}</span>
-                          </td>
-                          <td className="p-3">
-                            {record.lockedRuntime || '-'}
-                          </td>
-                          <td className="p-3">
-                            <div>
-                              <p>{format(new Date(record.completedAt), 'MMM d, yyyy')}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {format(new Date(record.completedAt), 'h:mm a')}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            {record.deliveryFileUrl && record.deliveryFileName ? (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 px-2 gap-1.5"
-                                onClick={() => handleFileDownload(record.deliveryFileUrl!, record.deliveryFileName!, record.id)}
-                                disabled={downloadingFileId === record.id}
-                              >
-                                {downloadingFileId === record.id ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  <Download className="w-3.5 h-3.5" />
+                            </td>
+                            <td className="p-3">
+                              <div>
+                                <p className="font-medium">{record.taskName}</p>
+                                {record.tituloAprobadoEspanol && (
+                                  <p className="text-xs text-muted-foreground">{record.tituloAprobadoEspanol}</p>
                                 )}
-                                <span className="text-xs truncate max-w-[80px]">
-                                  {record.deliveryFileName}
-                                </span>
-                              </Button>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                          <td className="p-3 max-w-[200px]">
-                            {record.deliveryComment ? (
-                              <p className="truncate text-muted-foreground" title={record.deliveryComment}>
-                                {record.deliveryComment}
-                              </p>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                                {record.workspaceName && (
+                                  <p className="text-xs text-muted-foreground">{record.workspaceName}</p>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <Badge variant="secondary" className="text-xs">
+                                {record.phase}
+                              </Badge>
+                            </td>
+                            <td className="p-3">
+                              <span className="capitalize">{record.rolePerformed}</span>
+                            </td>
+                            <td className="p-3">
+                              {record.lockedRuntime || '-'}
+                            </td>
+                            <td className="p-3">
+                              <div>
+                                <p>{format(new Date(record.completedAt), 'MMM d, yyyy')}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {format(new Date(record.completedAt), 'h:mm a')}
+                                </p>
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              {record.deliveryFileUrl && record.deliveryFileName ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 gap-1.5"
+                                  onClick={() => handleFileDownload(record.deliveryFileUrl!, record.deliveryFileName!, record.id)}
+                                  disabled={downloadingFileId === record.id}
+                                >
+                                  {downloadingFileId === record.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Download className="w-3.5 h-3.5" />
+                                  )}
+                                  <span className="text-xs truncate max-w-[80px]">
+                                    {record.deliveryFileName}
+                                  </span>
+                                </Button>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </td>
+                            <td className="p-3 max-w-[200px]">
+                              {record.deliveryComment ? (
+                                <p className="truncate text-muted-foreground" title={record.deliveryComment}>
+                                  {record.deliveryComment}
+                                </p>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              {matchingTask ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 px-2 gap-1.5"
+                                  onClick={() => setSelectedTask(matchingTask)}
+                                >
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                  <span className="text-xs">View</span>
+                                </Button>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">-</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

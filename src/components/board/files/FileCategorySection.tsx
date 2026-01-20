@@ -1,9 +1,11 @@
-import { FileText, Image, File, Music, Video, ExternalLink, Trash2, Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
+import { FileText, Image, File, Music, Video, ExternalLink, Trash2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { TaskFileRecord } from '@/hooks/useTaskFiles';
 import { formatDistanceToNow } from 'date-fns';
+import { getSignedFileUrl } from '@/hooks/useSignedUrl';
 import {
   Tooltip,
   TooltipContent,
@@ -28,6 +30,18 @@ export function FileCategorySection({
   onToggleAccess,
   onDelete 
 }: FileCategorySectionProps) {
+  const [loadingFileId, setLoadingFileId] = useState<string | null>(null);
+
+  const handleOpenFile = async (file: TaskFileRecord) => {
+    setLoadingFileId(file.id);
+    try {
+      const signedUrl = await getSignedFileUrl(file.url);
+      window.open(signedUrl, '_blank');
+    } finally {
+      setLoadingFileId(null);
+    }
+  };
+
   if (files.length === 0) return null;
 
   const getFileIcon = (type: string) => {
@@ -93,9 +107,14 @@ export function FileCategorySection({
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7"
-                      onClick={() => window.open(file.url, '_blank')}
+                      onClick={() => handleOpenFile(file)}
+                      disabled={loadingFileId === file.id}
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
+                      {loadingFileId === file.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      )}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Open file</TooltipContent>

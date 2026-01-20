@@ -81,9 +81,9 @@ export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled 
       <div className="flex items-center gap-1">
         {owner ? (
           <div className="flex items-center gap-2 group/cell">
-            <button
+            <div
               onClick={() => setIsOpen(!isOpen)}
-              className="flex items-center gap-2 hover:bg-accent rounded px-1 py-0.5 transition-smooth"
+              className="flex items-center gap-2 hover:bg-accent rounded px-1 py-0.5 transition-smooth cursor-pointer"
             >
               <Avatar className="h-6 w-6">
                 <AvatarFallback
@@ -94,7 +94,7 @@ export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled 
                 </AvatarFallback>
               </Avatar>
               <span className="text-sm truncate max-w-[100px]">{owner.name}</span>
-            </button>
+            </div>
             <button
               type="button"
               onMouseDown={(e) => {
@@ -112,12 +112,12 @@ export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled 
             </button>
           </div>
         ) : (
-          <button
+          <div
             onClick={() => setIsOpen(!isOpen)}
-            className="w-6 h-6 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-muted-foreground/50 transition-smooth"
+            className="w-6 h-6 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-muted-foreground/50 transition-smooth cursor-pointer"
           >
             <Plus className="w-3 h-3 text-muted-foreground" />
-          </button>
+          </div>
         )}
       </div>
 

@@ -234,17 +234,17 @@ function BoardViewContent({
     if (updates.rateInfo !== undefined) dbUpdates.rate_info = updates.rateInfo;
     if (updates.guestDueDate !== undefined) dbUpdates.guest_due_date = updates.guestDueDate;
     if (updates.deliveryComment !== undefined) dbUpdates.delivery_comment = updates.deliveryComment;
-    // Person fields
-    if (updates.projectManager !== undefined) dbUpdates.project_manager_id = updates.projectManager?.id || null;
-    if (updates.director !== undefined) dbUpdates.director_id = updates.director?.id || null;
-    if (updates.tecnico !== undefined) dbUpdates.tecnico_id = updates.tecnico?.id || null;
-    if (updates.qc1 !== undefined) dbUpdates.qc_1_id = updates.qc1?.id || null;
-    if (updates.qcRetakes !== undefined) dbUpdates.qc_retakes_id = updates.qcRetakes?.id || null;
-    if (updates.mixerBogota !== undefined) dbUpdates.mixer_bogota_id = updates.mixerBogota?.id || null;
-    if (updates.mixerMiami !== undefined) dbUpdates.mixer_miami_id = updates.mixerMiami?.id || null;
-    if (updates.qcMix !== undefined) dbUpdates.qc_mix_id = updates.qcMix?.id || null;
-    if (updates.traductor !== undefined) dbUpdates.traductor_id = updates.traductor?.id || null;
-    if (updates.adaptador !== undefined) dbUpdates.adaptador_id = updates.adaptador?.id || null;
+    // Person fields - use 'in' operator to detect when field is explicitly set (including to undefined/null)
+    if ('projectManager' in updates) dbUpdates.project_manager_id = updates.projectManager?.id || null;
+    if ('director' in updates) dbUpdates.director_id = updates.director?.id || null;
+    if ('tecnico' in updates) dbUpdates.tecnico_id = updates.tecnico?.id || null;
+    if ('qc1' in updates) dbUpdates.qc_1_id = updates.qc1?.id || null;
+    if ('qcRetakes' in updates) dbUpdates.qc_retakes_id = updates.qcRetakes?.id || null;
+    if ('mixerBogota' in updates) dbUpdates.mixer_bogota_id = updates.mixerBogota?.id || null;
+    if ('mixerMiami' in updates) dbUpdates.mixer_miami_id = updates.mixerMiami?.id || null;
+    if ('qcMix' in updates) dbUpdates.qc_mix_id = updates.qcMix?.id || null;
+    if ('traductor' in updates) dbUpdates.traductor_id = updates.traductor?.id || null;
+    if ('adaptador' in updates) dbUpdates.adaptador_id = updates.adaptador?.id || null;
 
     // Check if a guest is being assigned to a role field on a private task
     const roleFields = ['traductor', 'adaptador', 'mixerMiami', 'qc1', 'qcMix'] as const;

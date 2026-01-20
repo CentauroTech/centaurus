@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
-import { useTaskFiles, useUploadTaskFile, useToggleFileAccessibility, useDeleteTaskFile, FileCategory } from "@/hooks/useTaskFiles";
+import { useTaskFiles, useUploadTaskFile, useToggleFileAccessibility, useDeleteTaskFile, FileCategory, FILE_CATEGORIES } from "@/hooks/useTaskFiles";
 import { useActivityLog } from "@/hooks/useActivityLog";
 import { usePermissions } from "@/hooks/usePermissions";
 import CommentSection from "./comments/CommentSection";
@@ -67,16 +67,12 @@ export default function TaskDetailsPanel({
     return value;
   };
 
-  const getCategoryTitle = (category: string): string => {
-    const categoryMap: Record<string, string> = {
-      source: "Source Material",
-      translated: "Translated",
-      adapted: "Adapted",
-      retake_list: "Retake List",
-      delivery: "Delivery",
-      general: "General",
-    };
-    return categoryMap[category] || category;
+  const getCategoryInfo = (category: string): { title: string; description?: string } => {
+    const cat = FILE_CATEGORIES.find(c => c.value === category);
+    if (cat) {
+      return { title: cat.label, description: cat.description };
+    }
+    return { title: category };
   };
 
   return (
@@ -122,16 +118,20 @@ export default function TaskDetailsPanel({
                     No files uploaded yet
                   </p>
                 ) : (
-                  Object.entries(filesByCategory).map(([category, categoryFiles]) => (
-                    <FileCategorySection
-                      key={category}
-                      title={getCategoryTitle(category)}
-                      files={categoryFiles}
-                      isGuest={isGuest}
-                      onToggleAccess={handleToggleAccess}
-                      onDelete={handleDeleteFile}
-                    />
-                  ))
+                  Object.entries(filesByCategory).map(([category, categoryFiles]) => {
+                    const { title, description } = getCategoryInfo(category);
+                    return (
+                      <FileCategorySection
+                        key={category}
+                        title={title}
+                        description={description}
+                        files={categoryFiles}
+                        isGuest={isGuest}
+                        onToggleAccess={handleToggleAccess}
+                        onDelete={handleDeleteFile}
+                      />
+                    );
+                  })
                 )}
               </div>
             </TabsContent>

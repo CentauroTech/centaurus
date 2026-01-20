@@ -187,15 +187,18 @@ export function useDeleteTaskFile(taskId: string) {
   });
 }
 
-// File categories for categorization
+// File categories for categorization with descriptions
 export const FILE_CATEGORIES = [
-  { value: 'source', label: 'Source Material' },
-  { value: 'script', label: 'Script' },
-  { value: 'translated', label: 'Translated' },
-  { value: 'adapted', label: 'Adapted' },
-  { value: 'retake_list', label: 'Retake List' },
-  { value: 'delivery', label: 'Delivery' },
-  { value: 'general', label: 'General' },
+  { value: 'source', label: 'Source Material', description: 'Original content from client (videos, audio, reference files)' },
+  { value: 'script', label: 'Script', description: 'Original script to be translated' },
+  { value: 'translated', label: 'Translated', description: 'Script translated from source language to target language' },
+  { value: 'adapted', label: 'Adapted', description: 'Script adapted for lip-sync and cultural localization' },
+  { value: 'voice_tests', label: 'Voice Tests', description: 'Voice casting samples and auditions' },
+  { value: 'recorded', label: 'Recorded', description: 'Audio recordings from studio sessions' },
+  { value: 'premix_retake_list', label: 'Premix Retake List', description: 'Notes and corrections needed after premix QC' },
+  { value: 'mix_retake_list', label: 'Mix Retake List', description: 'Notes and corrections needed after final mix QC' },
+  { value: 'delivery', label: 'Delivery', description: 'Final deliverables ready for client' },
+  { value: 'general', label: 'General', description: 'Other project-related files' },
 ] as const;
 
 export type FileCategory = typeof FILE_CATEGORIES[number]['value'];

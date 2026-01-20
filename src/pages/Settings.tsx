@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Users, Columns, Eye, EyeOff, X, Plus, Minus } from 'lucide-react';
+import { ArrowLeft, Search, Users, Columns, Eye, EyeOff, X, Plus, Minus, Zap } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,7 @@ import {
 } from '@/hooks/useUpdateTeamMemberType';
 import { COLUMNS } from '@/types/board';
 import { toast } from 'sonner';
+import { PhaseAutomationsTab } from '@/components/settings/PhaseAutomationsTab';
 
 const BRANCH_COLORS: Record<Branch, string> = {
   Colombia: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
@@ -465,10 +466,16 @@ export default function Settings() {
               Team Directory
             </TabsTrigger>
             {(isGod || isAdmin) && (
-              <TabsTrigger value="columns" className="gap-2">
-                <Columns className="h-4 w-4" />
-                Column Visibility
-              </TabsTrigger>
+              <>
+                <TabsTrigger value="automations" className="gap-2">
+                  <Zap className="h-4 w-4" />
+                  Phase Automations
+                </TabsTrigger>
+                <TabsTrigger value="columns" className="gap-2">
+                  <Columns className="h-4 w-4" />
+                  Column Visibility
+                </TabsTrigger>
+              </>
             )}
           </TabsList>
 
@@ -733,6 +740,12 @@ export default function Settings() {
               </div>
             )}
           </TabsContent>
+
+          {(isGod || isAdmin) && (
+            <TabsContent value="automations">
+              <PhaseAutomationsTab />
+            </TabsContent>
+          )}
 
           {(isGod || isAdmin) && (
             <TabsContent value="columns" className="space-y-6">

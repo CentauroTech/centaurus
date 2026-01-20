@@ -395,6 +395,35 @@ export type Database = {
           },
         ]
       }
+      phase_automations: {
+        Row: {
+          created_at: string | null
+          id: string
+          phase: string
+          team_member_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          phase: string
+          team_member_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          phase?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phase_automations_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_files: {
         Row: {
           file_category: string

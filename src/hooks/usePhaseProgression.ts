@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { fetchPhaseAutomations } from '@/hooks/usePhaseAutomations';
 
 // Phase progression order (normalized phase names)
 const PHASE_ORDER = [
@@ -20,41 +21,17 @@ const PHASE_ORDER = [
   'deliveries',
 ];
 
-// Phase automation configuration - maps normalized phase names to team member names
-const PHASE_AUTOMATIONS: Record<string, string[]> = {
-  'assets': ['Natalia Aparicio'],
-  'translation': ['Julio Neri'],
-  'adapting': ['Julio Neri'],
-  'voicetests': ['Julio Neri', 'Judith Noguera'],
-  'recording': ['Judith Noguera'],
-  'premix': ['Judith Noguera'],
-  'qcpremix': ['Natalia Aparicio'],
-  'retakes': ['Judith Noguera'],
-  'qcretakes': ['Natalia Aparicio'],
-  'mix': ['Natalia Aparicio'],
-  'mixretakes': ['Natalia Aparicio'],
-  'deliveries': ['Natalia Aparicio'],
-};
-
-// Helper function to assign people to a task based on phase automation
+// Helper function to assign people to a task based on phase automation (fetched from database)
 async function applyPhaseAutomation(
   taskId: string,
   normalizedPhase: string,
   currentUserId: string | null | undefined
 ): Promise<void> {
-  const assignees = PHASE_AUTOMATIONS[normalizedPhase];
-  if (!assignees || assignees.length === 0) return;
-
-  // Fetch team members for the assignees
-  const { data: teamMembers, error: teamError } = await supabase
-    .from('team_members')
-    .select('id, name')
-    .in('name', assignees);
-
-  if (teamError || !teamMembers || teamMembers.length === 0) {
-    console.error('Failed to fetch team members for automation:', teamError);
-    return;
-  }
+  // Fetch phase automations from database
+  const phaseAutomations = await fetchPhaseAutomations();
+  const assigneeIds = phaseAutomations.get(normalizedPhase);
+  
+  if (!assigneeIds || assigneeIds.length === 0) return;
 
   // Get existing assignments to avoid duplicates
   const { data: existingAssignments } = await supabase
@@ -65,14 +42,20 @@ async function applyPhaseAutomation(
   const existingIds = new Set(existingAssignments?.map(a => a.team_member_id) || []);
 
   // Filter out already assigned members
-  const newAssignments = teamMembers.filter(tm => !existingIds.has(tm.id));
+  const newAssigneeIds = assigneeIds.filter(id => !existingIds.has(id));
 
-  if (newAssignments.length === 0) return;
+  if (newAssigneeIds.length === 0) return;
+
+  // Fetch team member names for logging
+  const { data: teamMembers } = await supabase
+    .from('team_members')
+    .select('id, name')
+    .in('id', newAssigneeIds);
 
   // Insert new assignments
-  const insertData = newAssignments.map(tm => ({
+  const insertData = newAssigneeIds.map(id => ({
     task_id: taskId,
-    team_member_id: tm.id
+    team_member_id: id
   }));
 
   const { error: insertError } = await supabase
@@ -85,15 +68,17 @@ async function applyPhaseAutomation(
   }
 
   // Log the assignment
-  const assignedNames = newAssignments.map(tm => tm.name).join(', ');
-  await supabase.from('activity_log').insert({
-    task_id: taskId,
-    type: 'field_change',
-    field: 'people',
-    old_value: null,
-    new_value: assignedNames,
-    user_id: currentUserId || null,
-  });
+  const assignedNames = teamMembers?.map(tm => tm.name).join(', ') || '';
+  if (assignedNames) {
+    await supabase.from('activity_log').insert({
+      task_id: taskId,
+      type: 'field_change',
+      field: 'people',
+      old_value: null,
+      new_value: assignedNames,
+      user_id: currentUserId || null,
+    });
+  }
 }
 
 // Map various phase name variations to normalized names

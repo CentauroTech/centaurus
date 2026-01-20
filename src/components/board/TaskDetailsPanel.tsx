@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
+import { ArrowRight, CheckCircle2, Play, UserPlus, UserMinus, Calendar, Users, Edit, Plus, Clock, Tag, FileText, AlertCircle } from "lucide-react";
 import { useTaskFiles, useUploadTaskFile, useToggleFileAccessibility, useDeleteTaskFile, FileCategory, FILE_CATEGORIES } from "@/hooks/useTaskFiles";
 import { useActivityLog } from "@/hooks/useActivityLog";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -10,6 +11,7 @@ import CommentSection from "./comments/CommentSection";
 import { FileCategorySection } from "./files/FileCategorySection";
 import { FileUploadButton } from "./files/FileUploadButton";
 import { Task, User } from "@/types/board";
+import { formatActivityMessage, FormattedActivity } from "@/lib/activityFormatter";
 
 interface TaskDetailsPanelProps {
   task: Task;
@@ -58,25 +60,32 @@ export default function TaskDetailsPanel({
     deleteFileMutation.mutate(fileId);
   };
 
-  const formatActivityValue = (value: string | null) => {
-    if (!value) return "—";
-    // Try to format as date if it looks like one
-    if (value.match(/^\d{4}-\d{2}-\d{2}/)) {
-      try {
-        return format(new Date(value), "MMM d, yyyy");
-      } catch {
-        return value;
-      }
-    }
-    return value;
-  };
-
   const getCategoryInfo = (category: string): { title: string; description?: string } => {
     const cat = FILE_CATEGORIES.find(c => c.value === category);
     if (cat) {
       return { title: cat.label, description: cat.description };
     }
     return { title: category };
+  };
+
+  // Map icon names to components
+  const getActivityIcon = (iconName: FormattedActivity['icon']) => {
+    const iconMap = {
+      ArrowRight: ArrowRight,
+      CheckCircle2: CheckCircle2,
+      Play: Play,
+      UserPlus: UserPlus,
+      UserMinus: UserMinus,
+      Calendar: Calendar,
+      Users: Users,
+      Edit: Edit,
+      Plus: Plus,
+      Clock: Clock,
+      Tag: Tag,
+      FileText: FileText,
+      AlertCircle: AlertCircle,
+    };
+    return iconMap[iconName] || Edit;
   };
 
   return (
@@ -149,44 +158,36 @@ export default function TaskDetailsPanel({
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {activityLogs.map((log) => (
-                      <div
-                        key={log.id}
-                        className="flex items-start gap-3 text-sm border-b border-border pb-3 last:border-0"
-                      >
-                        <Avatar className="h-7 w-7 flex-shrink-0">
-                          <AvatarFallback
-                            style={{ backgroundColor: log.user?.color || "#888" }}
-                            className="text-white text-xs"
-                          >
-                            {log.user?.initials || "?"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <span className="font-medium text-foreground">
-                              {log.user?.name || "System"}
-                            </span>
-                            <span>changed</span>
-                            <span className="font-medium text-foreground">
-                              {log.field || "field"}
-                            </span>
+                    {activityLogs.map((log) => {
+                      const { action, description, icon } = formatActivityMessage(log);
+                      const IconComponent = getActivityIcon(icon);
+                      
+                      return (
+                        <div
+                          key={log.id}
+                          className="flex items-start gap-3 text-sm border-b border-border pb-3 last:border-0"
+                        >
+                          <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                            <IconComponent className="h-3.5 w-3.5 text-muted-foreground" />
                           </div>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            <span className="line-through">
-                              {formatActivityValue(log.old_value)}
-                            </span>
-                            <span className="mx-1.5">→</span>
-                            <span className="font-medium text-foreground">
-                              {formatActivityValue(log.new_value)}
-                            </span>
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(log.created_at), "MMM d, h:mm a")}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-muted-foreground">
+                              <span className="font-medium text-foreground">
+                                {log.user?.name || "System"}
+                              </span>
+                              {" "}
+                              <span className="font-medium text-foreground">{action}</span>
+                              {description && (
+                                <span> {description}</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {format(new Date(log.created_at), "MMM d 'at' h:mm a")}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

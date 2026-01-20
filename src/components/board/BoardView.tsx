@@ -329,17 +329,30 @@ function BoardViewContent({
       })));
     }
 
-    // Log the change
+    // Log the change with semantic type
     const oldNames = oldPeople.map(p => p.name).join(', ') || null;
     const newNames = newPeople.map(p => p.name).join(', ') || null;
     if (oldNames !== newNames) {
+      // Determine the semantic type based on what changed
+      let activityType = 'field_change';
+      if (newNames && !oldNames) {
+        activityType = 'people_added';
+      } else if (!newNames && oldNames) {
+        activityType = 'people_removed';
+      } else if (newPeople.length > oldPeople.length) {
+        activityType = 'people_added';
+      } else if (newPeople.length < oldPeople.length) {
+        activityType = 'people_removed';
+      }
+      
       await supabase.from('activity_log').insert({
         task_id: taskId,
-        type: 'field_change',
+        type: activityType,
         field: 'people',
         old_value: oldNames,
         new_value: newNames,
-        user_id: currentUserId
+        user_id: currentUserId,
+        context_phase: boardPhase,
       });
     }
 

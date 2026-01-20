@@ -63,8 +63,15 @@ export function useSignedUrl(originalUrl: string | undefined, expiresIn: number 
 /**
  * Utility function to get a signed URL for a file.
  * Returns a promise that resolves to the signed URL or original URL on failure.
+ * @param originalUrl - The public URL of the file
+ * @param expiresIn - How long the signed URL is valid (in seconds)
+ * @param downloadName - Optional filename to use when downloading
  */
-export async function getSignedFileUrl(originalUrl: string, expiresIn: number = 3600): Promise<string> {
+export async function getSignedFileUrl(
+  originalUrl: string, 
+  expiresIn: number = 3600,
+  downloadName?: string
+): Promise<string> {
   try {
     const url = new URL(originalUrl);
     const pathMatch = url.pathname.match(/\/production-files\/(.+)$/);
@@ -75,9 +82,15 @@ export async function getSignedFileUrl(originalUrl: string, expiresIn: number = 
 
     const filePath = decodeURIComponent(pathMatch[1]);
     
+    // Use download option to set the filename when downloading
+    const options: { download?: string } = {};
+    if (downloadName) {
+      options.download = downloadName;
+    }
+    
     const { data, error } = await supabase.storage
       .from('production-files')
-      .createSignedUrl(filePath, expiresIn);
+      .createSignedUrl(filePath, expiresIn, options);
 
     if (error) {
       console.error('Failed to create signed URL:', error);

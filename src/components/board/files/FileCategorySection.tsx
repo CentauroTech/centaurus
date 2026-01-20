@@ -35,7 +35,8 @@ export function FileCategorySection({
   const handleOpenFile = async (file: TaskFileRecord) => {
     setLoadingFileId(file.id);
     try {
-      const signedUrl = await getSignedFileUrl(file.url);
+      // Pass the original filename so downloads use the correct name
+      const signedUrl = await getSignedFileUrl(file.url, 3600, file.name);
       window.open(signedUrl, '_blank');
     } finally {
       setLoadingFileId(null);

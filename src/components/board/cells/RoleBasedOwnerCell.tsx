@@ -95,21 +95,30 @@ export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled 
               </Avatar>
               <span className="text-sm truncate max-w-[100px]">{owner.name}</span>
             </div>
-            <button
-              type="button"
+            <div
+              role="button"
+              tabIndex={0}
               onMouseDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                console.log('[RoleBasedOwnerCell] X button mousedown');
               }}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                console.log('[RoleBasedOwnerCell] X button clicked, calling onOwnerChange(undefined)');
                 onOwnerChange(undefined);
               }}
-              className="opacity-0 group-hover/cell:opacity-100 p-0.5 rounded hover:bg-accent transition-smooth"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onOwnerChange(undefined);
+                }
+              }}
+              className="opacity-0 group-hover/cell:opacity-100 p-1 rounded hover:bg-destructive/20 transition-smooth cursor-pointer z-50"
             >
-              <X className="w-3 h-3 text-muted-foreground" />
-            </button>
+              <X className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+            </div>
           </div>
         ) : (
           <div

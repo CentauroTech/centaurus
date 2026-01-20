@@ -454,6 +454,6 @@ export function TaskRow({
         </td>
       </tr>
 
-      <TaskDetailsPanel task={task} isOpen={isDetailsPanelOpen} onClose={() => setIsDetailsPanelOpen(false)} users={mockUsers} boardId={boardId} />
+      <TaskDetailsPanel task={task} isOpen={isDetailsPanelOpen} onClose={() => setIsDetailsPanelOpen(false)} users={mockUsers} boardId={boardId} workspaceName={workspaceName} />
     </>;
 }

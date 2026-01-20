@@ -503,18 +503,21 @@ export type Database = {
           id: string
           phase: string
           team_member_id: string
+          workspace_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
           phase: string
           team_member_id: string
+          workspace_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
           phase?: string
           team_member_id?: string
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -522,6 +525,13 @@ export type Database = {
             columns: ["team_member_id"]
             isOneToOne: false
             referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "phase_automations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]

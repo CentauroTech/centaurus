@@ -44,6 +44,7 @@ interface PhaseAutomation {
   id: string;
   phase: string;
   team_member_id: string;
+  workspace_id: string;
   created_at: string;
 }
 
@@ -56,22 +57,29 @@ interface PhaseAutomationWithMember extends PhaseAutomation {
   };
 }
 
-// Fetch all phase automations with team member details
-export function usePhaseAutomations() {
+// Fetch all phase automations with team member details, optionally filtered by workspace
+export function usePhaseAutomations(workspaceId?: string) {
   return useQuery({
-    queryKey: ['phase-automations'],
+    queryKey: ['phase-automations', workspaceId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('phase_automations')
         .select(`
           id,
           phase,
           team_member_id,
+          workspace_id,
           created_at,
           team_member:team_members(id, name, initials, color)
         `)
         .order('phase')
         .order('created_at');
+
+      if (workspaceId) {
+        query = query.eq('workspace_id', workspaceId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       
@@ -85,17 +93,24 @@ export function usePhaseAutomations() {
 }
 
 // Fetch phase automations as a map for use in phase progression
-export function usePhaseAutomationsMap() {
+export function usePhaseAutomationsMap(workspaceId?: string) {
   return useQuery({
-    queryKey: ['phase-automations-map'],
+    queryKey: ['phase-automations-map', workspaceId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('phase_automations')
         .select(`
           phase,
           team_member_id,
+          workspace_id,
           team_member:team_members(id, name)
         `);
+
+      if (workspaceId) {
+        query = query.eq('workspace_id', workspaceId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -118,10 +133,10 @@ export function useAddPhaseAutomation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ phase, teamMemberId }: { phase: string; teamMemberId: string }) => {
+    mutationFn: async ({ phase, teamMemberId, workspaceId }: { phase: string; teamMemberId: string; workspaceId: string }) => {
       const { data, error } = await supabase
         .from('phase_automations')
-        .insert({ phase, team_member_id: teamMemberId })
+        .insert({ phase, team_member_id: teamMemberId, workspace_id: workspaceId })
         .select()
         .single();
 
@@ -171,10 +186,16 @@ export function useRemovePhaseAutomation() {
 }
 
 // Helper function to fetch phase automations directly (for use in mutations)
-export async function fetchPhaseAutomations(): Promise<Map<string, string[]>> {
-  const { data, error } = await supabase
+export async function fetchPhaseAutomations(workspaceId?: string): Promise<Map<string, string[]>> {
+  let query = supabase
     .from('phase_automations')
-    .select('phase, team_member_id');
+    .select('phase, team_member_id, workspace_id');
+
+  if (workspaceId) {
+    query = query.eq('workspace_id', workspaceId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Failed to fetch phase automations:', error);

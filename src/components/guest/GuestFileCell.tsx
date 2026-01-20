@@ -52,7 +52,8 @@ export function GuestFileCell({ taskId, category, label, phase }: GuestFileCellP
     
     try {
       setDownloadingFile(file.id);
-      const signedUrl = await getSignedFileUrl(file.url);
+      // Pass the original filename so downloads use the correct name
+      const signedUrl = await getSignedFileUrl(file.url, 3600, file.name);
       window.open(signedUrl, '_blank');
     } catch (error) {
       console.error('Failed to download file:', error);

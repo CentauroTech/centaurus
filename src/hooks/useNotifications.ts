@@ -62,8 +62,7 @@ export function useNotifications() {
           )
         `)
         .eq('user_id', currentMember.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       

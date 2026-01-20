@@ -101,12 +101,10 @@ export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled 
               onMouseDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('[RoleBasedOwnerCell] X button mousedown');
               }}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('[RoleBasedOwnerCell] X button clicked, calling onOwnerChange(undefined)');
                 onOwnerChange(undefined);
               }}
               onKeyDown={(e) => {

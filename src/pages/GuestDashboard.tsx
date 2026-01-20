@@ -12,6 +12,7 @@ import { GuestTaskTable } from '@/components/guest/GuestTaskTable';
 import { GuestTaskView } from '@/components/guest/GuestTaskView';
 import { GuestCompleteDialog } from '@/components/guest/GuestCompleteDialog';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { ChatWidget } from '@/components/chat/ChatWidget';
 import { useGuestTasks, useUpdateGuestTask, GuestTask } from '@/hooks/useGuestTasks';
 import { useGuestCompletedHistory } from '@/hooks/useGuestCompletedHistory';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
@@ -451,6 +452,9 @@ export default function GuestDashboard() {
           onComplete={() => setTaskToComplete(null)}
         />
       )}
+
+      {/* Direct messaging chat widget */}
+      <ChatWidget />
     </div>
   );
 }

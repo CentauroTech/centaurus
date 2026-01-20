@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { LogOut, CheckCircle, Clock, AlertTriangle, Table, LayoutGrid, FileText, Hash } from 'lucide-react';
+import { LogOut, CheckCircle, Clock, AlertTriangle, Table, LayoutGrid, FileText, Hash, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,6 +16,7 @@ import { useGuestTasks, useUpdateGuestTask, GuestTask } from '@/hooks/useGuestTa
 import { useGuestCompletedHistory } from '@/hooks/useGuestCompletedHistory';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useAuth } from '@/hooks/useAuth';
+import { getSignedFileUrl } from '@/hooks/useSignedUrl';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import centaurusLogo from '@/assets/centaurus-logo.jpeg';
@@ -32,6 +33,21 @@ export default function GuestDashboard() {
   const [selectedTask, setSelectedTask] = useState<GuestTask | null>(null);
   const [taskToComplete, setTaskToComplete] = useState<GuestTask | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
+
+  // Handle file download with signed URL
+  const handleFileDownload = async (fileUrl: string, fileName: string, recordId: string) => {
+    try {
+      setDownloadingFileId(recordId);
+      const signedUrl = await getSignedFileUrl(fileUrl);
+      window.open(signedUrl, '_blank');
+    } catch (error) {
+      console.error('Failed to download file:', error);
+      toast.error('Failed to download file');
+    } finally {
+      setDownloadingFileId(null);
+    }
+  };
 
   // Handle deep link from notifications
   useEffect(() => {
@@ -301,6 +317,7 @@ export default function GuestDashboard() {
                         <th className="text-left p-3 font-medium">Role</th>
                         <th className="text-left p-3 font-medium">Runtime</th>
                         <th className="text-left p-3 font-medium">Completed</th>
+                        <th className="text-left p-3 font-medium">Delivered File</th>
                         <th className="text-left p-3 font-medium">Notes</th>
                       </tr>
                     </thead>
@@ -346,6 +363,28 @@ export default function GuestDashboard() {
                                 {format(new Date(record.completedAt), 'h:mm a')}
                               </p>
                             </div>
+                          </td>
+                          <td className="p-3">
+                            {record.deliveryFileUrl && record.deliveryFileName ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 gap-1.5"
+                                onClick={() => handleFileDownload(record.deliveryFileUrl!, record.deliveryFileName!, record.id)}
+                                disabled={downloadingFileId === record.id}
+                              >
+                                {downloadingFileId === record.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Download className="w-3.5 h-3.5" />
+                                )}
+                                <span className="text-xs truncate max-w-[80px]">
+                                  {record.deliveryFileName}
+                                </span>
+                              </Button>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
                           </td>
                           <td className="p-3 max-w-[200px]">
                             {record.deliveryComment ? (

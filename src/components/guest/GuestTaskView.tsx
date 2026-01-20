@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Calendar, FileText, MessageSquare, CheckCircle, Download, ExternalLink, Hash, Globe, Film, User } from 'lucide-react';
+import { Clock, Calendar, FileText, MessageSquare, CheckCircle, Download, ExternalLink, Hash, Globe, Film, User, Loader2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -12,8 +12,9 @@ import { GuestTask } from '@/hooks/useGuestTasks';
 import { useUpdateGuestTask } from '@/hooks/useGuestTasks';
 import { useComments, useAddComment } from '@/hooks/useComments';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
-import { useTaskFiles, FILE_CATEGORIES } from '@/hooks/useTaskFiles';
+import { useTaskFiles, FILE_CATEGORIES, TaskFileRecord } from '@/hooks/useTaskFiles';
 import { useTeamMembers } from '@/hooks/useWorkspaces';
+import { getSignedFileUrl } from '@/hooks/useSignedUrl';
 import { RichTextEditor, RichTextDisplay, MentionUser } from '@/components/board/comments/RichTextEditor';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -47,6 +48,7 @@ interface GuestTaskViewProps {
 export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
   const [newComment, setNewComment] = useState('');
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+  const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
 
   const { data: currentMember } = useCurrentTeamMember();
   const { data: comments, isLoading: commentsLoading } = useComments(task.id, isOpen);
@@ -85,6 +87,20 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
     return acc;
   }, {} as Record<string, typeof guestFiles>);
 
+  // Handle file download with signed URL
+  const handleFileDownload = async (file: TaskFileRecord) => {
+    try {
+      setDownloadingFile(file.id);
+      const signedUrl = await getSignedFileUrl(file.url);
+      window.open(signedUrl, '_blank');
+    } catch (error) {
+      console.error('Failed to download file:', error);
+      toast.error('Failed to download file');
+    } finally {
+      setDownloadingFile(null);
+    }
+  };
+
   const handleStatusChange = async (status: 'default' | 'working' | 'done') => {
     if (status === 'done') {
       setShowCompleteDialog(true);
@@ -106,11 +122,14 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
     const mentionedUserIds = extractMentionsFromHtml(newComment);
 
     try {
+      // Pass phase and viewer for comment isolation
       await addComment.mutateAsync({
         content: newComment,
         userId: currentMember.id,
         mentionedUserIds,
         isGuestVisible: true,
+        phase: task.fase,
+        viewerId: currentMember.id,
       });
       setNewComment('');
       toast.success('Comment sent');
@@ -353,20 +372,18 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
                 )}
               </ScrollArea>
 
-              {/* Comment input */}
-              {!isDone && (
-                <div className="p-3 border-t bg-card">
-                  <RichTextEditor
-                    content={newComment}
-                    onChange={setNewComment}
-                    onSend={handleSendComment}
-                    placeholder="Send a message to the team... Use @ to mention"
-                    isSending={addComment.isPending}
-                    mentionUsers={mentionUsers}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Ctrl+Enter to send</p>
-                </div>
-              )}
+              {/* Comment input - always visible so team can communicate even after done */}
+              <div className="p-3 border-t bg-card">
+                <RichTextEditor
+                  content={newComment}
+                  onChange={setNewComment}
+                  onSend={handleSendComment}
+                  placeholder="Send a message to the team... Use @ to mention"
+                  isSending={addComment.isPending}
+                  mentionUsers={mentionUsers}
+                />
+                <p className="text-xs text-muted-foreground mt-1">Ctrl+Enter to send</p>
+              </div>
             </TabsContent>
 
             <TabsContent value="files" className="flex-1 m-0 overflow-hidden">
@@ -404,19 +421,27 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8"
-                                    onClick={() => window.open(file.url, '_blank')}
+                                    onClick={() => handleFileDownload(file)}
+                                    disabled={downloadingFile === file.id}
                                   >
-                                    <ExternalLink className="w-4 h-4" />
+                                    {downloadingFile === file.id ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <ExternalLink className="w-4 h-4" />
+                                    )}
                                   </Button>
                                   <Button
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8"
-                                    asChild
+                                    onClick={() => handleFileDownload(file)}
+                                    disabled={downloadingFile === file.id}
                                   >
-                                    <a href={file.url} download={file.name}>
+                                    {downloadingFile === file.id ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
                                       <Download className="w-4 h-4" />
-                                    </a>
+                                    )}
                                   </Button>
                                 </div>
                               </div>

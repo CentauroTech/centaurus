@@ -258,11 +258,15 @@ export function useCompleteGuestTask() {
       deliveryComment,
       phase,
       rolePerformed,
+      deliveryFileUrl,
+      deliveryFileName,
     }: { 
       taskId: string; 
       deliveryComment?: string;
       phase?: string;
       rolePerformed?: string;
+      deliveryFileUrl?: string;
+      deliveryFileName?: string;
     }) => {
       if (!currentMember?.id) throw new Error('User not authenticated');
 
@@ -328,7 +332,7 @@ export function useCompleteGuestTask() {
         }
       }
 
-      // Insert permanent completion record for invoice history
+      // Insert permanent completion record for invoice history (with file info)
       const { error: historyError } = await supabase
         .from('guest_completed_tasks')
         .upsert({
@@ -344,6 +348,8 @@ export function useCompleteGuestTask() {
           locked_runtime: taskDetails?.locked_runtime || null,
           cantidad_episodios: taskDetails?.cantidad_episodios || null,
           workspace_name: workspaceName || null,
+          delivery_file_url: deliveryFileUrl || null,
+          delivery_file_name: deliveryFileName || null,
         }, {
           onConflict: 'task_id,team_member_id,phase,role_performed',
         });

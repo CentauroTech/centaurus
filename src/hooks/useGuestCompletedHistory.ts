@@ -15,6 +15,8 @@ export interface GuestCompletedTask {
   lockedRuntime?: string;
   cantidadEpisodios?: number;
   workspaceName?: string;
+  deliveryFileUrl?: string;
+  deliveryFileName?: string;
 }
 
 export function useGuestCompletedHistory() {
@@ -46,6 +48,8 @@ export function useGuestCompletedHistory() {
         lockedRuntime: record.locked_runtime,
         cantidadEpisodios: record.cantidad_episodios,
         workspaceName: record.workspace_name,
+        deliveryFileUrl: (record as any).delivery_file_url,
+        deliveryFileName: (record as any).delivery_file_name,
       }));
     },
     enabled: !!currentMember?.id,

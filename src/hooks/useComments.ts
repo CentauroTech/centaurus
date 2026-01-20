@@ -10,6 +10,8 @@ export interface CommentWithUser {
   created_at: string;
   updated_at: string;
   is_guest_visible?: boolean;
+  phase?: string;
+  viewer_id?: string;
   user: {
     id: string;
     name: string;
@@ -59,12 +61,16 @@ export function useAddComment(taskId: string, boardId: string) {
       content, 
       userId, 
       mentionedUserIds = [],
-      isGuestVisible = false 
+      isGuestVisible = false,
+      phase,
+      viewerId,
     }: { 
       content: string; 
       userId: string; 
       mentionedUserIds?: string[];
       isGuestVisible?: boolean;
+      phase?: string;
+      viewerId?: string;
     }) => {
       // Insert the comment
       // Comments from guests are always guest-visible
@@ -78,6 +84,8 @@ export function useAddComment(taskId: string, boardId: string) {
           user_id: userId,
           content,
           is_guest_visible: shouldBeGuestVisible,
+          phase: phase || null,
+          viewer_id: viewerId || null,
         })
         .select()
         .single();

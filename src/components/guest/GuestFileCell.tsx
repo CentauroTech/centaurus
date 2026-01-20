@@ -1,7 +1,10 @@
-import { FileText, Download, ExternalLink } from 'lucide-react';
+import { FileText, Download, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTaskFiles, TaskFileRecord } from '@/hooks/useTaskFiles';
+import { getSignedFileUrl } from '@/hooks/useSignedUrl';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
 interface GuestFileCellProps {
   taskId: string;
@@ -32,6 +35,7 @@ const getDisplayCategory = (requestedCategory: string, phase?: string): string =
 
 export function GuestFileCell({ taskId, category, label, phase }: GuestFileCellProps) {
   const { data: files, isLoading } = useTaskFiles(taskId, true);
+  const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
   
   // Determine which category to display based on phase
   const displayCategory = getDisplayCategory(category, phase);
@@ -40,6 +44,23 @@ export function GuestFileCell({ taskId, category, label, phase }: GuestFileCellP
   const categoryFiles = files?.filter(
     f => f.is_guest_accessible && f.file_category === displayCategory
   ) || [];
+
+  // Handle file download with signed URL
+  const handleDownload = async (file: TaskFileRecord, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    try {
+      setDownloadingFile(file.id);
+      const signedUrl = await getSignedFileUrl(file.url);
+      window.open(signedUrl, '_blank');
+    } catch (error) {
+      console.error('Failed to download file:', error);
+      toast.error('Failed to download file');
+    } finally {
+      setDownloadingFile(null);
+    }
+  };
 
   if (isLoading) {
     return <span className="text-muted-foreground text-xs">Loading...</span>;
@@ -61,12 +82,14 @@ export function GuestFileCell({ taskId, category, label, phase }: GuestFileCellP
             variant="ghost"
             size="sm"
             className="h-7 px-2 gap-1.5 text-xs"
-            onClick={(e) => {
-              e.stopPropagation();
-              window.open(firstFile.url, '_blank');
-            }}
+            onClick={(e) => handleDownload(firstFile, e)}
+            disabled={downloadingFile === firstFile.id}
           >
-            <FileText className="w-3.5 h-3.5 text-primary" />
+            {downloadingFile === firstFile.id ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+            ) : (
+              <FileText className="w-3.5 h-3.5 text-primary" />
+            )}
             <span className="truncate max-w-[60px]">{firstFile.name.split('.')[0]}</span>
             {hasMore && (
               <span className="text-muted-foreground">+{categoryFiles.length - 1}</span>
@@ -83,22 +106,28 @@ export function GuestFileCell({ taskId, category, label, phase }: GuestFileCellP
                     variant="ghost"
                     size="icon"
                     className="h-5 w-5"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.open(file.url, '_blank');
-                    }}
+                    onClick={(e) => handleDownload(file, e)}
+                    disabled={downloadingFile === file.id}
                   >
-                    <ExternalLink className="w-3 h-3" />
+                    {downloadingFile === file.id ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <ExternalLink className="w-3 h-3" />
+                    )}
                   </Button>
-                  <a 
-                    href={file.url} 
-                    download={file.name}
-                    onClick={(e) => e.stopPropagation()}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-5 w-5"
+                    onClick={(e) => handleDownload(file, e)}
+                    disabled={downloadingFile === file.id}
                   >
-                    <Button variant="ghost" size="icon" className="h-5 w-5">
+                    {downloadingFile === file.id ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
                       <Download className="w-3 h-3" />
-                    </Button>
-                  </a>
+                    )}
+                  </Button>
                 </div>
               </div>
             ))}

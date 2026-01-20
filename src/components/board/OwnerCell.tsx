@@ -73,7 +73,13 @@ export function OwnerCell({ owner, onOwnerChange, disabled = false }: OwnerCellP
             <span className="text-sm text-inherit">{owner.name}</span>
           </button>
           <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               onOwnerChange(undefined);
             }}

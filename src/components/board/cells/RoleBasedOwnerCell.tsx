@@ -96,7 +96,13 @@ export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled 
               <span className="text-sm truncate max-w-[100px]">{owner.name}</span>
             </button>
             <button
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 onOwnerChange(undefined);
               }}

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { User } from '@/types/board';
 import { fetchPhaseAutomations } from '@/hooks/usePhaseAutomations';
+import { getLocalDateString } from '@/lib/businessDays';
 
 // Phase order for reference
 const PHASE_ORDER = [
@@ -221,7 +222,7 @@ export function useBulkMoveToPhase(boardId: string, currentUserId?: string | nul
       }
 
       // Move all tasks
-      const currentDate = new Date().toISOString().split('T')[0];
+      const currentDate = getLocalDateString();
       const now = new Date().toISOString();
 
       // First, set date_delivered on all tasks before moving (stamps delivery from current board)
@@ -349,7 +350,7 @@ export function useMoveTaskToPhase(boardId: string, currentUserId?: string | nul
       }
 
       // Move the task
-      const currentDate = new Date().toISOString().split('T')[0];
+      const currentDate = getLocalDateString();
       const now = new Date().toISOString();
 
       // First, set date_delivered on current task before moving (stamps delivery from current board)
@@ -445,7 +446,7 @@ export function useBulkUpdateField(boardId: string, currentUserId?: string | nul
       
       // Auto-set date_delivered when status is 'done'
       if (field === 'status' && value === 'done') {
-        updates.date_delivered = new Date().toISOString().split('T')[0];
+        updates.date_delivered = getLocalDateString();
       }
       
       const { error } = await supabase

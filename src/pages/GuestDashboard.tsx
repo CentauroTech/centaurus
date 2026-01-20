@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { LogOut, CheckCircle, Clock, AlertTriangle, Table, LayoutGrid, FileText, Hash, Download, Loader2, MessageSquare } from 'lucide-react';
+import { LogOut, CheckCircle, Clock, AlertTriangle, Table, LayoutGrid, FileText, Hash, Download, Loader2, MessageSquare, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { GuestTaskTable } from '@/components/guest/GuestTaskTable';
 import { GuestTaskView } from '@/components/guest/GuestTaskView';
 import { GuestCompleteDialog } from '@/components/guest/GuestCompleteDialog';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { InvoicesTab } from '@/components/guest/InvoicesTab';
 import { ChatWidget } from '@/components/chat/ChatWidget';
 import { useGuestTasks, useUpdateGuestTask, GuestTask } from '@/hooks/useGuestTasks';
 import { useGuestCompletedHistory } from '@/hooks/useGuestCompletedHistory';
@@ -223,6 +224,10 @@ export default function GuestDashboard() {
             <TabsTrigger value="completed" className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
               Completed ({completedHistory?.length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="invoices" className="flex items-center gap-2">
+              <Receipt className="w-4 h-4" />
+              Invoices
             </TabsTrigger>
           </TabsList>
 

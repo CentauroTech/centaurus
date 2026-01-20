@@ -392,6 +392,168 @@ export type Database = {
           },
         ]
       }
+      invoice_items: {
+        Row: {
+          completed_task_id: string | null
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          phase: string | null
+          quantity: number
+          role_performed: string | null
+          runtime: string | null
+          total_price: number
+          unit_price: number
+          work_order_number: string | null
+        }
+        Insert: {
+          completed_task_id?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          phase?: string | null
+          quantity?: number
+          role_performed?: string | null
+          runtime?: string | null
+          total_price?: number
+          unit_price?: number
+          work_order_number?: string | null
+        }
+        Update: {
+          completed_task_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          phase?: string | null
+          quantity?: number
+          role_performed?: string | null
+          runtime?: string | null
+          total_price?: number
+          unit_price?: number
+          work_order_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_completed_task_id_fkey"
+            columns: ["completed_task_id"]
+            isOneToOne: false
+            referencedRelation: "guest_completed_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          approved_at: string | null
+          approved_by_id: string | null
+          billing_address: string | null
+          billing_bank_account: string | null
+          billing_bank_name: string | null
+          billing_bank_routing: string | null
+          billing_city: string | null
+          billing_country: string | null
+          billing_name: string
+          billing_notes: string | null
+          billing_tax_id: string | null
+          created_at: string
+          currency: string | null
+          due_date: string | null
+          id: string
+          invoice_date: string
+          invoice_number: string
+          payment_instructions: string | null
+          rejection_reason: string | null
+          status: string
+          subtotal: number
+          tax_amount: number | null
+          tax_rate: number | null
+          team_member_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by_id?: string | null
+          billing_address?: string | null
+          billing_bank_account?: string | null
+          billing_bank_name?: string | null
+          billing_bank_routing?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_name: string
+          billing_notes?: string | null
+          billing_tax_id?: string | null
+          created_at?: string
+          currency?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          payment_instructions?: string | null
+          rejection_reason?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number | null
+          tax_rate?: number | null
+          team_member_id: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by_id?: string | null
+          billing_address?: string | null
+          billing_bank_account?: string | null
+          billing_bank_name?: string | null
+          billing_bank_routing?: string | null
+          billing_city?: string | null
+          billing_country?: string | null
+          billing_name?: string
+          billing_notes?: string | null
+          billing_tax_id?: string | null
+          created_at?: string
+          currency?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          payment_instructions?: string | null
+          rejection_reason?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number | null
+          tax_rate?: number | null
+          team_member_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_approved_by_id_fkey"
+            columns: ["approved_by_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           bell_assignments: boolean

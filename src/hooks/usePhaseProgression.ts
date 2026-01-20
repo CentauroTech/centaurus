@@ -26,10 +26,11 @@ const PHASE_ORDER = [
 async function applyPhaseAutomation(
   taskId: string,
   normalizedPhase: string,
+  workspaceId: string,
   currentUserId: string | null | undefined
 ): Promise<void> {
-  // Fetch phase automations from database
-  const phaseAutomations = await fetchPhaseAutomations();
+  // Fetch phase automations from database for the specific workspace
+  const phaseAutomations = await fetchPhaseAutomations(workspaceId);
   const assigneeIds = phaseAutomations.get(normalizedPhase);
   
   if (!assigneeIds || assigneeIds.length === 0) return;
@@ -277,8 +278,8 @@ export function useMoveToNextPhase(boardId: string, currentUserId?: string | nul
 
       if (updateError) throw updateError;
 
-      // 8. Apply phase automation (assign people based on phase)
-      await applyPhaseAutomation(taskId, nextPhase, currentUserId);
+      // 8. Apply phase automation (assign people based on phase and workspace)
+      await applyPhaseAutomation(taskId, nextPhase, currentBoard.workspace_id, currentUserId);
 
       // 9. Log the date_assigned change for new board with semantic type
       await supabase.from('activity_log').insert({

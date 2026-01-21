@@ -10,6 +10,7 @@ import { DraggableColumnHeader } from './DraggableColumnHeader';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
+import { useColumnFilters } from '@/contexts/ColumnFiltersContext';
 
 interface VirtualizedTaskGroupProps {
   group: TaskGroupType;
@@ -26,6 +27,7 @@ interface VirtualizedTaskGroupProps {
   onReorderColumns: (activeId: string, overId: string) => void;
   canDeleteTasks?: boolean;
   taskViewersMap?: Map<string, string[]>;
+  allBoardTasks: Task[];
 }
 
 // How many tasks to show per page
@@ -46,11 +48,13 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
   onReorderColumns,
   canDeleteTasks = true,
   taskViewersMap,
+  allBoardTasks,
 }: VirtualizedTaskGroupProps) {
   const [isCollapsed, setIsCollapsed] = useState(group.isCollapsed ?? false);
   const [groupName, setGroupName] = useState(group.name);
   const [visibleCount, setVisibleCount] = useState(TASKS_PER_PAGE);
   const { selectedTaskIds, selectAll, clearSelection } = useTaskSelection();
+  const { filterTasks } = useColumnFilters();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -74,7 +78,12 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
     }
   }, [groupName, group.name, onUpdateGroup]);
 
-  const groupTaskIds = useMemo(() => group.tasks.map(t => t.id), [group.tasks]);
+  // Apply filters to group tasks
+  const filteredTasks = useMemo(() => {
+    return filterTasks(group.tasks);
+  }, [group.tasks, filterTasks]);
+
+  const groupTaskIds = useMemo(() => filteredTasks.map(t => t.id), [filteredTasks]);
   const allSelected = groupTaskIds.length > 0 && groupTaskIds.every(id => selectedTaskIds.has(id));
   const someSelected = groupTaskIds.some(id => selectedTaskIds.has(id)) && !allSelected;
 
@@ -90,15 +99,15 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
 
   // Paginated tasks
   const visibleTasks = useMemo(() => {
-    return group.tasks.slice(0, visibleCount);
-  }, [group.tasks, visibleCount]);
+    return filteredTasks.slice(0, visibleCount);
+  }, [filteredTasks, visibleCount]);
 
-  const hasMore = visibleCount < group.tasks.length;
-  const remainingCount = group.tasks.length - visibleCount;
+  const hasMore = visibleCount < filteredTasks.length;
+  const remainingCount = filteredTasks.length - visibleCount;
 
   const loadMore = useCallback(() => {
-    setVisibleCount(prev => Math.min(prev + TASKS_PER_PAGE, group.tasks.length));
-  }, [group.tasks.length]);
+    setVisibleCount(prev => Math.min(prev + TASKS_PER_PAGE, filteredTasks.length));
+  }, [filteredTasks.length]);
 
   const showLess = useCallback(() => {
     setVisibleCount(TASKS_PER_PAGE);
@@ -133,7 +142,10 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
         />
         
         <span className="text-sm text-muted-foreground">
-          {group.tasks.length} {group.tasks.length === 1 ? 'task' : 'tasks'}
+          {filteredTasks.length !== group.tasks.length 
+            ? `${filteredTasks.length} of ${group.tasks.length} tasks`
+            : `${group.tasks.length} ${group.tasks.length === 1 ? 'task' : 'tasks'}`
+          }
           {hasMore && ` (showing ${visibleCount})`}
         </span>
 
@@ -173,6 +185,7 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
                         column={column}
                         index={index}
                         isLocked={isLocked}
+                        allTasks={allBoardTasks}
                       />
                     ))}
                   </SortableContext>

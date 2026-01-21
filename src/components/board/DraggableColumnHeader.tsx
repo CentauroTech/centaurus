@@ -2,16 +2,18 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 import { GripVertical } from 'lucide-react';
-import { ColumnConfig } from '@/types/board';
-import { restrictToHorizontalAxis } from '@dnd-kit/modifiers';
+import { ColumnConfig, Task } from '@/types/board';
+import { ColumnFilterPopover } from './ColumnFilterPopover';
+import { useColumnFilters, ColumnFilter } from '@/contexts/ColumnFiltersContext';
 
 interface DraggableColumnHeaderProps {
   column: ColumnConfig;
   index: number;
   isLocked: boolean;
+  allTasks: Task[];
 }
 
-export function DraggableColumnHeader({ column, index, isLocked }: DraggableColumnHeaderProps) {
+export function DraggableColumnHeader({ column, index, isLocked, allTasks }: DraggableColumnHeaderProps) {
   const {
     attributes,
     listeners,
@@ -23,6 +25,9 @@ export function DraggableColumnHeader({ column, index, isLocked }: DraggableColu
     id: column.id,
     disabled: isLocked || index <= 2, // First 3 columns (privacy, WO#, name) are sticky and not draggable
   });
+
+  const { filters, setFilter, clearFilter } = useColumnFilters();
+  const activeFilter = filters[column.id];
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -38,6 +43,17 @@ export function DraggableColumnHeader({ column, index, isLocked }: DraggableColu
         ? 72  // after checkbox + drag + privacy (48 + 24)
         : 296  // after checkbox + drag + privacy + name (48 + 24 + 224)
     : undefined;
+
+  // Determine if this column type supports filtering
+  const supportsFiltering = !['privacy', 'time-tracked', 'last-updated', 'file'].includes(column.type);
+
+  const handleSetFilter = (value: string | string[] | null, type: ColumnFilter['type']) => {
+    setFilter(column.id, column.field, value, type);
+  };
+
+  const handleClearFilter = () => {
+    clearFilter(column.id);
+  };
 
   return (
     <th
@@ -65,7 +81,16 @@ export function DraggableColumnHeader({ column, index, isLocked }: DraggableColu
             <GripVertical className="w-3 h-3" />
           </span>
         )}
-        <span>{column.label}</span>
+        <span className="flex-1">{column.label}</span>
+        {supportsFiltering && (
+          <ColumnFilterPopover
+            column={column}
+            tasks={allTasks}
+            activeFilter={activeFilter}
+            onSetFilter={handleSetFilter}
+            onClearFilter={handleClearFilter}
+          />
+        )}
       </div>
     </th>
   );

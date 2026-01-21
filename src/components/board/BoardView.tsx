@@ -1,13 +1,15 @@
 import { useState, useMemo } from 'react';
-import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy } from 'lucide-react';
+import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy, X } from 'lucide-react';
 import { addBusinessDays } from '@/lib/businessDays';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { TaskGroup } from './TaskGroup';
 import { Task, User, TaskGroup as TaskGroupType } from '@/types/board';
 import { BulkActionsToolbar } from './BulkActionsToolbar';
 import { MultipleWODialog } from './MultipleWODialog';
 import { TaskSelectionProvider } from '@/contexts/TaskSelectionContext';
 import { BulkEditProvider, BulkUpdateParams } from '@/contexts/BulkEditContext';
+import { ColumnFiltersProvider, useColumnFilters } from '@/contexts/ColumnFiltersContext';
 import { useAddTaskGroup, useUpdateTaskGroup, useDeleteTaskGroup, useAddTask, useUpdateTask, useDeleteTask, useWorkspaces } from '@/hooks/useWorkspaces';
 import { useMoveToNextPhase } from '@/hooks/usePhaseProgression';
 import { useBulkDuplicate, useBulkDelete, useBulkMoveToPhase, useMoveTaskToPhase, useBulkUpdateField, AVAILABLE_PHASES } from '@/hooks/useBulkTaskActions';
@@ -174,6 +176,11 @@ function BoardViewContent({
       }))
     }));
   }, [board.groups, board.teamMemberMap, boardPhase]);
+
+  // Flatten all tasks for column filter unique values
+  const allBoardTasks = useMemo(() => {
+    return transformedGroups.flatMap(g => g.tasks);
+  }, [transformedGroups]);
 
   // Handle task update from TaskRow - convert camelCase to snake_case
   const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
@@ -464,23 +471,19 @@ function BoardViewContent({
       displayField: params.displayField
     });
   };
+  const { activeFilterCount, clearAllFilters } = useColumnFilters();
+
   return <BulkEditProvider onBulkUpdate={handleBulkUpdate}>
     <div className="flex-1 flex flex-col p-6 overflow-hidden">
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-6 flex-shrink-0 px-[10px]">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2">
-            <Filter className="w-4 h-4" />
-            Filter
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Users className="w-4 h-4" />
-            Person
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Calendar className="w-4 h-4" />
-            Due date
-          </Button>
+          {activeFilterCount > 0 && (
+            <Button variant="outline" size="sm" className="gap-2" onClick={clearAllFilters}>
+              <X className="w-4 h-4" />
+              Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -563,7 +566,7 @@ function BoardViewContent({
       <div className="flex-1 overflow-auto custom-scrollbar">
       {/* Task Groups */}
         <div className="space-y-6 min-w-max">
-          {transformedGroups.map(group => <TaskGroup key={group.id} group={group} onUpdateTask={handleUpdateTask} onDeleteTask={deleteTask} onAddTask={() => addTask(group.id)} onUpdateGroup={updates => updateGroup(group.id, updates)} onDeleteGroup={() => deleteGroup(group.id)} onSendToPhase={handleSendTaskToPhase} boardId={boardId} boardName={board.name} workspaceName={workspaceName} columns={columns} isLocked={isLocked || !canReorderColumns} onReorderColumns={reorderColumns} canDeleteTasks={canDeleteTasks} canDeleteGroups={canDeleteTasks} />)}
+          {transformedGroups.map(group => <TaskGroup key={group.id} group={group} onUpdateTask={handleUpdateTask} onDeleteTask={deleteTask} onAddTask={() => addTask(group.id)} onUpdateGroup={updates => updateGroup(group.id, updates)} onDeleteGroup={() => deleteGroup(group.id)} onSendToPhase={handleSendTaskToPhase} boardId={boardId} boardName={board.name} workspaceName={workspaceName} columns={columns} isLocked={isLocked || !canReorderColumns} onReorderColumns={reorderColumns} canDeleteTasks={canDeleteTasks} canDeleteGroups={canDeleteTasks} allBoardTasks={allBoardTasks} />)}
         </div>
 
         {/* Empty State */}
@@ -591,7 +594,11 @@ export function BoardView({
   board,
   boardId
 }: BoardViewProps) {
-  return <TaskSelectionProvider>
-      <BoardViewContent board={board} boardId={boardId} />
-    </TaskSelectionProvider>;
+  return (
+    <TaskSelectionProvider>
+      <ColumnFiltersProvider>
+        <BoardViewContent board={board} boardId={boardId} />
+      </ColumnFiltersProvider>
+    </TaskSelectionProvider>
+  );
 }

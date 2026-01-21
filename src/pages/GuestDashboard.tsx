@@ -133,7 +133,7 @@ export default function GuestDashboard() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowGuide(true)}>
+            <Button variant="outline" size="sm" onClick={() => setShowGuide(true)} className="bg-red-500 text-white border-red-500 hover:bg-red-600">
               <BookOpen className="w-4 h-4 mr-2" />
               View Guide
             </Button>

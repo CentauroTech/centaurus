@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { CheckCircle2, FileText, Loader2, LogOut } from 'lucide-react';
@@ -23,7 +23,8 @@ export default function GuestOnboarding() {
   } = useBillingProfile();
   const createProfile = useCreateBillingProfile();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('profile');
-  const [hasCompletedProfile, setHasCompletedProfile] = useState(false);
+  // Use a ref to track profile completion - this prevents race condition with useEffect
+  const hasCompletedProfileRef = useRef(false);
   
   const handleSignOut = async () => {
     await signOut();
@@ -38,7 +39,7 @@ export default function GuestOnboarding() {
     if (isLoadingProfile) return;
     
     // If user just completed the profile form in this session, don't redirect
-    if (hasCompletedProfile) return;
+    if (hasCompletedProfileRef.current) return;
     
     // If user already has a profile (navigated here directly)
     if (existingProfile && currentStep === 'profile') {
@@ -50,7 +51,7 @@ export default function GuestOnboarding() {
         setCurrentStep('guide');
       }
     }
-  }, [existingProfile, isLoadingProfile, currentStep, hasCompletedProfile, navigate]);
+  }, [existingProfile, isLoadingProfile, currentStep, navigate]);
 
   if (isLoadingProfile) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
@@ -92,10 +93,10 @@ export default function GuestOnboarding() {
       });
       console.log('[GuestOnboarding] Profile created, setting step to guide');
       toast.success('Billing profile saved successfully!');
-      // Mark that we completed the profile in this session to prevent redirect
-      setHasCompletedProfile(true);
+      // Mark that we completed the profile in this session to prevent redirect - using ref to avoid race condition
+      hasCompletedProfileRef.current = true;
       setCurrentStep('guide');
-      console.log('[GuestOnboarding] currentStep set to guide, hasCompletedProfile set to true');
+      console.log('[GuestOnboarding] currentStep set to guide, hasCompletedProfileRef set to true');
     } catch (error: any) {
       console.error('[GuestOnboarding] Error creating profile:', error);
       toast.error(error.message || 'Failed to save profile');

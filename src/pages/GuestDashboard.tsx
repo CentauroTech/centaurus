@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { LogOut, CheckCircle, Clock, AlertTriangle, Table, LayoutGrid, FileText, Hash, Download, Loader2, MessageSquare, Receipt } from 'lucide-react';
+import { LogOut, CheckCircle, Clock, AlertTriangle, Table, LayoutGrid, FileText, Hash, Download, Loader2, MessageSquare, Receipt, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toggle } from '@/components/ui/toggle';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { GuestTaskCard } from '@/components/guest/GuestTaskCard';
 import { GuestTaskTable } from '@/components/guest/GuestTaskTable';
 import { GuestTaskView } from '@/components/guest/GuestTaskView';
@@ -14,6 +15,7 @@ import { GuestCompleteDialog } from '@/components/guest/GuestCompleteDialog';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { InvoicesTab } from '@/components/guest/InvoicesTab';
 import { ChatWidget } from '@/components/chat/ChatWidget';
+import { PlatformGuide } from '@/components/guest/PlatformGuide';
 import { useGuestTasks, useUpdateGuestTask, GuestTask } from '@/hooks/useGuestTasks';
 import { useGuestCompletedHistory } from '@/hooks/useGuestCompletedHistory';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
@@ -49,6 +51,7 @@ export default function GuestDashboard() {
   const [taskToComplete, setTaskToComplete] = useState<GuestTask | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   // Handle file download with signed URL
   const handleFileDownload = async (fileUrl: string, fileName: string, recordId: string) => {
@@ -130,6 +133,10 @@ export default function GuestDashboard() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowGuide(true)}>
+              <BookOpen className="w-4 h-4 mr-2" />
+              View Guide
+            </Button>
             <NotificationBell />
             
             <div className="flex items-center gap-2 pl-3 border-l">
@@ -471,6 +478,19 @@ export default function GuestDashboard() {
           onComplete={() => setTaskToComplete(null)}
         />
       )}
+
+      {/* Platform Guide Dialog */}
+      <Dialog open={showGuide} onOpenChange={setShowGuide}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Platform Guide</DialogTitle>
+          </DialogHeader>
+          <PlatformGuide 
+            onComplete={() => setShowGuide(false)} 
+            onSkip={() => setShowGuide(false)} 
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Direct messaging chat widget */}
       <ChatWidget />

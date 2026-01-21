@@ -10,37 +10,41 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCreateBillingProfile, useBillingProfile } from '@/hooks/useBillingProfile';
 import { cn } from '@/lib/utils';
 import centaurusLogo from '@/assets/centaurus-logo.jpeg';
-
 type OnboardingStep = 'profile' | 'guide';
-
 export default function GuestOnboarding() {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-  const { data: existingProfile, isLoading: isLoadingProfile } = useBillingProfile();
+  const {
+    user,
+    signOut
+  } = useAuth();
+  const {
+    data: existingProfile,
+    isLoading: isLoadingProfile
+  } = useBillingProfile();
   const createProfile = useCreateBillingProfile();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('profile');
-
   const handleSignOut = async () => {
     await signOut();
-    navigate('/auth', { replace: true });
+    navigate('/auth', {
+      replace: true
+    });
   };
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // If profile already exists, skip to guide or redirect
   if (isLoadingProfile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+    return <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+      </div>;
   }
 
   // If user already has a profile, they shouldn't be on this page
   if (existingProfile) {
-    navigate('/guest-dashboard', { replace: true });
+    navigate('/guest-dashboard', {
+      replace: true
+    });
     return null;
   }
-
   const handleProfileSubmit = async (data: BillingFormData) => {
     setIsSubmitting(true);
     try {
@@ -71,7 +75,7 @@ export default function GuestOnboarding() {
         businessPostalCode: data.businessPostalCode,
         businessCountry: data.businessCountry,
         businessId: data.businessId,
-        businessPhone: data.businessPhone,
+        businessPhone: data.businessPhone
       });
       toast.success('Billing profile saved successfully!');
       setCurrentStep('guide');
@@ -81,49 +85,43 @@ export default function GuestOnboarding() {
       setIsSubmitting(false);
     }
   };
-
   const handleGuideComplete = () => {
     // Store that user has seen the guide
     localStorage.setItem('guest-guide-completed', 'true');
-    navigate('/guest-dashboard', { replace: true });
+    navigate('/guest-dashboard', {
+      replace: true
+    });
   };
-
   const handleSkipGuide = () => {
     localStorage.setItem('guest-guide-completed', 'true');
-    navigate('/guest-dashboard', { replace: true });
+    navigate('/guest-dashboard', {
+      replace: true
+    });
   };
-
-  const steps = [
-    { id: 'profile', label: 'Billing Profile', icon: FileText },
-    { id: 'guide', label: 'Platform Guide', icon: CheckCircle2 },
-  ];
-
+  const steps = [{
+    id: 'profile',
+    label: 'Billing Profile',
+    icon: FileText
+  }, {
+    id: 'guide',
+    label: 'Platform Guide',
+    icon: CheckCircle2
+  }];
   const currentStepIndex = steps.findIndex(s => s.id === currentStep);
-  const progress = ((currentStepIndex + 1) / steps.length) * 100;
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+  const progress = (currentStepIndex + 1) / steps.length * 100;
+  return <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       {/* Header */}
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="container max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <img
-                src={centaurusLogo}
-                alt="Centaurus"
-                className="h-10 w-10 rounded-lg object-cover"
-              />
+              <img src={centaurusLogo} alt="Centaurus" className="h-10 w-10 rounded-lg object-cover" />
               <div>
                 <h1 className="text-xl font-semibold">Welcome to Centaurus</h1>
                 <p className="text-sm text-muted-foreground">Let's set up your profile</p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSignOut}
-              className="text-muted-foreground hover:text-foreground"
-            >
+            <Button variant="ghost" size="sm" onClick={handleSignOut} className="bg-[#e00000] text-white">
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
@@ -136,89 +134,47 @@ export default function GuestOnboarding() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             {steps.map((step, index) => {
-              const isActive = step.id === currentStep;
-              const isCompleted = index < currentStepIndex;
-              const Icon = step.icon;
-
-              return (
-                <div
-                  key={step.id}
-                  className={cn(
-                    "flex items-center gap-2",
-                    index < steps.length - 1 && "flex-1"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all",
-                      isActive && "border-primary bg-primary text-primary-foreground",
-                      isCompleted && "border-primary bg-primary/20 text-primary",
-                      !isActive && !isCompleted && "border-muted-foreground/30 text-muted-foreground"
-                    )}
-                  >
+            const isActive = step.id === currentStep;
+            const isCompleted = index < currentStepIndex;
+            const Icon = step.icon;
+            return <div key={step.id} className={cn("flex items-center gap-2", index < steps.length - 1 && "flex-1")}>
+                  <div className={cn("flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all", isActive && "border-primary bg-primary text-primary-foreground", isCompleted && "border-primary bg-primary/20 text-primary", !isActive && !isCompleted && "border-muted-foreground/30 text-muted-foreground")}>
                     <Icon className="h-5 w-5" />
                   </div>
-                  <span
-                    className={cn(
-                      "text-sm font-medium hidden sm:inline",
-                      isActive && "text-primary",
-                      !isActive && "text-muted-foreground"
-                    )}
-                  >
+                  <span className={cn("text-sm font-medium hidden sm:inline", isActive && "text-primary", !isActive && "text-muted-foreground")}>
                     {step.label}
                   </span>
-                  {index < steps.length - 1 && (
-                    <div
-                      className={cn(
-                        "flex-1 h-0.5 mx-4",
-                        isCompleted ? "bg-primary" : "bg-muted"
-                      )}
-                    />
-                  )}
-                </div>
-              );
-            })}
+                  {index < steps.length - 1 && <div className={cn("flex-1 h-0.5 mx-4", isCompleted ? "bg-primary" : "bg-muted")} />}
+                </div>;
+          })}
           </div>
           <Progress value={progress} className="h-1" />
         </div>
 
         {/* Step Content */}
         <div className="bg-card rounded-xl border shadow-sm p-6 md:p-8">
-          {currentStep === 'profile' && (
-            <div className="space-y-6">
+          {currentStep === 'profile' && <div className="space-y-6">
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold mb-2">Complete Your Billing Profile</h2>
                 <p className="text-muted-foreground max-w-lg mx-auto">
                   This information will be used for all your invoices. You can edit it until you submit your first invoice.
                 </p>
               </div>
-              <BillingProfileForm
-                defaultValues={{
-                  email: user?.email || '',
-                }}
-                onSubmit={handleProfileSubmit}
-                isLoading={isSubmitting}
-                submitLabel="Save & Continue"
-              />
-            </div>
-          )}
+              <BillingProfileForm defaultValues={{
+            email: user?.email || ''
+          }} onSubmit={handleProfileSubmit} isLoading={isSubmitting} submitLabel="Save & Continue" />
+            </div>}
 
-          {currentStep === 'guide' && (
-            <div className="space-y-6">
+          {currentStep === 'guide' && <div className="space-y-6">
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold mb-2">Learn How to Use the Portal</h2>
                 <p className="text-muted-foreground max-w-lg mx-auto">
                   A quick guide to help you navigate tasks, completions, and invoicing.
                 </p>
               </div>
-              <PlatformGuide
-                onComplete={handleGuideComplete}
-                onSkip={handleSkipGuide}
-              />
-            </div>
-          )}
+              <PlatformGuide onComplete={handleGuideComplete} onSkip={handleSkipGuide} />
+            </div>}
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }

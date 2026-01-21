@@ -516,6 +516,7 @@ export type Database = {
       }
       invoice_items: {
         Row: {
+          branch: string | null
           completed_task_id: string | null
           created_at: string
           description: string
@@ -530,6 +531,7 @@ export type Database = {
           work_order_number: string | null
         }
         Insert: {
+          branch?: string | null
           completed_task_id?: string | null
           created_at?: string
           description: string
@@ -544,6 +546,7 @@ export type Database = {
           work_order_number?: string | null
         }
         Update: {
+          branch?: string | null
           completed_task_id?: string | null
           created_at?: string
           description?: string

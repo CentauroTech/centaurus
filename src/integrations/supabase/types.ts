@@ -76,6 +76,7 @@ export type Database = {
           bank_account_number: string | null
           bank_name: string | null
           bank_routing_number: string | null
+          birthday: string | null
           business_address: string | null
           business_city: string | null
           business_country: string | null
@@ -111,6 +112,7 @@ export type Database = {
           bank_account_number?: string | null
           bank_name?: string | null
           bank_routing_number?: string | null
+          birthday?: string | null
           business_address?: string | null
           business_city?: string | null
           business_country?: string | null
@@ -146,6 +148,7 @@ export type Database = {
           bank_account_number?: string | null
           bank_name?: string | null
           bank_routing_number?: string | null
+          birthday?: string | null
           business_address?: string | null
           business_city?: string | null
           business_country?: string | null

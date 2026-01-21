@@ -135,12 +135,17 @@ export default function Auth() {
 
       setIsSubmitting(true);
 
-      // First, create the auth user
-      const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
+      // Create the auth user with metadata - the database trigger will handle team_member creation
+      const { error: signUpError } = await supabase.auth.signUp({
         email: email.toLowerCase().trim(),
         password,
         options: {
           emailRedirectTo: window.location.origin,
+          data: {
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            role_type: selectedRole,
+          }
         }
       });
 
@@ -151,44 +156,6 @@ export default function Auth() {
           toast.error(signUpError.message);
         }
         return;
-      }
-
-      // Create team member record
-      const fullName = `${firstName.trim()} ${lastName.trim()}`;
-      const initials = generateInitials(firstName, lastName);
-      const color = generateColor();
-
-      const { data: teamMember, error: teamMemberError } = await supabase
-        .from('team_members')
-        .insert({
-          name: fullName,
-          initials,
-          color,
-          email: email.toLowerCase().trim(),
-          role: 'member', // Default role for the team_members table
-        })
-        .select()
-        .single();
-
-      if (teamMemberError) {
-        console.error('Error creating team member:', teamMemberError);
-        toast.error('Account created but profile setup failed. Contact support.');
-        return;
-      }
-
-      // Create team member role
-      if (selectedRole && teamMember) {
-        const { error: roleError } = await supabase
-          .from('team_member_roles')
-          .insert({
-            team_member_id: teamMember.id,
-            role_type: selectedRole,
-          });
-
-        if (roleError) {
-          console.error('Error creating team member role:', roleError);
-          // Don't block signup for role creation failure
-        }
       }
 
       toast.success('Account created successfully!');

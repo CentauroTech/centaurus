@@ -11,6 +11,7 @@ import Notifications from "./pages/Notifications";
 import GuestDashboard from "./pages/GuestDashboard";
 import GuestOnboarding from "./pages/GuestOnboarding";
 import Settings from "./pages/Settings";
+import Billing from "./pages/Billing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,11 @@ const App = () => (
             <Route path="/settings" element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            } />
+            <Route path="/billing" element={
+              <ProtectedRoute>
+                <Billing />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

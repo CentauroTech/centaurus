@@ -191,7 +191,7 @@ export function InvoiceView({ invoiceId, invoice: passedInvoice, onBack, onClose
                       <p className="font-medium">{item.description}</p>
                     </td>
                     <td className="p-3 text-muted-foreground">{item.workOrderNumber || '-'}</td>
-                    <td className="p-3 text-muted-foreground capitalize">{item.phase || '-'}</td>
+                    <td className="p-3 text-muted-foreground capitalize">{item.branch || '-'}</td>
                     <td className="p-3 text-muted-foreground capitalize">{item.rolePerformed || '-'}</td>
                     <td className="p-3 text-muted-foreground">{item.runtime || '-'}</td>
                     <td className="p-3 text-right">{item.quantity}</td>

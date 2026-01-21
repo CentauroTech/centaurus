@@ -12,6 +12,7 @@ export interface InvoiceItem {
   description: string;
   workOrderNumber?: string;
   phase?: string;
+  branch?: string;
   rolePerformed?: string;
   runtime?: string;
   quantity: number;
@@ -80,6 +81,7 @@ export interface CreateInvoiceData {
     description: string;
     workOrderNumber?: string;
     phase?: string;
+    branch?: string;
     rolePerformed?: string;
     runtime?: string;
     quantity: number;
@@ -193,6 +195,7 @@ export function useCreateInvoice() {
           description: item.description,
           work_order_number: item.workOrderNumber,
           phase: item.phase,
+          branch: item.branch,
           role_performed: item.rolePerformed,
           runtime: item.runtime,
           quantity: item.quantity,
@@ -253,6 +256,7 @@ export function useUpdateInvoice() {
           description: item.description,
           work_order_number: item.workOrderNumber,
           phase: item.phase,
+          branch: item.branch,
           role_performed: item.rolePerformed,
           runtime: item.runtime,
           quantity: item.quantity,
@@ -480,6 +484,7 @@ function mapInvoiceItem(row: any): InvoiceItem {
     description: row.description,
     workOrderNumber: row.work_order_number,
     phase: row.phase,
+    branch: row.branch,
     rolePerformed: row.role_performed,
     runtime: row.runtime,
     quantity: parseFloat(row.quantity) || 1,
@@ -489,13 +494,13 @@ function mapInvoiceItem(row: any): InvoiceItem {
   };
 }
 
-// Helper to create invoice items from completed tasks
 export function createItemsFromCompletedTasks(tasks: GuestCompletedTask[], defaultRate: number = 0): CreateInvoiceData['items'] {
   return tasks.map(task => ({
     completedTaskId: task.id,
     description: `${task.taskName}${task.tituloAprobadoEspanol ? ` - ${task.tituloAprobadoEspanol}` : ''}`,
     workOrderNumber: task.workOrderNumber,
     phase: task.phase,
+    branch: task.branch,
     rolePerformed: task.rolePerformed,
     runtime: task.lockedRuntime,
     quantity: 1,

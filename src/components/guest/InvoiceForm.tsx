@@ -29,6 +29,7 @@ interface LineItem {
   description: string;
   workOrderNumber?: string;
   phase?: string;
+  branch?: string;
   rolePerformed?: string;
   runtime?: string;
   quantity: number;
@@ -146,7 +147,8 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
           completedTaskId: task.id,
           description: `${task.taskName}${task.tituloAprobadoEspanol ? ` - ${task.tituloAprobadoEspanol}` : ''}`,
           workOrderNumber: task.workOrderNumber,
-          phase: task.branch || task.phase,
+          phase: task.phase,
+          branch: task.branch,
           rolePerformed: task.rolePerformed,
           runtime: task.lockedRuntime,
           quantity: runtimeMinutes,
@@ -522,7 +524,7 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                           {(item.workOrderNumber || item.phase || item.rolePerformed) && (
                             <div className="flex flex-wrap gap-2 mt-2 text-xs text-muted-foreground">
                               {item.workOrderNumber && <span>WO# {item.workOrderNumber}</span>}
-                              {item.phase && <span>• Branch: {item.phase}</span>}
+                              {item.branch && <span>• Branch: {item.branch}</span>}
                               {item.rolePerformed && <span>• {item.rolePerformed}</span>}
                               {item.runtime && <span>• {item.runtime}</span>}
                             </div>

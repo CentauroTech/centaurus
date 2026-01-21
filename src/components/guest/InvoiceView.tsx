@@ -24,11 +24,13 @@ const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; clas
 };
 
 export function InvoiceView({ invoiceId, invoice: passedInvoice, onBack, onClose }: InvoiceViewProps) {
-  const { data: fetchedInvoice, isLoading } = useInvoice(invoiceId || '');
+  // Always fetch the full invoice with items using either the passed ID or the passed invoice's ID
+  const effectiveInvoiceId = invoiceId || passedInvoice?.id || '';
+  const { data: fetchedInvoice, isLoading } = useInvoice(effectiveInvoiceId);
   const submitInvoice = useSubmitInvoice();
   
-  // Use passed invoice or fetched invoice
-  const invoice = passedInvoice || fetchedInvoice;
+  // Prefer fetched invoice (has items) over passed invoice
+  const invoice = fetchedInvoice || passedInvoice;
   const handleClose = onBack || onClose;
 
   const handleSubmit = async () => {

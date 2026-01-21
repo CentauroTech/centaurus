@@ -9,8 +9,10 @@ import { toast } from 'sonner';
 import centaurusLogo from '@/assets/centaurus-logo.jpeg';
 
 interface InvoiceViewProps {
-  invoiceId: string;
-  onBack: () => void;
+  invoiceId?: string;
+  invoice?: Invoice;
+  onBack?: () => void;
+  onClose?: () => void;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; className: string }> = {
@@ -21,13 +23,18 @@ const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; clas
   paid: { label: 'Paid', icon: <DollarSign className="w-4 h-4" />, className: 'bg-emerald-100 text-emerald-700' },
 };
 
-export function InvoiceView({ invoiceId, onBack }: InvoiceViewProps) {
-  const { data: invoice, isLoading } = useInvoice(invoiceId);
+export function InvoiceView({ invoiceId, invoice: passedInvoice, onBack, onClose }: InvoiceViewProps) {
+  const { data: fetchedInvoice, isLoading } = useInvoice(invoiceId || '');
   const submitInvoice = useSubmitInvoice();
+  
+  // Use passed invoice or fetched invoice
+  const invoice = passedInvoice || fetchedInvoice;
+  const handleClose = onBack || onClose;
 
   const handleSubmit = async () => {
+    if (!invoice) return;
     try {
-      await submitInvoice.mutateAsync(invoiceId);
+      await submitInvoice.mutateAsync(invoice.id);
       toast.success('Invoice submitted for approval');
     } catch (error: any) {
       toast.error(error.message || 'Failed to submit invoice');
@@ -38,7 +45,8 @@ export function InvoiceView({ invoiceId, onBack }: InvoiceViewProps) {
     window.print();
   };
 
-  if (isLoading) {
+  // Only show loading if we're fetching (not using passed invoice)
+  if (!passedInvoice && isLoading) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         Loading invoice...
@@ -61,9 +69,11 @@ export function InvoiceView({ invoiceId, onBack }: InvoiceViewProps) {
       {/* Header - Hidden in print */}
       <div className="flex items-center justify-between print:hidden">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
+          {handleClose && (
+            <Button variant="ghost" size="icon" onClick={handleClose}>
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          )}
           <h3 className="text-lg font-semibold">Invoice {invoice.invoiceNumber}</h3>
           <Badge className={`${statusConfig.className} gap-1`}>
             {statusConfig.icon}

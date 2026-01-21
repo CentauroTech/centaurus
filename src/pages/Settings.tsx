@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Users, Columns, Eye, EyeOff, X, Plus, Minus, Zap } from 'lucide-react';
+import { ArrowLeft, Search, Users, Columns, Eye, EyeOff, X, Plus, Minus, Zap, DollarSign } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -44,10 +44,12 @@ import {
   MEMBER_TYPE_LABELS,
   useUpdateTeamMemberType,
 } from '@/hooks/useUpdateTeamMemberType';
+import { useHasBillingRole } from '@/hooks/useMyRoles';
 import { COLUMNS } from '@/types/board';
 import { toast } from 'sonner';
 import { PhaseAutomationsTab } from '@/components/settings/PhaseAutomationsTab';
 import { EditableEmailCell } from '@/components/settings/EditableEmailCell';
+import { BillingTab } from '@/components/settings/BillingTab';
 
 const BRANCH_COLORS: Record<Branch, string> = {
   Colombia: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
@@ -91,6 +93,9 @@ export default function Settings() {
   const updateBranches = useUpdateTeamMemberBranches();
   const updateRoles = useUpdateTeamMemberRoles();
   const updateMemberType = useUpdateTeamMemberType();
+
+  // Check billing role access
+  const { hasBillingRole } = useHasBillingRole();
 
   // Column visibility
   const { data: columnVisibility, isLoading: loadingColumnVisibility } = useColumnVisibility();
@@ -478,6 +483,12 @@ export default function Settings() {
                 </TabsTrigger>
               </>
             )}
+            {hasBillingRole && (
+              <TabsTrigger value="billing" className="gap-2">
+                <DollarSign className="h-4 w-4" />
+                Billing
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="directory" className="space-y-6">
@@ -837,6 +848,13 @@ export default function Settings() {
                   {initializeColumnVisibility.isPending ? 'Initializing...' : 'Initialize Missing Columns'}
                 </Button>
               </div>
+            </TabsContent>
+          )}
+
+          {/* Billing Tab - Only for users with billing role */}
+          {hasBillingRole && (
+            <TabsContent value="billing" className="space-y-6">
+              <BillingTab />
             </TabsContent>
           )}
         </Tabs>

@@ -10,7 +10,7 @@ const corsHeaders = {
 interface NotificationPayload {
   notification_id: string;
   user_id: string;
-  type: "mention" | "assignment";
+  type: "mention" | "assignment" | "invoice_submitted";
   task_id: string | null;
   triggered_by_id: string | null;
   title: string;
@@ -73,7 +73,9 @@ serve(async (req) => {
       .maybeSingle();
 
     const shouldSendEmail = preferences
-      ? (payload.type === "mention" ? preferences.email_mentions : preferences.email_assignments)
+      ? (payload.type === "mention" ? preferences.email_mentions : 
+         payload.type === "assignment" ? preferences.email_assignments : 
+         true) // invoice_submitted always sends email
       : true; // Default to true if no preferences set
 
     if (!shouldSendEmail) {
@@ -115,6 +117,8 @@ serve(async (req) => {
     // Build email subject and content
     const subject = payload.type === "mention"
       ? `${triggeredByName} mentioned you in Centaurus`
+      : payload.type === "invoice_submitted"
+      ? `Invoice Submitted for Approval - Centaurus`
       : `You were assigned to "${taskName}" in Centaurus`;
 
     const htmlContent = `
@@ -131,9 +135,11 @@ serve(async (req) => {
           <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0; border-top: none;">
             <h2 style="color: #1e293b; margin-top: 0;">${payload.title}</h2>
             ${payload.message ? `<p style="color: #64748b; margin-bottom: 24px;">${payload.message}</p>` : ''}
+            ${payload.type !== "invoice_submitted" ? `
             <div style="background: white; border-radius: 8px; padding: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
               <p style="margin: 0; font-weight: 500;">Task: ${taskName}</p>
             </div>
+            ` : ''}
             <p style="color: #64748b; font-size: 14px; margin-top: 30px;">
               This is an automated notification from Centaurus. You can manage your notification preferences in the app settings.
             </p>

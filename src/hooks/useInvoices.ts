@@ -367,6 +367,20 @@ export function useApproveInvoice() {
         .single();
 
       if (error) throw error;
+
+      // Create notification for the invoice owner
+      const invoiceData = data as any;
+      if (invoiceData.team_member_id) {
+        await supabase.rpc('create_notification', {
+          p_user_id: invoiceData.team_member_id,
+          p_type: 'invoice_approved',
+          p_title: `Invoice ${invoiceData.invoice_number} Approved`,
+          p_message: 'Your invoice has been approved and is ready for payment.',
+          p_task_id: null,
+          p_triggered_by_id: currentMember.id,
+        });
+      }
+
       return data;
     },
     onSuccess: (_, invoiceId) => {

@@ -539,23 +539,26 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                       </div>
                       <div className="grid grid-cols-3 gap-2">
                         <div>
-                          <Label className="text-xs">Quantity</Label>
+                          <Label className="text-xs">Runtime (min)</Label>
                           <Input
                             type="number"
                             min="0"
-                            step="0.01"
+                            step="1"
                             value={item.quantity}
                             onChange={(e) => updateItem(item.id, { quantity: parseFloat(e.target.value) || 0 })}
                           />
                         </div>
                         <div>
-                          <Label className="text-xs">Unit Price ($)</Label>
+                          <Label className="text-xs">Rate per min ($)</Label>
                           <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={item.unitPrice}
-                            onChange={(e) => updateItem(item.id, { unitPrice: parseFloat(e.target.value) || 0 })}
+                            type="text"
+                            inputMode="decimal"
+                            value={item.unitPrice || ''}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/[^0-9.]/g, '');
+                              updateItem(item.id, { unitPrice: parseFloat(value) || 0 });
+                            }}
+                            placeholder="0.00"
                           />
                         </div>
                         <div>

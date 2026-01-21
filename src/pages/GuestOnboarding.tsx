@@ -8,7 +8,9 @@ import { BillingProfileForm, BillingFormData } from '@/components/guest/BillingP
 import { PlatformGuide } from '@/components/guest/PlatformGuide';
 import { useAuth } from '@/hooks/useAuth';
 import { useCreateBillingProfile, useBillingProfile } from '@/hooks/useBillingProfile';
+import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 import centaurusLogo from '@/assets/centaurus-logo.jpeg';
 type OnboardingStep = 'profile' | 'guide';
 export default function GuestOnboarding() {
@@ -104,18 +106,65 @@ export default function GuestOnboarding() {
       setIsSubmitting(false);
     }
   };
-  const handleGuideComplete = () => {
+
+  const { data: currentMember } = useCurrentTeamMember();
+
+  const assignTutorialTask = async () => {
+    if (!currentMember?.id) return;
+    
+    const TUTORIAL_TASK_ID = '00000000-0000-0000-0000-000000000004';
+    
+    try {
+      // Check if already assigned
+      const { data: existing } = await supabase
+        .from('task_people')
+        .select('id')
+        .eq('task_id', TUTORIAL_TASK_ID)
+        .eq('team_member_id', currentMember.id)
+        .maybeSingle();
+      
+      if (!existing) {
+        // Assign user to the tutorial task
+        await supabase
+          .from('task_people')
+          .insert({
+            task_id: TUTORIAL_TASK_ID,
+            team_member_id: currentMember.id
+          });
+        
+        // Also add as task viewer so they can see it
+        await supabase
+          .from('task_viewers')
+          .insert({
+            task_id: TUTORIAL_TASK_ID,
+            team_member_id: currentMember.id
+          });
+      }
+    } catch (error) {
+      console.error('Failed to assign tutorial task:', error);
+    }
+  };
+
+  const handleGuideComplete = async () => {
     // Store that user has seen the guide
     localStorage.setItem('guest-guide-completed', 'true');
+    
+    // Assign tutorial task to the user
+    await assignTutorialTask();
+    
+    toast.success('Welcome! A practice task has been added to help you learn the platform.');
     navigate('/guest-dashboard', {
       replace: true
     });
   };
-  const handleSkipGuide = () => {
+
+  const handleSkipGuide = async () => {
     localStorage.setItem('guest-guide-completed', 'true');
-    navigate('/guest-dashboard', {
-      replace: true
-    });
+    
+    // Still assign tutorial task even if they skip
+    await assignTutorialTask();
+    
+    navigate('/guest-dashboard', { replace: true });
   };
   const steps = [{
     id: 'profile',

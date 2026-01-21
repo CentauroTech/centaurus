@@ -10,6 +10,7 @@ import { DraggableColumnHeader } from './DraggableColumnHeader';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
+import { useColumnFilters } from '@/contexts/ColumnFiltersContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,6 +47,7 @@ interface TaskGroupProps {
   onReorderColumns: (activeId: string, overId: string) => void;
   canDeleteTasks?: boolean;
   canDeleteGroups?: boolean;
+  allBoardTasks: Task[];
 }
 export function TaskGroup({
   group,
@@ -62,7 +64,8 @@ export function TaskGroup({
   isLocked,
   onReorderColumns,
   canDeleteTasks = true,
-  canDeleteGroups = false
+  canDeleteGroups = false,
+  allBoardTasks
 }: TaskGroupProps) {
   const [isCollapsed, setIsCollapsed] = useState(group.isCollapsed ?? false);
   const [groupName, setGroupName] = useState(group.name);
@@ -73,6 +76,7 @@ export function TaskGroup({
     selectAll,
     clearSelection
   } = useTaskSelection();
+  const { filterTasks } = useColumnFilters();
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: {
       distance: 5
@@ -105,15 +109,20 @@ export function TaskGroup({
     }
   }, [allSelected, clearSelection, selectAll, groupTaskIds]);
 
+  // Apply filters to group tasks
+  const filteredTasks = useMemo(() => {
+    return filterTasks(group.tasks);
+  }, [group.tasks, filterTasks]);
+
   // Paginated tasks - only render visible tasks
   const visibleTasks = useMemo(() => {
-    return group.tasks.slice(0, visibleCount);
-  }, [group.tasks, visibleCount]);
-  const hasMore = visibleCount < group.tasks.length;
-  const remainingCount = group.tasks.length - visibleCount;
+    return filteredTasks.slice(0, visibleCount);
+  }, [filteredTasks, visibleCount]);
+  const hasMore = visibleCount < filteredTasks.length;
+  const remainingCount = filteredTasks.length - visibleCount;
   const loadMore = useCallback(() => {
-    setVisibleCount(prev => Math.min(prev + LOAD_MORE_COUNT, group.tasks.length));
-  }, [group.tasks.length]);
+    setVisibleCount(prev => Math.min(prev + LOAD_MORE_COUNT, filteredTasks.length));
+  }, [filteredTasks.length]);
   const showLess = useCallback(() => {
     setVisibleCount(INITIAL_TASKS);
   }, []);
@@ -134,7 +143,10 @@ export function TaskGroup({
         <input type="text" value={groupName} onChange={e => setGroupName(e.target.value)} onBlur={handleNameBlur} className="bg-transparent border-0 outline-none font-display font-semibold text-foreground focus:ring-0" />
         
         <span className="text-sm text-muted-foreground">
-          {group.tasks.length} {group.tasks.length === 1 ? 'task' : 'tasks'}
+          {filteredTasks.length !== group.tasks.length 
+            ? `${filteredTasks.length} of ${group.tasks.length} tasks`
+            : `${group.tasks.length} ${group.tasks.length === 1 ? 'task' : 'tasks'}`
+          }
           {hasMore && ` (showing ${visibleCount})`}
         </span>
 
@@ -144,7 +156,7 @@ export function TaskGroup({
               <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg z-50">
             {canDeleteGroups && onDeleteGroup && (
               <DropdownMenuItem
                 onClick={() => setShowDeleteDialog(true)}
@@ -196,8 +208,8 @@ export function TaskGroup({
                     <Checkbox checked={allSelected} onCheckedChange={handleSelectAll} className={cn("transition-smooth h-3.5 w-3.5", someSelected && "data-[state=unchecked]:bg-primary/30")} />
                   </th>
                   <th className="w-6 sticky left-6 bg-slate-100 z-40" />
-                  <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-                    {columns.map((column, index) => <DraggableColumnHeader key={column.id} column={column} index={index} isLocked={isLocked} />)}
+                <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
+                    {columns.map((column, index) => <DraggableColumnHeader key={column.id} column={column} index={index} isLocked={isLocked} allTasks={allBoardTasks} />)}
                   </SortableContext>
                   <th className="w-10" />
                 </tr>

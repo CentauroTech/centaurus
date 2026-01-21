@@ -17,6 +17,7 @@ export interface GuestCompletedTask {
   workspaceName?: string;
   deliveryFileUrl?: string;
   deliveryFileName?: string;
+  branch?: string;
 }
 
 export function useGuestCompletedHistory() {
@@ -50,6 +51,7 @@ export function useGuestCompletedHistory() {
         workspaceName: record.workspace_name,
         deliveryFileUrl: (record as any).delivery_file_url,
         deliveryFileName: (record as any).delivery_file_name,
+        branch: record.branch,
       }));
     },
     enabled: !!currentMember?.id,

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { CheckCircle2, FileText, Loader2 } from 'lucide-react';
+import { CheckCircle2, FileText, Loader2, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { BillingProfileForm, BillingFormData } from '@/components/guest/BillingProfileForm';
@@ -15,10 +15,15 @@ type OnboardingStep = 'profile' | 'guide';
 
 export default function GuestOnboarding() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { data: existingProfile, isLoading: isLoadingProfile } = useBillingProfile();
   const createProfile = useCreateBillingProfile();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('profile');
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth', { replace: true });
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // If profile already exists, skip to guide or redirect
@@ -101,16 +106,27 @@ export default function GuestOnboarding() {
       {/* Header */}
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="container max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <img
-              src={centaurusLogo}
-              alt="Centaurus"
-              className="h-10 w-10 rounded-lg object-cover"
-            />
-            <div>
-              <h1 className="text-xl font-semibold">Welcome to Centaurus</h1>
-              <p className="text-sm text-muted-foreground">Let's set up your profile</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <img
+                src={centaurusLogo}
+                alt="Centaurus"
+                className="h-10 w-10 rounded-lg object-cover"
+              />
+              <div>
+                <h1 className="text-xl font-semibold">Welcome to Centaurus</h1>
+                <p className="text-sm text-muted-foreground">Let's set up your profile</p>
+              </div>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSignOut}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </header>

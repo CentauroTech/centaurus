@@ -288,6 +288,7 @@ export function useUpdateInvoice() {
 
 export function useSubmitInvoice() {
   const queryClient = useQueryClient();
+  const { data: currentMember } = useCurrentTeamMember();
 
   return useMutation({
     mutationFn: async (invoiceId: string) => {
@@ -299,6 +300,27 @@ export function useSubmitInvoice() {
         .single();
 
       if (error) throw error;
+
+      // Notify project managers about the submitted invoice
+      if (currentMember?.id) {
+        const { data: projectManagers } = await supabase
+          .from('team_members')
+          .select('id')
+          .eq('role', 'project_manager');
+
+        const invoiceData = data as any;
+        for (const pm of projectManagers || []) {
+          await supabase.rpc('create_notification', {
+            p_user_id: pm.id,
+            p_type: 'invoice_submitted',
+            p_title: `Invoice ${invoiceData.invoice_number} Submitted`,
+            p_message: `${currentMember.name || 'A team member'} submitted an invoice for approval.`,
+            p_task_id: null,
+            p_triggered_by_id: currentMember.id,
+          });
+        }
+      }
+
       return data;
     },
     onSuccess: (_, invoiceId) => {

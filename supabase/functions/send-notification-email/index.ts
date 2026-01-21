@@ -10,7 +10,7 @@ const corsHeaders = {
 interface NotificationPayload {
   notification_id: string;
   user_id: string;
-  type: "mention" | "assignment" | "invoice_submitted";
+  type: "mention" | "assignment" | "invoice_submitted" | "invoice_approved";
   task_id: string | null;
   triggered_by_id: string | null;
   title: string;
@@ -75,7 +75,7 @@ serve(async (req) => {
     const shouldSendEmail = preferences
       ? (payload.type === "mention" ? preferences.email_mentions : 
          payload.type === "assignment" ? preferences.email_assignments : 
-         true) // invoice_submitted always sends email
+         true) // invoice_submitted and invoice_approved always send email
       : true; // Default to true if no preferences set
 
     if (!shouldSendEmail) {
@@ -119,6 +119,8 @@ serve(async (req) => {
       ? `${triggeredByName} mentioned you in Centaurus`
       : payload.type === "invoice_submitted"
       ? `Invoice Submitted for Approval - Centaurus`
+      : payload.type === "invoice_approved"
+      ? `Your Invoice Has Been Approved - Centaurus`
       : `You were assigned to "${taskName}" in Centaurus`;
 
     const htmlContent = `

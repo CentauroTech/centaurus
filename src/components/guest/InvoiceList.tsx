@@ -24,7 +24,7 @@ interface InvoiceListProps {
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; className: string }> = {
   draft: { label: 'Draft', icon: <FileText className="w-3 h-3" />, className: 'bg-gray-100 text-gray-700' },
-  submitted: { label: 'Pending', icon: <Clock className="w-3 h-3" />, className: 'bg-amber-100 text-amber-700' },
+  submitted: { label: 'Pending Approval', icon: <Clock className="w-3 h-3" />, className: 'bg-amber-100 text-amber-700' },
   approved: { label: 'Approved', icon: <CheckCircle className="w-3 h-3" />, className: 'bg-green-100 text-green-700' },
   rejected: { label: 'Rejected', icon: <XCircle className="w-3 h-3" />, className: 'bg-red-100 text-red-700' },
   paid: { label: 'Paid', icon: <DollarSign className="w-3 h-3" />, className: 'bg-emerald-100 text-emerald-700' },

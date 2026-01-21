@@ -118,6 +118,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                 <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Last Updated</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Translator</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Adapter</TableHead>
+                <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Branch</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Date Delivered</TableHead>
               </TableRow>
             </TableHeader>
@@ -340,6 +341,13 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
+                    </TableCell>
+
+                    {/* Branch */}
+                    <TableCell onClick={() => onTaskClick(task)}>
+                      <span className="text-sm capitalize whitespace-nowrap">
+                        {task.branch || '—'}
+                      </span>
                     </TableCell>
 
                     {/* Date Delivered (only shows when task is done with completedAt) */}

@@ -224,6 +224,7 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
           description: item.description,
           workOrderNumber: item.workOrderNumber,
           phase: item.phase,
+          branch: item.branch,
           rolePerformed: item.rolePerformed,
           runtime: item.runtime,
           quantity: item.quantity,
@@ -472,20 +473,35 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                       />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm">{task.taskName}</p>
-                        <div className="flex flex-wrap gap-2 mt-1 text-xs text-muted-foreground">
-                          {task.workOrderNumber && <span>WO# {task.workOrderNumber}</span>}
-                          <span>•</span>
-                          <span>{task.phase}</span>
-                          <span>•</span>
-                          <span className="capitalize">{task.rolePerformed}</span>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 mt-2 text-xs">
+                          {task.workOrderNumber && (
+                            <div>
+                              <span className="text-muted-foreground">WO#:</span>{' '}
+                              <span>{task.workOrderNumber}</span>
+                            </div>
+                          )}
+                          {task.branch && (
+                            <div>
+                              <span className="text-muted-foreground">Branch:</span>{' '}
+                              <span className="capitalize">{task.branch}</span>
+                            </div>
+                          )}
+                          <div>
+                            <span className="text-muted-foreground">Phase:</span>{' '}
+                            <span>{task.phase}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Role:</span>{' '}
+                            <span className="capitalize">{task.rolePerformed}</span>
+                          </div>
                           {task.lockedRuntime && (
-                            <>
-                              <span>•</span>
+                            <div>
+                              <span className="text-muted-foreground">Duration:</span>{' '}
                               <span>{task.lockedRuntime}</span>
-                            </>
+                            </div>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-muted-foreground mt-2">
                           Completed: {format(new Date(task.completedAt), 'MMM d, yyyy')}
                         </p>
                       </div>
@@ -515,18 +531,39 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                     <div key={item.id} className="p-3 border rounded-lg space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
+                          <Label className="text-xs text-muted-foreground mb-1 block">Description</Label>
                           <Input
                             value={item.description}
                             onChange={(e) => updateItem(item.id, { description: e.target.value })}
                             placeholder="Description"
                             className="font-medium"
                           />
-                          {(item.workOrderNumber || item.phase || item.rolePerformed) && (
-                            <div className="flex flex-wrap gap-2 mt-2 text-xs text-muted-foreground">
-                              {item.workOrderNumber && <span>WO# {item.workOrderNumber}</span>}
-                              {item.branch && <span>• Branch: {item.branch}</span>}
-                              {item.rolePerformed && <span>• {item.rolePerformed}</span>}
-                              {item.runtime && <span>• {item.runtime}</span>}
+                          {(item.workOrderNumber || item.branch || item.rolePerformed || item.runtime) && (
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 text-xs">
+                              {item.workOrderNumber && (
+                                <div>
+                                  <span className="text-muted-foreground block">Work Order</span>
+                                  <span className="font-medium">{item.workOrderNumber}</span>
+                                </div>
+                              )}
+                              {item.branch && (
+                                <div>
+                                  <span className="text-muted-foreground block">Branch</span>
+                                  <span className="font-medium capitalize">{item.branch}</span>
+                                </div>
+                              )}
+                              {item.rolePerformed && (
+                                <div>
+                                  <span className="text-muted-foreground block">Role</span>
+                                  <span className="font-medium capitalize">{item.rolePerformed}</span>
+                                </div>
+                              )}
+                              {item.runtime && (
+                                <div>
+                                  <span className="text-muted-foreground block">Duration</span>
+                                  <span className="font-medium">{item.runtime}</span>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>

@@ -58,6 +58,7 @@ export default function GuestOnboarding() {
       </div>;
   }
   const handleProfileSubmit = async (data: BillingFormData) => {
+    console.log('[GuestOnboarding] handleProfileSubmit called');
     setIsSubmitting(true);
     try {
       await createProfile.mutateAsync({
@@ -89,11 +90,14 @@ export default function GuestOnboarding() {
         businessId: data.businessId,
         businessPhone: data.businessPhone
       });
+      console.log('[GuestOnboarding] Profile created, setting step to guide');
       toast.success('Billing profile saved successfully!');
       // Mark that we completed the profile in this session to prevent redirect
       setHasCompletedProfile(true);
       setCurrentStep('guide');
+      console.log('[GuestOnboarding] currentStep set to guide, hasCompletedProfile set to true');
     } catch (error: any) {
+      console.error('[GuestOnboarding] Error creating profile:', error);
       toast.error(error.message || 'Failed to save profile');
     } finally {
       setIsSubmitting(false);

@@ -441,6 +441,7 @@ export type Database = {
       }
       guest_completed_tasks: {
         Row: {
+          branch: string | null
           cantidad_episodios: number | null
           completed_at: string
           created_at: string
@@ -459,6 +460,7 @@ export type Database = {
           workspace_name: string | null
         }
         Insert: {
+          branch?: string | null
           cantidad_episodios?: number | null
           completed_at?: string
           created_at?: string
@@ -477,6 +479,7 @@ export type Database = {
           workspace_name?: string | null
         }
         Update: {
+          branch?: string | null
           cantidad_episodios?: number | null
           completed_at?: string
           created_at?: string

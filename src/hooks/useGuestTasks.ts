@@ -283,6 +283,7 @@ export function useCompleteGuestTask() {
           locked_runtime,
           cantidad_episodios,
           fase,
+          branch,
           traductor_id,
           adaptador_id,
           group_id
@@ -350,6 +351,7 @@ export function useCompleteGuestTask() {
           workspace_name: workspaceName || null,
           delivery_file_url: deliveryFileUrl || null,
           delivery_file_name: deliveryFileName || null,
+          branch: taskDetails?.branch || null,
         }, {
           onConflict: 'task_id,team_member_id,phase,role_performed',
         });

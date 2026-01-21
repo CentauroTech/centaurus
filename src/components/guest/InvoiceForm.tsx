@@ -146,7 +146,7 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
           completedTaskId: task.id,
           description: `${task.taskName}${task.tituloAprobadoEspanol ? ` - ${task.tituloAprobadoEspanol}` : ''}`,
           workOrderNumber: task.workOrderNumber,
-          phase: task.phase,
+          phase: task.branch || task.phase,
           rolePerformed: task.rolePerformed,
           runtime: task.lockedRuntime,
           quantity: runtimeMinutes,

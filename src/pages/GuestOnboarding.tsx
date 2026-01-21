@@ -113,6 +113,7 @@ export default function GuestOnboarding() {
     if (!currentMember?.id) return;
     
     const TUTORIAL_TASK_ID = '00000000-0000-0000-0000-000000000004';
+    const SYSTEM_MEMBER_ID = '00000000-0000-0000-0000-000000000000';
     
     try {
       // Check if already assigned
@@ -124,6 +125,20 @@ export default function GuestOnboarding() {
         .maybeSingle();
       
       if (!existing) {
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Update the tutorial task with dynamic data
+        await supabase
+          .from('tasks')
+          .update({
+            traductor_id: currentMember.id,
+            adaptador_id: SYSTEM_MEMBER_ID, // "Tutorial" system user
+            date_assigned: today,
+            cantidad_episodios: 1,
+            guest_due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          })
+          .eq('id', TUTORIAL_TASK_ID);
+
         // Assign user to the tutorial task
         await supabase
           .from('task_people')
@@ -132,12 +147,47 @@ export default function GuestOnboarding() {
             team_member_id: currentMember.id
           });
         
-        // Also add as task viewer so they can see it
+        // Add as task viewer so they can see it
         await supabase
           .from('task_viewers')
           .insert({
             task_id: TUTORIAL_TASK_ID,
             team_member_id: currentMember.id
+          });
+
+        // Add a sample file to translate
+        await supabase
+          .from('task_files')
+          .insert({
+            task_id: TUTORIAL_TASK_ID,
+            name: 'Tutorial_Script_Sample.docx',
+            url: 'tutorial/sample-script.docx',
+            type: 'document',
+            file_category: 'script',
+            is_guest_accessible: true,
+            size: 15000,
+            phase: 'Translation',
+            uploaded_by_id: SYSTEM_MEMBER_ID
+          });
+
+        // Add WO instructions as a comment
+        await supabase
+          .from('comments')
+          .insert({
+            task_id: TUTORIAL_TASK_ID,
+            user_id: SYSTEM_MEMBER_ID,
+            content: `<p><strong>📋 Work Order Instructions (Tutorial)</strong></p>
+<p>Welcome to your first practice task! Here's how to complete it:</p>
+<ol>
+<li><strong>Review the file</strong> - Click "File to Translate" to download the sample script</li>
+<li><strong>Update your status</strong> - Change status to "Working" when you start</li>
+<li><strong>Complete the task</strong> - Click "Done" to open the completion dialog</li>
+<li><strong>Upload your work</strong> - Upload any file as your "completed" work</li>
+<li><strong>Create an invoice</strong> - Go to Invoices tab and create your first invoice!</li>
+</ol>
+<p>💡 <em>This is a practice task - feel free to experiment!</em></p>`,
+            is_guest_visible: true,
+            phase: 'Translation'
           });
       }
     } catch (error) {

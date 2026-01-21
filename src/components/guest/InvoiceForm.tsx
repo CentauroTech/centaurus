@@ -522,7 +522,7 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                           {(item.workOrderNumber || item.phase || item.rolePerformed) && (
                             <div className="flex flex-wrap gap-2 mt-2 text-xs text-muted-foreground">
                               {item.workOrderNumber && <span>WO# {item.workOrderNumber}</span>}
-                              {item.phase && <span>• {item.phase}</span>}
+                              {item.phase && <span>• Branch: {item.phase}</span>}
                               {item.rolePerformed && <span>• {item.rolePerformed}</span>}
                               {item.runtime && <span>• {item.runtime}</span>}
                             </div>

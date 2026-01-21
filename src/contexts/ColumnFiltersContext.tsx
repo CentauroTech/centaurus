@@ -15,6 +15,7 @@ export interface ColumnFiltersState {
 }
 
 interface ColumnFiltersContextType {
+  // Column-level filters
   filters: ColumnFiltersState;
   setFilter: (columnId: string, field: keyof Task, value: FilterValue, type?: ColumnFilter['type']) => void;
   clearFilter: (columnId: string) => void;
@@ -22,16 +23,31 @@ interface ColumnFiltersContextType {
   filterTasks: (tasks: Task[]) => Task[];
   activeFilterCount: number;
   hasActiveFilters: boolean;
+  
+  // Global search
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  
+  // Quick filters
+  statusFilters: string[];
+  setStatusFilters: (statuses: string[]) => void;
+  personFilters: string[];
+  setPersonFilters: (personIds: string[]) => void;
+  clientFilters: string[];
+  setClientFilters: (clients: string[]) => void;
 }
 
 const ColumnFiltersContext = createContext<ColumnFiltersContextType | null>(null);
 
 export function ColumnFiltersProvider({ children }: { children: ReactNode }) {
   const [filters, setFilters] = useState<ColumnFiltersState>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilters, setStatusFilters] = useState<string[]>([]);
+  const [personFilters, setPersonFilters] = useState<string[]>([]);
+  const [clientFilters, setClientFilters] = useState<string[]>([]);
 
   const setFilter = useCallback((columnId: string, field: keyof Task, value: FilterValue, type: ColumnFilter['type'] = 'equals') => {
     setFilters(prev => {
-      // If value is null/empty, remove the filter
       if (value === null || value === '' || (Array.isArray(value) && value.length === 0)) {
         const { [columnId]: removed, ...rest } = prev;
         return rest;
@@ -52,18 +68,77 @@ export function ColumnFiltersProvider({ children }: { children: ReactNode }) {
 
   const clearAllFilters = useCallback(() => {
     setFilters({});
+    setSearchQuery('');
+    setStatusFilters([]);
+    setPersonFilters([]);
+    setClientFilters([]);
   }, []);
 
-  const activeFilterCount = useMemo(() => Object.keys(filters).length, [filters]);
+  const activeFilterCount = useMemo(() => {
+    return Object.keys(filters).length + 
+      (searchQuery ? 1 : 0) + 
+      statusFilters.length + 
+      personFilters.length + 
+      clientFilters.length;
+  }, [filters, searchQuery, statusFilters, personFilters, clientFilters]);
 
   const hasActiveFilters = activeFilterCount > 0;
 
-  // Filter tasks based on active filters
+  // Filter tasks based on all active filters
   const filterTasks = useCallback((tasks: Task[]): Task[] => {
     if (!hasActiveFilters) return tasks;
 
     return tasks.filter(task => {
-      return Object.values(filters).every(filter => {
+      // Global search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const searchableFields = [
+          task.name,
+          task.workOrderNumber,
+          task.tituloAprobadoEspanol,
+          task.clientName,
+          task.projectManager?.name,
+          task.director?.name,
+        ].filter(Boolean);
+        
+        const matches = searchableFields.some(field => 
+          String(field).toLowerCase().includes(query)
+        );
+        if (!matches) return false;
+      }
+
+      // Status filters
+      if (statusFilters.length > 0) {
+        if (!statusFilters.includes(task.status)) return false;
+      }
+
+      // Person filters
+      if (personFilters.length > 0) {
+        const taskPersonIds = [
+          task.projectManager?.id,
+          task.director?.id,
+          task.traductor?.id,
+          task.adaptador?.id,
+          task.mixerBogota?.id,
+          task.mixerMiami?.id,
+          task.qc1?.id,
+          task.qcRetakes?.id,
+          task.qcMix?.id,
+          task.tecnico?.id,
+          ...(task.people?.map(p => p.id) || [])
+        ].filter(Boolean);
+        
+        const hasMatchingPerson = personFilters.some(pid => taskPersonIds.includes(pid));
+        if (!hasMatchingPerson) return false;
+      }
+
+      // Client filters
+      if (clientFilters.length > 0) {
+        if (!task.clientName || !clientFilters.includes(task.clientName)) return false;
+      }
+
+      // Column-level filters
+      const columnFiltersPass = Object.values(filters).every(filter => {
         const taskValue = task[filter.field];
 
         switch (filter.type) {
@@ -71,7 +146,6 @@ export function ColumnFiltersProvider({ children }: { children: ReactNode }) {
             if (taskValue === undefined || taskValue === null) {
               return filter.value === null || filter.value === '';
             }
-            // Handle User objects (person fields)
             if (typeof taskValue === 'object' && taskValue !== null && 'id' in taskValue) {
               return (taskValue as User).id === filter.value;
             }
@@ -82,20 +156,15 @@ export function ColumnFiltersProvider({ children }: { children: ReactNode }) {
             return String(taskValue).toLowerCase().includes(String(filter.value).toLowerCase());
 
           case 'includes':
-            // For array fields like servicios, formato, or multi-value selection
             if (Array.isArray(filter.value)) {
-              // Multiple values selected - task should match ANY of them
               if (Array.isArray(taskValue)) {
-                // Task value is array (multi-select) - check if any filter value is in task array
                 return filter.value.some(v => (taskValue as string[]).includes(v));
               }
-              // Task value is scalar - check if it matches any filter value
               if (typeof taskValue === 'object' && taskValue !== null && 'id' in taskValue) {
                 return filter.value.includes((taskValue as User).id);
               }
               return filter.value.includes(String(taskValue));
             }
-            // Single filter value
             if (!Array.isArray(taskValue)) return false;
             return (taskValue as string[]).includes(filter.value as string);
 
@@ -114,8 +183,10 @@ export function ColumnFiltersProvider({ children }: { children: ReactNode }) {
             return true;
         }
       });
+
+      return columnFiltersPass;
     });
-  }, [filters, hasActiveFilters]);
+  }, [filters, hasActiveFilters, searchQuery, statusFilters, personFilters, clientFilters]);
 
   return (
     <ColumnFiltersContext.Provider value={{
@@ -125,7 +196,15 @@ export function ColumnFiltersProvider({ children }: { children: ReactNode }) {
       clearAllFilters,
       filterTasks,
       activeFilterCount,
-      hasActiveFilters
+      hasActiveFilters,
+      searchQuery,
+      setSearchQuery,
+      statusFilters,
+      setStatusFilters,
+      personFilters,
+      setPersonFilters,
+      clientFilters,
+      setClientFilters,
     }}>
       {children}
     </ColumnFiltersContext.Provider>

@@ -4,6 +4,7 @@ import { addBusinessDays } from '@/lib/businessDays';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TaskGroup } from './TaskGroup';
+import { BoardFilterBar } from './BoardFilterBar';
 import { Task, User, TaskGroup as TaskGroupType } from '@/types/board';
 import { BulkActionsToolbar } from './BulkActionsToolbar';
 import { MultipleWODialog } from './MultipleWODialog';
@@ -471,18 +472,43 @@ function BoardViewContent({
       displayField: params.displayField
     });
   };
-  const { activeFilterCount, clearAllFilters } = useColumnFilters();
+  const { 
+    activeFilterCount, 
+    clearAllFilters, 
+    searchQuery, 
+    setSearchQuery,
+    statusFilters,
+    setStatusFilters,
+    personFilters,
+    setPersonFilters,
+    clientFilters,
+    setClientFilters
+  } = useColumnFilters();
 
   return <BulkEditProvider onBulkUpdate={handleBulkUpdate}>
     <div className="flex-1 flex flex-col p-6 overflow-hidden">
+      {/* Filter Bar */}
+      <div className="flex-shrink-0 px-[10px]">
+        <BoardFilterBar
+          allTasks={allBoardTasks}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          statusFilters={statusFilters}
+          onStatusFiltersChange={setStatusFilters}
+          personFilters={personFilters}
+          onPersonFiltersChange={setPersonFilters}
+          clientFilters={clientFilters}
+          onClientFiltersChange={setClientFilters}
+        />
+      </div>
+
       {/* Toolbar */}
-      <div className="flex items-center justify-between mb-6 flex-shrink-0 px-[10px]">
+      <div className="flex items-center justify-between mb-4 flex-shrink-0 px-[10px]">
         <div className="flex items-center gap-2">
           {activeFilterCount > 0 && (
-            <Button variant="outline" size="sm" className="gap-2" onClick={clearAllFilters}>
-              <X className="w-4 h-4" />
-              Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
-            </Button>
+            <Badge variant="secondary" className="gap-1">
+              {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active
+            </Badge>
           )}
         </div>
 

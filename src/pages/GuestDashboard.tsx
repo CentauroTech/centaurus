@@ -17,6 +17,7 @@ import { ChatWidget } from '@/components/chat/ChatWidget';
 import { useGuestTasks, useUpdateGuestTask, GuestTask } from '@/hooks/useGuestTasks';
 import { useGuestCompletedHistory } from '@/hooks/useGuestCompletedHistory';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
+import { useBillingProfile } from '@/hooks/useBillingProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { getSignedFileUrl } from '@/hooks/useSignedUrl';
 import { useGuestTasksRealtime } from '@/hooks/useRealtimeSubscriptions';
@@ -28,10 +29,18 @@ export default function GuestDashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { signOut, user } = useAuth();
-  const { data: currentMember } = useCurrentTeamMember();
+  const { data: currentMember, isLoading: memberLoading } = useCurrentTeamMember();
+  const { data: billingProfile, isLoading: profileLoading } = useBillingProfile();
   const { data: tasks, isLoading } = useGuestTasks();
   const { data: completedHistory, isLoading: historyLoading } = useGuestCompletedHistory();
   const updateTask = useUpdateGuestTask();
+
+  // Redirect to onboarding if no billing profile exists
+  useEffect(() => {
+    if (!memberLoading && !profileLoading && currentMember && !billingProfile) {
+      navigate('/guest-onboarding', { replace: true });
+    }
+  }, [currentMember, billingProfile, memberLoading, profileLoading, navigate]);
 
   // Real-time subscriptions for guest tasks
   useGuestTasksRealtime(true);

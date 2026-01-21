@@ -1,17 +1,19 @@
 import { useState, useMemo, useEffect } from 'react';
 import { format, addDays } from 'date-fns';
-import { ArrowLeft, Plus, Trash2, Calendar } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Calendar, Lock, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useGuestCompletedHistory, GuestCompletedTask } from '@/hooks/useGuestCompletedHistory';
 import { useCreateInvoice, CreateInvoiceData, createItemsFromCompletedTasks } from '@/hooks/useInvoices';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
+import { useBillingProfile } from '@/hooks/useBillingProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -36,10 +38,11 @@ interface LineItem {
 export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
   const { data: completedTasks } = useGuestCompletedHistory();
   const { data: currentMember } = useCurrentTeamMember();
+  const { data: billingProfile, isLoading: profileLoading } = useBillingProfile();
   const { user } = useAuth();
   const createInvoice = useCreateInvoice();
 
-  // Billing info - pre-filled from current user
+  // Billing info - pre-filled from billing profile
   const [billingName, setBillingName] = useState('');
   const [billingAddress, setBillingAddress] = useState('');
   const [billingCity, setBillingCity] = useState('');
@@ -59,12 +62,33 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
 
-  // Pre-fill billing name from current member
+  // Check if billing fields should be locked (profile is locked)
+  const isBillingLocked = billingProfile?.isLocked ?? false;
+
+  // Pre-fill billing info from billing profile
   useEffect(() => {
-    if (currentMember?.name && !billingName) {
+    if (billingProfile) {
+      // Build full name (use business name if invoicing as business)
+      const displayName = billingProfile.isBusiness && billingProfile.businessName
+        ? billingProfile.businessName
+        : `${billingProfile.firstName} ${billingProfile.lastName}`;
+      setBillingName(displayName);
+      
+      // Build full address
+      const addressParts = [billingProfile.address, billingProfile.state, billingProfile.postalCode].filter(Boolean);
+      setBillingAddress(addressParts.join(', '));
+      
+      setBillingCity(billingProfile.city || '');
+      setBillingCountry(billingProfile.country || '');
+      setBillingTaxId(billingProfile.isBusiness ? (billingProfile.businessId || '') : (billingProfile.taxId || ''));
+      setBillingBankName(billingProfile.bankName || '');
+      setBillingBankAccount(billingProfile.bankAccountNumber || '');
+      setBillingBankRouting(billingProfile.bankRoutingNumber || '');
+    } else if (currentMember?.name && !billingName) {
+      // Fallback to current member name if no profile
       setBillingName(currentMember.name);
     }
-  }, [currentMember?.name]);
+  }, [billingProfile, currentMember?.name]);
 
   // Calculate totals
   const subtotal = useMemo(() => 
@@ -192,9 +216,30 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Billing Information</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Billing Information</CardTitle>
+                {isBillingLocked && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Lock className="h-3 w-3" />
+                    <span>Locked</span>
+                  </div>
+                )}
+              </div>
+              {isBillingLocked && billingProfile?.lockedAt && (
+                <CardDescription className="text-xs">
+                  Using profile from {format(new Date(billingProfile.lockedAt), 'MMM d, yyyy')}
+                </CardDescription>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
+              {isBillingLocked && (
+                <Alert className="bg-muted/50">
+                  <Info className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    Billing details are locked after your first invoice submission. Contact a Project Manager to make changes.
+                  </AlertDescription>
+                </Alert>
+              )}
               <div>
                 <Label htmlFor="billingName">Full Name / Company *</Label>
                 <Input
@@ -202,6 +247,8 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                   value={billingName}
                   onChange={(e) => setBillingName(e.target.value)}
                   placeholder="Your name or company name"
+                  disabled={isBillingLocked}
+                  className={isBillingLocked ? "bg-muted" : ""}
                 />
               </div>
               <div>
@@ -212,6 +259,8 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                   onChange={(e) => setBillingAddress(e.target.value)}
                   placeholder="Street address"
                   rows={2}
+                  disabled={isBillingLocked}
+                  className={isBillingLocked ? "bg-muted" : ""}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -221,6 +270,8 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                     id="billingCity"
                     value={billingCity}
                     onChange={(e) => setBillingCity(e.target.value)}
+                    disabled={isBillingLocked}
+                    className={isBillingLocked ? "bg-muted" : ""}
                   />
                 </div>
                 <div>
@@ -229,6 +280,8 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                     id="billingCountry"
                     value={billingCountry}
                     onChange={(e) => setBillingCountry(e.target.value)}
+                    disabled={isBillingLocked}
+                    className={isBillingLocked ? "bg-muted" : ""}
                   />
                 </div>
               </div>
@@ -239,6 +292,8 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                   value={billingTaxId}
                   onChange={(e) => setBillingTaxId(e.target.value)}
                   placeholder="Optional"
+                  disabled={isBillingLocked}
+                  className={isBillingLocked ? "bg-muted" : ""}
                 />
               </div>
             </CardContent>
@@ -246,7 +301,15 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Bank Details</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Bank Details</CardTitle>
+                {isBillingLocked && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Lock className="h-3 w-3" />
+                    <span>Locked</span>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -255,6 +318,8 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                   id="bankName"
                   value={billingBankName}
                   onChange={(e) => setBillingBankName(e.target.value)}
+                  disabled={isBillingLocked}
+                  className={isBillingLocked ? "bg-muted" : ""}
                 />
               </div>
               <div>
@@ -263,6 +328,8 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                   id="bankAccount"
                   value={billingBankAccount}
                   onChange={(e) => setBillingBankAccount(e.target.value)}
+                  disabled={isBillingLocked}
+                  className={isBillingLocked ? "bg-muted" : ""}
                 />
               </div>
               <div>
@@ -271,6 +338,8 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                   id="bankRouting"
                   value={billingBankRouting}
                   onChange={(e) => setBillingBankRouting(e.target.value)}
+                  disabled={isBillingLocked}
+                  className={isBillingLocked ? "bg-muted" : ""}
                 />
               </div>
             </CardContent>

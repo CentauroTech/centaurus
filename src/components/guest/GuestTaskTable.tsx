@@ -185,14 +185,24 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       style={{ left: '320px' }}
                     >
                       <div className="flex items-center gap-2 whitespace-nowrap">
-                        <span className="font-medium truncate max-w-[240px]">
+                        {/* Click indicator bubble */}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors shrink-0 cursor-pointer">
+                              <MessageSquare className="w-3.5 h-3.5 text-primary" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Click to open task details</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <span className="font-medium truncate max-w-[200px]">
                           {task.name || 'Untitled'}
                         </span>
                         {(task.commentCount || 0) > 0 && (
-                          <div className="flex items-center gap-1 text-primary shrink-0">
-                            <MessageSquare className="w-3.5 h-3.5" />
-                            <span className="text-xs">{task.commentCount}</span>
-                          </div>
+                          <Badge variant="secondary" className="text-xs shrink-0">
+                            {task.commentCount}
+                          </Badge>
                         )}
                       </div>
                     </TableCell>

@@ -12,6 +12,7 @@ export interface BillingProfile {
   artisticName?: string;
   email: string;
   phoneNumber?: string;
+  birthday?: string;
   
   // Address
   address?: string;
@@ -55,6 +56,7 @@ export interface CreateBillingProfileData {
   artisticName?: string;
   email: string;
   phoneNumber?: string;
+  birthday?: string;
   address?: string;
   city?: string;
   state?: string;
@@ -88,6 +90,7 @@ function mapProfile(row: any): BillingProfile {
     artisticName: row.artistic_name,
     email: row.email,
     phoneNumber: row.phone_number,
+    birthday: row.birthday,
     address: row.address,
     city: row.city,
     state: row.state,
@@ -157,6 +160,7 @@ export function useCreateBillingProfile() {
           artistic_name: data.artisticName || null,
           email: data.email,
           phone_number: data.phoneNumber || null,
+          birthday: data.birthday || null,
           address: data.address || null,
           city: data.city || null,
           state: data.state || null,
@@ -207,6 +211,7 @@ export function useUpdateBillingProfile() {
       if (data.artisticName !== undefined) updates.artistic_name = data.artisticName;
       if (data.email !== undefined) updates.email = data.email;
       if (data.phoneNumber !== undefined) updates.phone_number = data.phoneNumber;
+      if (data.birthday !== undefined) updates.birthday = data.birthday;
       if (data.address !== undefined) updates.address = data.address;
       if (data.city !== undefined) updates.city = data.city;
       if (data.state !== undefined) updates.state = data.state;

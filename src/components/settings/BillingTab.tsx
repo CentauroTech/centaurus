@@ -265,11 +265,12 @@ export function BillingTab() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50 gap-1"
                             onClick={() => handleApprove(invoice)}
                             disabled={approveInvoice.isPending}
                           >
                             <Check className="h-4 w-4" />
+                            Approve?
                           </Button>
                           <Button
                             variant="ghost"

@@ -17,7 +17,7 @@ interface InvoiceViewProps {
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; className: string }> = {
   draft: { label: 'Draft', icon: <FileText className="w-4 h-4" />, className: 'bg-gray-100 text-gray-700' },
-  submitted: { label: 'Submitted', icon: <Clock className="w-4 h-4" />, className: 'bg-blue-100 text-blue-700' },
+  submitted: { label: 'Pending', icon: <Clock className="w-4 h-4" />, className: 'bg-amber-100 text-amber-700' },
   approved: { label: 'Approved', icon: <CheckCircle className="w-4 h-4" />, className: 'bg-green-100 text-green-700' },
   rejected: { label: 'Rejected', icon: <XCircle className="w-4 h-4" />, className: 'bg-red-100 text-red-700' },
   paid: { label: 'Paid', icon: <DollarSign className="w-4 h-4" />, className: 'bg-emerald-100 text-emerald-700' },
@@ -162,22 +162,26 @@ export function InvoiceView({ invoiceId, invoice: passedInvoice, onBack, onClose
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground mb-2">BILL TO</p>
-              <p className="font-semibold">Centaurus Media</p>
-              <p className="text-sm">Production Services</p>
+              <p className="font-semibold">Television Services Inc</p>
+              <p className="text-sm">6355 NW 36 St Suite 304</p>
+              <p className="text-sm">Miami, FL 33166</p>
+              <p className="text-sm text-muted-foreground mt-1">Tax ID: 12345678</p>
             </div>
           </div>
 
           {/* Line Items */}
           <div className="border rounded-lg overflow-hidden mb-8">
-            <table className="w-full">
+            <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
                   <th className="text-left p-3 font-medium">Description</th>
-                  <th className="text-left p-3 font-medium w-24">Phase</th>
-                  <th className="text-left p-3 font-medium w-24">Role</th>
+                  <th className="text-left p-3 font-medium w-24">Work Order</th>
+                  <th className="text-left p-3 font-medium w-20">Phase</th>
+                  <th className="text-left p-3 font-medium w-20">Role</th>
+                  <th className="text-left p-3 font-medium w-20">Duration</th>
                   <th className="text-right p-3 font-medium w-20">Qty</th>
-                  <th className="text-right p-3 font-medium w-28">Rate</th>
-                  <th className="text-right p-3 font-medium w-28">Amount</th>
+                  <th className="text-right p-3 font-medium w-24">Rate</th>
+                  <th className="text-right p-3 font-medium w-24">Amount</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -185,15 +189,11 @@ export function InvoiceView({ invoiceId, invoice: passedInvoice, onBack, onClose
                   <tr key={item.id}>
                     <td className="p-3">
                       <p className="font-medium">{item.description}</p>
-                      {item.workOrderNumber && (
-                        <p className="text-xs text-muted-foreground">WO# {item.workOrderNumber}</p>
-                      )}
-                      {item.runtime && (
-                        <p className="text-xs text-muted-foreground">Runtime: {item.runtime}</p>
-                      )}
                     </td>
-                    <td className="p-3 text-sm">{item.phase || '-'}</td>
-                    <td className="p-3 text-sm capitalize">{item.rolePerformed || '-'}</td>
+                    <td className="p-3 text-muted-foreground">{item.workOrderNumber || '-'}</td>
+                    <td className="p-3 text-muted-foreground capitalize">{item.phase?.replace(/_/g, ' ') || '-'}</td>
+                    <td className="p-3 text-muted-foreground capitalize">{item.rolePerformed || '-'}</td>
+                    <td className="p-3 text-muted-foreground">{item.runtime || '-'}</td>
                     <td className="p-3 text-right">{item.quantity}</td>
                     <td className="p-3 text-right">${item.unitPrice.toFixed(2)}</td>
                     <td className="p-3 text-right font-medium">${item.totalPrice.toFixed(2)}</td>

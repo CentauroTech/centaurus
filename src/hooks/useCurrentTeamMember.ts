@@ -13,7 +13,7 @@ export function useCurrentTeamMember() {
       const { data, error } = await supabase
         .from('team_members')
         .select('id, name, initials, color')
-        .eq('email', user.email)
+        .ilike('email', user.email)
         .maybeSingle();
 
       if (error) throw error;

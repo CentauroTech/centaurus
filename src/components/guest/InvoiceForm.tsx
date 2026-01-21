@@ -553,7 +553,7 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                           <Input
                             type="text"
                             inputMode="decimal"
-                            value={item.unitPrice || ''}
+                            value={item.unitPrice ? item.unitPrice : ''}
                             onChange={(e) => {
                               const value = e.target.value.replace(/[^0-9.]/g, '');
                               updateItem(item.id, { unitPrice: parseFloat(value) || 0 });

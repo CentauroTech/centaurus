@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Notifications from "./pages/Notifications";
 import GuestDashboard from "./pages/GuestDashboard";
+import GuestOnboarding from "./pages/GuestOnboarding";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -36,6 +37,11 @@ const App = () => (
             <Route path="/guest-dashboard" element={
               <ProtectedRoute>
                 <GuestDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/guest-onboarding" element={
+              <ProtectedRoute>
+                <GuestOnboarding />
               </ProtectedRoute>
             } />
             <Route path="/notifications" element={

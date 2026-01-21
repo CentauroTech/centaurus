@@ -68,6 +68,122 @@ export type Database = {
           },
         ]
       }
+      billing_profiles: {
+        Row: {
+          address: string | null
+          artistic_name: string | null
+          bank_account_holder: string | null
+          bank_account_number: string | null
+          bank_name: string | null
+          bank_routing_number: string | null
+          business_address: string | null
+          business_city: string | null
+          business_country: string | null
+          business_email: string | null
+          business_id: string | null
+          business_name: string | null
+          business_phone: string | null
+          business_postal_code: string | null
+          business_state: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          is_business: boolean | null
+          is_locked: boolean | null
+          last_name: string
+          locked_at: string | null
+          paypal_email: string | null
+          phone_number: string | null
+          postal_code: string | null
+          preferred_currency: string | null
+          state: string | null
+          tax_id: string | null
+          team_member_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          artistic_name?: string | null
+          bank_account_holder?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          bank_routing_number?: string | null
+          business_address?: string | null
+          business_city?: string | null
+          business_country?: string | null
+          business_email?: string | null
+          business_id?: string | null
+          business_name?: string | null
+          business_phone?: string | null
+          business_postal_code?: string | null
+          business_state?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          is_business?: boolean | null
+          is_locked?: boolean | null
+          last_name: string
+          locked_at?: string | null
+          paypal_email?: string | null
+          phone_number?: string | null
+          postal_code?: string | null
+          preferred_currency?: string | null
+          state?: string | null
+          tax_id?: string | null
+          team_member_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          artistic_name?: string | null
+          bank_account_holder?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          bank_routing_number?: string | null
+          business_address?: string | null
+          business_city?: string | null
+          business_country?: string | null
+          business_email?: string | null
+          business_id?: string | null
+          business_name?: string | null
+          business_phone?: string | null
+          business_postal_code?: string | null
+          business_state?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          is_business?: boolean | null
+          is_locked?: boolean | null
+          last_name?: string
+          locked_at?: string | null
+          paypal_email?: string | null
+          phone_number?: string | null
+          postal_code?: string | null
+          preferred_currency?: string | null
+          state?: string | null
+          tax_id?: string | null
+          team_member_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_profiles_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: true
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       boards: {
         Row: {
           created_at: string

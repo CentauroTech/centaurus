@@ -101,11 +101,11 @@ const formSchema = z.object({
   email: z.string().email('Valid email is required'),
   phoneNumber: z.string().optional(),
   birthday: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  postalCode: z.string().optional(),
-  country: z.string().optional(),
+  address: z.string().min(1, 'Street address is required'),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().min(1, 'State/Province is required'),
+  postalCode: z.string().min(1, 'Postal code is required'),
+  country: z.string().min(1, 'Country is required'),
   taxId: z.string().optional(),
   preferredCurrency: z.string().default('USD'),
   bankName: z.string().optional(),
@@ -153,7 +153,6 @@ export function BillingProfileForm({
   const { user } = useAuth();
   const [isBusiness, setIsBusiness] = useState(defaultValues?.isBusiness || false);
   const [showPayment, setShowPayment] = useState(false);
-  const [showAddress, setShowAddress] = useState(false);
 
   const form = useForm<BillingFormData>({
     resolver: zodResolver(formSchema),
@@ -293,47 +292,22 @@ export function BillingProfileForm({
           </CardContent>
         </Card>
 
-        {/* Address - Optional/Collapsible */}
+        {/* Address - Required */}
         <Card>
           <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <MapPin className="h-5 w-5 text-primary" />
-                  Address
-                </CardTitle>
-                <CardDescription>Your mailing address for invoices (optional)</CardDescription>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAddress(!showAddress)}
-                disabled={isLocked}
-              >
-                {showAddress ? (
-                  <>
-                    <ChevronUp className="h-4 w-4 mr-1" />
-                    Skip
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-4 w-4 mr-1" />
-                    Add Address
-                  </>
-                )}
-              </Button>
-            </div>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <MapPin className="h-5 w-5 text-primary" />
+              Address
+            </CardTitle>
+            <CardDescription>Your mailing address for invoices (required)</CardDescription>
           </CardHeader>
-          <Collapsible open={showAddress || isLocked}>
-            <CollapsibleContent>
-              <CardContent className="grid gap-4 sm:grid-cols-2 border-t pt-4">
+          <CardContent className="grid gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="country"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Country</FormLabel>
+                      <FormLabel>Country *</FormLabel>
                       <Select 
                         onValueChange={(value) => {
                           field.onChange(value);
@@ -362,7 +336,7 @@ export function BillingProfileForm({
                   name="state"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>State/Province</FormLabel>
+                      <FormLabel>State/Province *</FormLabel>
                       {states.length > 0 ? (
                         <Select onValueChange={field.onChange} value={field.value} disabled={isLocked}>
                           <FormControl>
@@ -390,7 +364,7 @@ export function BillingProfileForm({
                   name="address"
                   render={({ field }) => (
                     <FormItem className="sm:col-span-2">
-                      <FormLabel>Street Address</FormLabel>
+                      <FormLabel>Street Address *</FormLabel>
                       <FormControl>
                         <Input {...field} disabled={isLocked} placeholder="123 Main Street" />
                       </FormControl>
@@ -403,7 +377,7 @@ export function BillingProfileForm({
                   name="city"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>City</FormLabel>
+                      <FormLabel>City *</FormLabel>
                       <FormControl>
                         <Input {...field} disabled={isLocked} placeholder="Miami" />
                       </FormControl>
@@ -416,7 +390,7 @@ export function BillingProfileForm({
                   name="postalCode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Postal Code</FormLabel>
+                      <FormLabel>Postal Code *</FormLabel>
                       <FormControl>
                         <Input {...field} disabled={isLocked} placeholder="33101" />
                       </FormControl>
@@ -424,9 +398,7 @@ export function BillingProfileForm({
                     </FormItem>
                   )}
                 />
-              </CardContent>
-            </CollapsibleContent>
-          </Collapsible>
+          </CardContent>
         </Card>
 
         {/* Payment Information - Optional/Collapsible */}

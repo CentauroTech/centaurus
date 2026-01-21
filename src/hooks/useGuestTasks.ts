@@ -15,6 +15,7 @@ export interface GuestTask {
   status: string;
   currentPhase: string;
   fase: string;
+  branch?: string;
   dateAssigned?: string;
   guestDueDate?: string;
   startedAt?: string;
@@ -64,6 +65,7 @@ export function useGuestTasks() {
           name,
           status,
           fase,
+          branch,
           date_assigned,
           guest_due_date,
           started_at,
@@ -163,6 +165,7 @@ export function useGuestTasks() {
           status: task.status,
           fase: task.fase || 'pre_production',
           currentPhase,
+          branch: task.branch,
           dateAssigned: task.date_assigned,
           guestDueDate: task.guest_due_date,
           startedAt: task.started_at,

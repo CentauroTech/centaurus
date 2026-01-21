@@ -90,6 +90,39 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
     }
   }, [billingProfile, currentMember?.name]);
 
+  // Parse runtime string (e.g., "01:30:00" or "90 min") to minutes
+  const parseRuntimeToMinutes = (runtime: string | undefined): number => {
+    if (!runtime) return 1;
+    
+    // Handle HH:MM:SS format
+    const timeMatch = runtime.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (timeMatch) {
+      const hours = parseInt(timeMatch[1], 10);
+      const minutes = parseInt(timeMatch[2], 10);
+      return hours * 60 + minutes || 1;
+    }
+    
+    // Handle "X min" or "X minutes" format
+    const minMatch = runtime.match(/(\d+)\s*min/i);
+    if (minMatch) {
+      return parseInt(minMatch[1], 10) || 1;
+    }
+    
+    // Handle "X hr" or "X hours" format
+    const hrMatch = runtime.match(/(\d+)\s*h(?:r|our)?/i);
+    if (hrMatch) {
+      return parseInt(hrMatch[1], 10) * 60 || 1;
+    }
+    
+    // Try to parse as plain number (assume minutes)
+    const numMatch = runtime.match(/^(\d+)$/);
+    if (numMatch) {
+      return parseInt(numMatch[1], 10) || 1;
+    }
+    
+    return 1;
+  };
+
   // Calculate totals
   const subtotal = useMemo(() => 
     lineItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
@@ -105,6 +138,7 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
       setLineItems(prev => prev.filter(item => item.completedTaskId !== task.id));
     } else {
       newSelected.add(task.id);
+      const runtimeMinutes = parseRuntimeToMinutes(task.lockedRuntime);
       setLineItems(prev => [
         ...prev,
         {
@@ -115,7 +149,7 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
           phase: task.phase,
           rolePerformed: task.rolePerformed,
           runtime: task.lockedRuntime,
-          quantity: 1,
+          quantity: runtimeMinutes,
           unitPrice: 0,
         },
       ]);

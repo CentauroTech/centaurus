@@ -31,19 +31,25 @@ export default function GuestOnboarding() {
   };
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // If profile already exists, skip to guide or redirect
+  // If profile already exists AND we're still on the profile step, skip to guide or redirect
+  // Don't redirect if we're already showing the guide (user just completed profile)
   if (isLoadingProfile) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>;
   }
 
-  // If user already has a profile, they shouldn't be on this page
-  if (existingProfile) {
-    navigate('/guest-dashboard', {
-      replace: true
-    });
-    return null;
+  // Only redirect if user already has a profile AND hasn't started onboarding
+  // (i.e., they're on 'profile' step but already have one - means they navigated here directly)
+  if (existingProfile && currentStep === 'profile') {
+    // Check if they've seen the guide
+    const hasSeenGuide = localStorage.getItem('guest-guide-completed') === 'true';
+    if (hasSeenGuide) {
+      navigate('/guest-dashboard', { replace: true });
+      return null;
+    }
+    // If they have a profile but haven't seen the guide, show the guide
+    setCurrentStep('guide');
   }
   const handleProfileSubmit = async (data: BillingFormData) => {
     setIsSubmitting(true);

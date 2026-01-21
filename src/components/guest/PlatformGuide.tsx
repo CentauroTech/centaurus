@@ -12,7 +12,11 @@ import {
   Bell,
   ArrowRight,
   Circle,
-  PlayCircle
+  PlayCircle,
+  MousePointer,
+  AlertTriangle,
+  MessageSquare,
+  Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -101,11 +105,18 @@ export function PlatformGuide({ onComplete, onSkip }: PlatformGuideProps) {
               <span className="text-sm">Task assigned but not yet begun</span>
             </div>
             <div className="flex items-center gap-3 p-3 rounded-lg border">
-              <Badge className="bg-blue-500">
+              <Badge className="bg-yellow-500">
                 <PlayCircle className="h-3 w-3 mr-1" />
                 Working
               </Badge>
               <span className="text-sm">You're actively working on this task</span>
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-lg border">
+              <Badge className="bg-red-500">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Delayed
+              </Badge>
+              <span className="text-sm">Tasks with past due dates - prioritize these!</span>
             </div>
             <div className="flex items-center gap-3 p-3 rounded-lg border">
               <Badge className="bg-green-500">
@@ -114,11 +125,6 @@ export function PlatformGuide({ onComplete, onSkip }: PlatformGuideProps) {
               </Badge>
               <span className="text-sm">Completed and delivered</span>
             </div>
-          </div>
-          <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-            <p className="text-sm">
-              <strong>Tip:</strong> Tasks with past due dates will show in <span className="text-red-500 font-medium">red</span> - prioritize these!
-            </p>
           </div>
           <p className="text-sm text-muted-foreground">
             Key information shown: <strong>WO#</strong> (Work Order), <strong>Phase</strong>, <strong>Runtime</strong>, and <strong>Due Date</strong>.
@@ -139,40 +145,52 @@ export function PlatformGuide({ onComplete, onSkip }: PlatformGuideProps) {
           <div className="space-y-3">
             <div className="flex gap-3">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">1</div>
-              <div>
-                <p className="font-medium">Open Task Details</p>
-                <p className="text-sm text-muted-foreground">Click on any task to see full project information and files</p>
+              <div className="flex items-start gap-2 flex-1">
+                <MousePointer className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Open Task Details</p>
+                  <p className="text-sm text-muted-foreground">Click on any task to see full project information and files</p>
+                </div>
               </div>
             </div>
             <div className="flex gap-3">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">2</div>
-              <div>
-                <p className="font-medium">Update Status to "Working"</p>
-                <p className="text-sm text-muted-foreground">Let the team know you've started working on the task</p>
+              <div className="flex items-start gap-2 flex-1">
+                <PlayCircle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Update Status to "Working"</p>
+                  <p className="text-sm text-muted-foreground">Let the team know you've started working on the task</p>
+                </div>
               </div>
             </div>
             <div className="flex gap-3">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">3</div>
-              <div>
-                <p className="font-medium">Click "Done" When Finished</p>
-                <p className="text-sm text-muted-foreground">This opens the completion dialog</p>
+              <div className="flex items-start gap-2 flex-1">
+                <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Click "Done" When Finished</p>
+                  <p className="text-sm text-muted-foreground">This opens the completion dialog</p>
+                </div>
               </div>
             </div>
             <div className="flex gap-3">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">4</div>
-              <div className="flex items-start gap-2">
+              <div className="flex items-start gap-2 flex-1">
+                <Upload className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium">Upload Completed File</p>
                   <p className="text-sm text-muted-foreground">Your file is automatically categorized by phase</p>
                 </div>
-                <Upload className="h-5 w-5 text-muted-foreground shrink-0" />
               </div>
             </div>
             <div className="flex gap-3">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">5</div>
-              <div>
-                <p className="font-medium">Add Delivery Notes (Optional)</p>
-                <p className="text-sm text-muted-foreground">Include any relevant comments about your work</p>
+              <div className="flex items-start gap-2 flex-1">
+                <Pencil className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Add Delivery Notes (Optional)</p>
+                  <p className="text-sm text-muted-foreground">Include any relevant comments about your work</p>
+                </div>
               </div>
             </div>
           </div>

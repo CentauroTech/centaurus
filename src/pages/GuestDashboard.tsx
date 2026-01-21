@@ -167,7 +167,7 @@ export default function GuestDashboard() {
           <div className="flex items-center gap-1 border rounded-lg p-1">
             <Toggle
               pressed={viewMode === 'table'}
-              onPressedChange={() => setViewMode('table')}
+              onPressedChange={(pressed) => pressed && setViewMode('table')}
               size="sm"
               aria-label="Table view"
             >
@@ -175,7 +175,7 @@ export default function GuestDashboard() {
             </Toggle>
             <Toggle
               pressed={viewMode === 'cards'}
-              onPressedChange={() => setViewMode('cards')}
+              onPressedChange={(pressed) => pressed && setViewMode('cards')}
               size="sm"
               aria-label="Card view"
             >

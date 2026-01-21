@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { CheckCircle2, FileText, Loader2, LogOut } from 'lucide-react';
@@ -23,6 +23,8 @@ export default function GuestOnboarding() {
   } = useBillingProfile();
   const createProfile = useCreateBillingProfile();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('profile');
+  const [hasCompletedProfile, setHasCompletedProfile] = useState(false);
+  
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth', {
@@ -31,25 +33,29 @@ export default function GuestOnboarding() {
   };
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // If profile already exists AND we're still on the profile step, skip to guide or redirect
-  // Don't redirect if we're already showing the guide (user just completed profile)
+  // Handle redirect logic for users who already have profiles
+  useEffect(() => {
+    if (isLoadingProfile) return;
+    
+    // If user just completed the profile form in this session, don't redirect
+    if (hasCompletedProfile) return;
+    
+    // If user already has a profile (navigated here directly)
+    if (existingProfile && currentStep === 'profile') {
+      const hasSeenGuide = localStorage.getItem('guest-guide-completed') === 'true';
+      if (hasSeenGuide) {
+        navigate('/guest-dashboard', { replace: true });
+      } else {
+        // Show the guide step
+        setCurrentStep('guide');
+      }
+    }
+  }, [existingProfile, isLoadingProfile, currentStep, hasCompletedProfile, navigate]);
+
   if (isLoadingProfile) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>;
-  }
-
-  // Only redirect if user already has a profile AND hasn't started onboarding
-  // (i.e., they're on 'profile' step but already have one - means they navigated here directly)
-  if (existingProfile && currentStep === 'profile') {
-    // Check if they've seen the guide
-    const hasSeenGuide = localStorage.getItem('guest-guide-completed') === 'true';
-    if (hasSeenGuide) {
-      navigate('/guest-dashboard', { replace: true });
-      return null;
-    }
-    // If they have a profile but haven't seen the guide, show the guide
-    setCurrentStep('guide');
   }
   const handleProfileSubmit = async (data: BillingFormData) => {
     setIsSubmitting(true);
@@ -84,6 +90,8 @@ export default function GuestOnboarding() {
         businessPhone: data.businessPhone
       });
       toast.success('Billing profile saved successfully!');
+      // Mark that we completed the profile in this session to prevent redirect
+      setHasCompletedProfile(true);
       setCurrentStep('guide');
     } catch (error: any) {
       toast.error(error.message || 'Failed to save profile');

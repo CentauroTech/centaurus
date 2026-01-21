@@ -176,7 +176,7 @@ export function InvoiceView({ invoiceId, invoice: passedInvoice, onBack, onClose
                 <tr>
                   <th className="text-left p-3 font-medium">Description</th>
                   <th className="text-left p-3 font-medium w-24">Work Order</th>
-                  <th className="text-left p-3 font-medium w-20">Phase</th>
+                  <th className="text-left p-3 font-medium w-20">Branch</th>
                   <th className="text-left p-3 font-medium w-20">Role</th>
                   <th className="text-left p-3 font-medium w-20">Duration</th>
                   <th className="text-right p-3 font-medium w-20">Qty</th>
@@ -191,7 +191,7 @@ export function InvoiceView({ invoiceId, invoice: passedInvoice, onBack, onClose
                       <p className="font-medium">{item.description}</p>
                     </td>
                     <td className="p-3 text-muted-foreground">{item.workOrderNumber || '-'}</td>
-                    <td className="p-3 text-muted-foreground capitalize">{item.phase?.replace(/_/g, ' ') || '-'}</td>
+                    <td className="p-3 text-muted-foreground capitalize">{item.phase || '-'}</td>
                     <td className="p-3 text-muted-foreground capitalize">{item.rolePerformed || '-'}</td>
                     <td className="p-3 text-muted-foreground">{item.runtime || '-'}</td>
                     <td className="p-3 text-right">{item.quantity}</td>

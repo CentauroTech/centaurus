@@ -100,6 +100,7 @@ const FIELD_TO_TEMPLATE_KEY: Record<string, keyof TaskTemplate> = {
   aorNeeded: 'aor_needed',
   entregaFinalScriptItems: 'entrega_final_script_items',
   entregaFinalDubAudioItems: 'entrega_final_dub_audio_items',
+  studioAssigned: 'studio_assigned',
   // Delivery dates
   entregaCliente: 'entrega_cliente',
   entregaMiamiStart: 'entrega_miami_start',

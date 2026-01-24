@@ -348,7 +348,6 @@ export const COLUMNS_COLOMBIA: ColumnConfig[] = [
   { id: 'pruebaDeVoz', label: 'Prueba de Voz', type: 'dropdown', width: 'w-24', field: 'pruebaDeVoz', options: VOICE_TEST_OPTIONS },
   { id: 'aorNeeded', label: 'Aor', type: 'boolean', width: 'w-16', field: 'aorNeeded' },
   { id: 'tituloAprobadoEspanol', label: 'Titulo Aprobado Espanol', type: 'text', width: 'w-40', field: 'tituloAprobadoEspanol' },
-  { id: 'branch', label: 'Sede', type: 'dropdown', width: 'w-24', field: 'branch', options: BRANCH_OPTIONS },
   { id: 'genre', label: 'Genero', type: 'dropdown', width: 'w-24', field: 'genre', options: GENRE_OPTIONS },
   { id: 'formato', label: 'Formato', type: 'multi-select', width: 'w-56', field: 'formato', options: FORMATO_OPTIONS },
   { id: 'servicios', label: 'Servicios', type: 'multi-select', width: 'w-72', field: 'servicios', options: SERVICIOS_OPTIONS },

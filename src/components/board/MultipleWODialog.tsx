@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -69,6 +70,7 @@ export interface TaskTemplate {
   entrega_final_script_items?: string[];
   entrega_final_dub_audio_items?: string[];
   studio_assigned?: string;
+  kickoff_brief?: string;
   // Delivery dates
   entrega_cliente?: string;
   entrega_miami_start?: string;
@@ -101,6 +103,7 @@ const FIELD_TO_TEMPLATE_KEY: Record<string, keyof TaskTemplate> = {
   entregaFinalScriptItems: 'entrega_final_script_items',
   entregaFinalDubAudioItems: 'entrega_final_dub_audio_items',
   studioAssigned: 'studio_assigned',
+  kickoffBrief: 'kickoff_brief',
   // Delivery dates
   entregaCliente: 'entrega_cliente',
   entregaMiamiStart: 'entrega_miami_start',
@@ -674,6 +677,18 @@ export function MultipleWODialog({
                     Branch and Project Manager are required to generate Work Order numbers.
                   </p>
                 )}
+              </div>
+
+              {/* Additional Instructions */}
+              <div className="space-y-2 border-t pt-4">
+                <Label htmlFor="additionalInstructions">Additional Instructions</Label>
+                <Textarea
+                  id="additionalInstructions"
+                  placeholder="Enter any additional instructions or notes for these work orders..."
+                  value={template.kickoff_brief || ''}
+                  onChange={(e) => setTemplate(prev => ({ ...prev, kickoff_brief: e.target.value || undefined }))}
+                  className="min-h-[80px] text-sm"
+                />
               </div>
 
               {/* Template Fields - Collapsible Categories */}

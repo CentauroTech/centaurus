@@ -140,7 +140,7 @@ const TEMPLATE_COLUMNS = COLUMNS.filter(col =>
 const COLUMN_CATEGORIES = {
   basic: {
     label: 'Basic Info',
-    columns: TEMPLATE_COLUMNS.filter(c => ['clientName', 'branch', 'genre', 'studioAssigned'].includes(c.id)),
+    columns: TEMPLATE_COLUMNS.filter(c => ['clientName', 'genre', 'studioAssigned'].includes(c.id)),
   },
   language: {
     label: 'Language & Title',

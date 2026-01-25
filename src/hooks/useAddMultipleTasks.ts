@@ -13,6 +13,7 @@ export function useAddMultipleTasks(boardId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['addMultipleTasks', boardId],
     mutationFn: async ({ groupId, template, names }: CreateMultipleTasksParams) => {
       // Get the max sort_order for existing tasks in this group
       const { data: existingTasks } = await supabase

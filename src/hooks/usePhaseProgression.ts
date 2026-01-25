@@ -151,6 +151,7 @@ export function useMoveToNextPhase(boardId: string, currentUserId?: string | nul
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['moveToNextPhase', boardId, currentUserId],
     mutationFn: async ({ taskId, currentGroupId, pruebaDeVoz }: MoveToNextPhaseParams) => {
       // 1. Get current group to find board
       const { data: currentGroup, error: groupError } = await supabase

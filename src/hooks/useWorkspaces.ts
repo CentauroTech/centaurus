@@ -246,6 +246,7 @@ export function useAddTaskGroup(boardId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['addTaskGroup', boardId],
     mutationFn: async (group: { name: string; color: string }) => {
       const { data, error } = await supabase
         .from('task_groups')
@@ -266,6 +267,7 @@ export function useUpdateTaskGroup(boardId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['updateTaskGroup', boardId],
     mutationFn: async ({ groupId, updates }: { groupId: string; updates: Partial<{ name: string; color: string; is_collapsed: boolean }> }) => {
       const { data, error } = await supabase
         .from('task_groups')
@@ -287,6 +289,7 @@ export function useAddTask(boardId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['addTask', boardId],
     mutationFn: async (task: { 
       group_id: string; 
       name?: string;
@@ -341,6 +344,7 @@ export function useUpdateTask(boardId: string, currentUserId?: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['updateTask', boardId, currentUserId],
     mutationFn: async ({ taskId, updates }: { taskId: string; updates: Record<string, any> }) => {
       // Handle _checkStartedAt flag - this is NOT a database field
       const shouldCheckStartedAt = updates._checkStartedAt;
@@ -502,6 +506,7 @@ export function useDeleteTask(boardId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['deleteTask', boardId],
     mutationFn: async (taskId: string) => {
       const { error } = await supabase
         .from('tasks')
@@ -520,6 +525,7 @@ export function useDeleteTaskGroup(boardId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['deleteTaskGroup', boardId],
     mutationFn: async (groupId: string) => {
       const { error } = await supabase
         .from('task_groups')

@@ -88,6 +88,7 @@ export function useBulkDuplicate(boardId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['bulkDuplicate', boardId],
     mutationFn: async (taskIds: string[]) => {
       // Get all tasks to duplicate
       const { data: tasks, error: fetchError } = await supabase
@@ -131,6 +132,7 @@ export function useBulkDelete(boardId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['bulkDelete', boardId],
     mutationFn: async (taskIds: string[]) => {
       const { error } = await supabase
         .from('tasks')
@@ -157,6 +159,7 @@ export function useBulkMoveToPhase(boardId: string, currentUserId?: string | nul
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['bulkMoveToPhase', boardId, currentUserId],
     mutationFn: async ({ taskIds, targetPhase }: { taskIds: string[]; targetPhase: string }) => {
       // Get current board info
       const { data: currentBoard, error: boardError } = await supabase
@@ -287,6 +290,7 @@ export function useMoveTaskToPhase(boardId: string, currentUserId?: string | nul
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['moveTaskToPhase', boardId, currentUserId],
     mutationFn: async ({ taskId, targetPhase }: { taskId: string; targetPhase: string }) => {
       // Get current board info
       const { data: currentBoard, error: boardError } = await supabase
@@ -414,7 +418,8 @@ export function useBulkUpdateField(boardId: string, currentUserId?: string | nul
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ 
+    mutationKey: ['bulkUpdateField', boardId, currentUserId],
+    mutationFn: async ({
       taskIds, 
       field, 
       value,

@@ -45,6 +45,7 @@ interface MultipleWODialogProps {
   onCreateTasks: (groupId: string, template: TaskTemplate, names: string[]) => void;
   groups: BoardGroup[];
   isCreating?: boolean;
+  defaultGroupId?: string | null;
 }
 
 export interface TaskTemplate {
@@ -326,10 +327,11 @@ export function MultipleWODialog({
   onClose, 
   onCreateTasks, 
   groups,
-  isCreating = false 
+  isCreating = false,
+  defaultGroupId = null
 }: MultipleWODialogProps) {
   const [step, setStep] = useState<1 | 2>(1);
-  const [selectedGroupId, setSelectedGroupId] = useState<string>(groups[0]?.id || '');
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(defaultGroupId || groups[0]?.id || '');
   const [baseName, setBaseName] = useState('');
   const [startingSuffix, setStartingSuffix] = useState('1');
   const [episodes, setEpisodes] = useState(1);
@@ -345,6 +347,13 @@ export function MultipleWODialog({
     deliverables: false,
     rates: false,
   });
+
+  // Update selectedGroupId when defaultGroupId changes
+  useEffect(() => {
+    if (defaultGroupId) {
+      setSelectedGroupId(defaultGroupId);
+    }
+  }, [defaultGroupId]);
 
   // Fetch existing values and project managers
   useEffect(() => {

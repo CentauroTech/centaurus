@@ -416,16 +416,14 @@ function BoardViewContent({
   const deleteTask = (taskId: string) => {
     deleteTaskMutation.mutate(taskId);
   };
+  // Track selected group for Multiple WO dialog
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  
   const addTask = (groupId: string) => {
-    // Single task creation requires branch and project_manager_id
-    // Show error toast prompting to use Multiple WO tool
-    addTaskMutation.mutate({
-      group_id: groupId
-    }, {
-      onError: error => {
-        console.error('Use Multiple WO tool:', error.message);
-      }
-    });
+    // Open Multiple WO dialog instead of single task creation
+    // (Single tasks require branch and project_manager_id which the dialog provides)
+    setSelectedGroupId(groupId);
+    setIsMultipleWODialogOpen(true);
   };
   const updateGroup = (groupId: string, updates: Partial<{
     name: string;
@@ -577,17 +575,27 @@ function BoardViewContent({
       </div>
 
       {/* Multiple WO Dialog */}
-      <MultipleWODialog isOpen={isMultipleWODialogOpen} onClose={() => setIsMultipleWODialogOpen(false)} onCreateTasks={(groupId, template, names) => {
-        addMultipleTasksMutation.mutate({
-          groupId,
-          template,
-          names
-        });
-      }} groups={board.groups.map(g => ({
-        id: g.id,
-        name: g.name,
-        color: g.color
-      }))} isCreating={addMultipleTasksMutation.isPending} />
+      <MultipleWODialog 
+        isOpen={isMultipleWODialogOpen} 
+        onClose={() => {
+          setIsMultipleWODialogOpen(false);
+          setSelectedGroupId(null);
+        }} 
+        onCreateTasks={(groupId, template, names) => {
+          addMultipleTasksMutation.mutate({
+            groupId,
+            template,
+            names
+          });
+        }} 
+        groups={board.groups.map(g => ({
+          id: g.id,
+          name: g.name,
+          color: g.color
+        }))} 
+        isCreating={addMultipleTasksMutation.isPending}
+        defaultGroupId={selectedGroupId}
+      />
 
       {/* Scrollable Board Area */}
       <div className="flex-1 overflow-auto custom-scrollbar">

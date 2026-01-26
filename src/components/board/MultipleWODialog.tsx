@@ -42,10 +42,11 @@ interface TeamMember {
 interface MultipleWODialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateTasks: (groupId: string, template: TaskTemplate, names: string[]) => void;
+  onCreateTasks: (groupId: string, template: TaskTemplate, names: string[], branches: string[]) => void;
   groups: BoardGroup[];
   isCreating?: boolean;
   defaultGroupId?: string | null;
+  currentWorkspaceName?: string;
 }
 
 export interface TaskTemplate {
@@ -55,7 +56,8 @@ export interface TaskTemplate {
   servicios?: string[];
   formato?: string[];
   cantidad_episodios?: number;
-  branch?: string;
+  branches?: string[];  // Changed from branch to branches for multi-select
+  branch?: string;      // Keep for backward compatibility (single branch when creating)
   genre?: string;
   lenguaje_original?: string;
   target_language?: string;
@@ -328,13 +330,15 @@ export function MultipleWODialog({
   onCreateTasks, 
   groups,
   isCreating = false,
-  defaultGroupId = null
+  defaultGroupId = null,
+  currentWorkspaceName = ''
 }: MultipleWODialogProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedGroupId, setSelectedGroupId] = useState<string>(defaultGroupId || groups[0]?.id || '');
   const [baseName, setBaseName] = useState('');
   const [startingSuffix, setStartingSuffix] = useState('1');
   const [episodes, setEpisodes] = useState(1);
+  const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
   const [template, setTemplate] = useState<TaskTemplate>({ name: '' });
   const [existingData, setExistingData] = useState<Record<string, string[]>>({});
   const [projectManagers, setProjectManagers] = useState<TeamMember[]>([]);
@@ -406,6 +410,7 @@ export function MultipleWODialog({
     setBaseName('');
     setStartingSuffix('1');
     setEpisodes(1);
+    setSelectedBranches([]);
     setTemplate({ name: '' });
   };
 
@@ -415,10 +420,14 @@ export function MultipleWODialog({
   };
 
   const handleCreate = () => {
-    if (selectedGroupId && generatedNames.length > 0) {
-      // Include episodes in template
-      const templateWithEpisodes = { ...template, cantidad_episodios: episodes };
-      onCreateTasks(selectedGroupId, templateWithEpisodes, generatedNames);
+    if (selectedGroupId && generatedNames.length > 0 && selectedBranches.length > 0) {
+      // Include episodes and branches in template
+      const templateWithEpisodes = { 
+        ...template, 
+        cantidad_episodios: episodes,
+        branches: selectedBranches 
+      };
+      onCreateTasks(selectedGroupId, templateWithEpisodes, generatedNames, selectedBranches);
       handleClose();
     }
   };
@@ -541,7 +550,7 @@ export function MultipleWODialog({
     startingSuffix.trim() !== '' && 
     episodes > 0 && 
     selectedGroupId && 
-    template.branch &&  // Required
+    selectedBranches.length > 0 &&  // At least one branch required
     template.project_manager_id;  // Required
 
   return (
@@ -550,7 +559,7 @@ export function MultipleWODialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ListPlus className="w-5 h-5" />
-            {step === 1 ? 'Create Multiple Work Orders' : 'Confirm Names'}
+            {step === 1 ? 'Create Work Order' : 'Confirm Names'}
           </DialogTitle>
         </DialogHeader>
 
@@ -631,24 +640,22 @@ export function MultipleWODialog({
               {/* Required Fields */}
               <div className="border-t pt-4">
                 <div className="grid grid-cols-2 gap-4">
-                  {/* Branch - Required */}
+                  {/* Branch - Required, Multi-select */}
                   <div className="space-y-2">
                     <Label className="flex items-center gap-1">
-                      Branch <span className="text-destructive">*</span>
+                      Branch(es) <span className="text-destructive">*</span>
                     </Label>
-                    <Select 
-                      value={template.branch || ''} 
-                      onValueChange={(val) => setTemplate(prev => ({ ...prev, branch: val || undefined }))}
-                    >
-                      <SelectTrigger className={cn("h-9", !template.branch && "border-destructive/50")}>
-                        <SelectValue placeholder="Select branch" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {BRANCH_OPTIONS.map((branch) => (
-                          <SelectItem key={branch} value={branch}>{branch}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <MultiSelectField
+                      value={selectedBranches}
+                      onChange={setSelectedBranches}
+                      options={BRANCH_OPTIONS}
+                      placeholder="Select branch(es)"
+                    />
+                    {selectedBranches.length > 1 && (
+                      <p className="text-xs text-muted-foreground">
+                        WO will be created in each selected branch's workspace
+                      </p>
+                    )}
                   </div>
 
                   {/* Project Manager - Required */}
@@ -681,7 +688,7 @@ export function MultipleWODialog({
                     </Select>
                   </div>
                 </div>
-                {(!template.branch || !template.project_manager_id) && (
+                {(selectedBranches.length === 0 || !template.project_manager_id) && (
                   <p className="text-xs text-destructive mt-2">
                     Branch and Project Manager are required to generate Work Order numbers.
                   </p>

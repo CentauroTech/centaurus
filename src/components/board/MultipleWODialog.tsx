@@ -60,7 +60,7 @@ export interface TaskTemplate {
   branch?: string;      // Keep for backward compatibility (single branch when creating)
   genre?: string;
   lenguaje_original?: string;
-  target_language?: string;
+  target_language?: string[];
   prueba_de_voz?: string;
   locked_runtime?: string;
   final_runtime?: string;
@@ -151,7 +151,7 @@ const COLUMN_CATEGORIES = {
   },
   production: {
     label: 'Production Details',
-    columns: TEMPLATE_COLUMNS.filter(c => ['servicios', 'formato', 'studio', 'pruebaDeVoz', 'aorNeeded'].includes(c.id)),
+    columns: TEMPLATE_COLUMNS.filter(c => ['servicios', 'formato', 'pruebaDeVoz', 'aorNeeded'].includes(c.id)),
   },
   content: {
     label: 'Content Info',

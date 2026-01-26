@@ -29,7 +29,7 @@ import { useTaskViewers, useUpdateTaskViewers } from '@/hooks/useTaskViewers';
 import { useSendGuestAssignmentNotification } from '@/hooks/useGuestNotifications';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
-import { mockUsers } from '@/data/mockData';
+
 import { RoleType } from '@/hooks/useTeamMemberRoles';
 import { toast } from 'sonner';
 interface TaskRowProps {
@@ -454,6 +454,6 @@ export function TaskRow({
         </td>
       </tr>
 
-      <TaskDetailsPanel task={task} isOpen={isDetailsPanelOpen} onClose={() => setIsDetailsPanelOpen(false)} users={mockUsers} boardId={boardId} workspaceName={workspaceName} />
+      <TaskDetailsPanel task={task} isOpen={isDetailsPanelOpen} onClose={() => setIsDetailsPanelOpen(false)} users={[]} boardId={boardId} workspaceName={workspaceName} />
     </>;
 }

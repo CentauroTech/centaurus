@@ -76,7 +76,7 @@ export interface Task {
   aorNeeded?: boolean;
   formato?: string[];
   lenguajeOriginal?: string;
-  targetLanguage?: string;
+  targetLanguage?: string[];
   rates?: number;
   showGuide?: string;
   tituloAprobadoEspanol?: string;
@@ -112,6 +112,7 @@ export interface Task {
   guestDueDate?: Date | string;
   deliveryComment?: string;
   // Kickoff brief
+  kickoffBrief?: string;
   kickoff_brief?: string;
   createdAt: Date;
   comments?: Comment[];
@@ -304,7 +305,7 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'studio', label: 'Studio', type: 'dropdown', width: 'w-28', field: 'studio', options: STUDIO_OPTIONS },
   { id: 'director', label: 'Director', type: 'person', width: 'w-28', field: 'director', roleFilter: 'director' },
   { id: 'lenguajeOriginal', label: 'Original Language', type: 'dropdown', width: 'w-32', field: 'lenguajeOriginal', options: LENGUAJE_OPTIONS },
-  { id: 'targetLanguage', label: 'Target Language', type: 'dropdown', width: 'w-32', field: 'targetLanguage', options: TARGET_LANGUAGE_OPTIONS },
+  { id: 'targetLanguage', label: 'Target Language', type: 'multi-select', width: 'w-48', field: 'targetLanguage', options: TARGET_LANGUAGE_OPTIONS },
   { id: 'tituloAprobadoEspanol', label: 'Approved Title', type: 'text', width: 'w-40', field: 'tituloAprobadoEspanol' },
   { id: 'premixRetakeList', label: 'Premix Retakes', type: 'file', width: 'w-28', field: 'premixRetakeList' },
   { id: 'mixRetakeList', label: 'Mix Retakes', type: 'file', width: 'w-28', field: 'mixRetakeList' },

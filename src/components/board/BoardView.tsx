@@ -146,6 +146,7 @@ function BoardViewContent({
         formato: t.formato || [],
         genre: t.genre,
         lenguajeOriginal: t.lenguaje_original,
+        targetLanguage: t.target_language ? t.target_language.split(', ').filter(Boolean) : [],
         rates: t.rates,
         showGuide: t.show_guide,
         tituloAprobadoEspanol: t.titulo_aprobado_espanol,
@@ -229,7 +230,8 @@ function BoardViewContent({
     if (updates.formato !== undefined) dbUpdates.formato = updates.formato;
     if (updates.genre !== undefined) dbUpdates.genre = updates.genre;
     if (updates.lenguajeOriginal !== undefined) dbUpdates.lenguaje_original = updates.lenguajeOriginal;
-    if (updates.targetLanguage !== undefined) dbUpdates.target_language = updates.targetLanguage;
+    if (updates.targetLanguage !== undefined) dbUpdates.target_language = Array.isArray(updates.targetLanguage) ? updates.targetLanguage.join(', ') : updates.targetLanguage;
+    if (updates.kickoffBrief !== undefined) dbUpdates.kickoff_brief = updates.kickoffBrief;
     if (updates.rates !== undefined) dbUpdates.rates = updates.rates;
     if (updates.showGuide !== undefined) dbUpdates.show_guide = updates.showGuide;
     if (updates.tituloAprobadoEspanol !== undefined) dbUpdates.titulo_aprobado_espanol = updates.tituloAprobadoEspanol;

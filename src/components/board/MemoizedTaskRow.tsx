@@ -27,7 +27,7 @@ import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 import { useBulkEdit } from '@/contexts/BulkEditContext';
 import { useUpdateTaskViewers } from '@/hooks/useTaskViewers';
 import { useSendGuestAssignmentNotification } from '@/hooks/useGuestNotifications';
-import { mockUsers } from '@/data/mockData';
+
 import { RoleType } from '@/hooks/useTeamMemberRoles';
 
 interface MemoizedTaskRowProps {
@@ -458,7 +458,7 @@ export const MemoizedTaskRow = memo(function MemoizedTaskRow({
         task={task} 
         isOpen={isDetailsPanelOpen} 
         onClose={() => setIsDetailsPanelOpen(false)} 
-        users={mockUsers} 
+        users={[]} 
         boardId={boardId}
         workspaceName={workspaceName}
       />

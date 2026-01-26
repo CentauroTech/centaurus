@@ -565,7 +565,7 @@ function BoardViewContent({
 
           {isKickoffBoard && <Button onClick={() => setIsMultipleWODialogOpen(true)} size="sm" variant="outline" className="gap-2">
               <ListPlus className="w-4 h-4" />
-              Multiple WO
+              Create WO
             </Button>}
           {canCreateGroups && <Button onClick={addGroup} size="sm" className="gap-2" disabled={addTaskGroupMutation.isPending}>
               <Plus className="w-4 h-4" />
@@ -581,11 +581,12 @@ function BoardViewContent({
           setIsMultipleWODialogOpen(false);
           setSelectedGroupId(null);
         }} 
-        onCreateTasks={(groupId, template, names) => {
+        onCreateTasks={(groupId, template, names, branches) => {
           addMultipleTasksMutation.mutate({
             groupId,
             template,
-            names
+            names,
+            branches
           });
         }} 
         groups={board.groups.map(g => ({
@@ -595,6 +596,7 @@ function BoardViewContent({
         }))} 
         isCreating={addMultipleTasksMutation.isPending}
         defaultGroupId={selectedGroupId}
+        currentWorkspaceName={workspaceName}
       />
 
       {/* Scrollable Board Area */}

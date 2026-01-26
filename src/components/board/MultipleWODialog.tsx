@@ -401,8 +401,8 @@ export function MultipleWODialog({
     }
   };
 
-  const generatedNames = baseName && startingSuffix && episodes > 0
-    ? generateSequentialNames(baseName, startingSuffix, episodes)
+  const generatedNames = baseName && episodes > 0
+    ? generateSequentialNames(baseName, startingSuffix || '1', episodes)
     : [];
 
   const handleReset = () => {
@@ -547,11 +547,10 @@ export function MultipleWODialog({
   };
 
   const canProceed = baseName.trim() !== '' && 
-    startingSuffix.trim() !== '' && 
     episodes > 0 && 
     selectedGroupId && 
     selectedBranches.length > 0 &&  // At least one branch required
-    template.project_manager_id;  // Required
+    template.project_manager_id;  // Required (startingSuffix is optional, defaults to '1')
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>

@@ -156,6 +156,7 @@ function BoardViewContent({
         completedAt: t.completed_at || undefined,
         guestDueDate: t.guest_due_date || undefined,
         deliveryComment: t.delivery_comment || undefined,
+        kickoffBrief: t.kickoff_brief || undefined,
         lastUpdated: t.last_updated ? new Date(t.last_updated) : undefined,
         aorComplete: t.aor_complete,
         director: getTeamMember(t.director_id),

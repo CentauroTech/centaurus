@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy, X } from 'lucide-react';
+import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy, X, HelpCircle } from 'lucide-react';
+import { BoardGuide, useBoardGuide } from './BoardGuide';
 import { addBusinessDays } from '@/lib/businessDays';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -57,6 +58,9 @@ function BoardViewContent({
   const currentUserId = currentTeamMember?.id || null;
   const queryClient = useQueryClient();
   const [isMultipleWODialogOpen, setIsMultipleWODialogOpen] = useState(false);
+
+  // Board guide for first-time visitors
+  const { isOpen: isGuideOpen, openGuide, closeGuide } = useBoardGuide(boardId, board.name);
 
   // Real-time subscriptions for this board
   useBoardRealtime(boardId);
@@ -515,6 +519,17 @@ function BoardViewContent({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Board Guide Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button onClick={openGuide} size="sm" variant="ghost" className="gap-2">
+                <HelpCircle className="w-4 h-4" />
+                Guide
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>View workflow guide for this phase</TooltipContent>
+          </Tooltip>
+
           {/* Column Lock/Unlock - Admin only */}
           {isAdmin && <>
               <Tooltip>
@@ -600,6 +615,13 @@ function BoardViewContent({
         isCreating={addMultipleTasksMutation.isPending}
         defaultGroupId={selectedGroupId}
         currentWorkspaceName={workspaceName}
+      />
+
+      {/* Board Guide Dialog */}
+      <BoardGuide 
+        boardName={board.name} 
+        isOpen={isGuideOpen} 
+        onClose={closeGuide} 
       />
 
       {/* Scrollable Board Area */}

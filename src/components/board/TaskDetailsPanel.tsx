@@ -114,7 +114,12 @@ export default function TaskDetailsPanel({
 
           <div className="flex-1 min-h-0 overflow-hidden">
             <TabsContent value="updates" className="h-full m-0">
-              <CommentSection taskId={task.id} boardId={boardId} workspaceName={workspaceName} />
+              <CommentSection 
+                taskId={task.id} 
+                boardId={boardId} 
+                workspaceName={workspaceName}
+                kickoffBrief={task.kickoffBrief}
+              />
             </TabsContent>
 
             <TabsContent value="files" className="h-full m-0 overflow-y-auto">

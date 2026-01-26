@@ -6,7 +6,7 @@ import { useTeamMembers } from "@/hooks/useWorkspaces";
 import { useWorkspaceTeamMembers } from "@/hooks/useWorkspaceTeamMembers";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trash2, Eye, EyeOff } from "lucide-react";
+import { Trash2, Eye, EyeOff, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,7 @@ interface CommentSectionProps {
   taskId: string;
   boardId?: string;
   workspaceName?: string; // Optional workspace name for @everyone feature
+  kickoffBrief?: string; // Additional instructions from WO creation
 }
 
 // Extract @mentions from HTML content
@@ -29,7 +30,7 @@ function extractMentionsFromHtml(html: string): string[] {
   return mentions;
 }
 
-export default function CommentSection({ taskId, boardId = "", workspaceName }: CommentSectionProps) {
+export default function CommentSection({ taskId, boardId = "", workspaceName, kickoffBrief }: CommentSectionProps) {
   const [newComment, setNewComment] = useState("");
   const [activeTab, setActiveTab] = useState<"team" | "guest">("team");
   
@@ -103,12 +104,46 @@ export default function CommentSection({ taskId, boardId = "", workspaceName }: 
   const teamComments = comments.filter((c) => !c.is_guest_visible);
   const guestComments = comments.filter((c) => c.is_guest_visible);
 
-  const renderCommentList = (commentList: typeof comments) => {
+  // Render kickoff brief as first entry
+  const renderKickoffBrief = () => {
+    if (!kickoffBrief) return null;
+    
+    return (
+      <div className="rounded-lg border p-3 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+        <div className="flex items-start gap-3">
+          <div className="h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-900 flex items-center justify-center flex-shrink-0">
+            <FileText className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-sm">Additional Instructions</span>
+              <span className="text-xs bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded">
+                From WO Creation
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-foreground whitespace-pre-wrap">
+              {kickoffBrief}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderCommentList = (commentList: typeof comments, showKickoffBrief = false) => {
     if (isLoading) {
       return <div className="text-sm text-muted-foreground p-4">Loading comments...</div>;
     }
 
-    if (commentList.length === 0) {
+    if (commentList.length === 0 && !showKickoffBrief) {
+      return (
+        <div className="text-sm text-muted-foreground p-4 text-center">
+          No comments yet. Start the conversation!
+        </div>
+      );
+    }
+
+    if (commentList.length === 0 && showKickoffBrief && !kickoffBrief) {
       return (
         <div className="text-sm text-muted-foreground p-4 text-center">
           No comments yet. Start the conversation!
@@ -118,12 +153,13 @@ export default function CommentSection({ taskId, boardId = "", workspaceName }: 
 
     return (
       <div className="flex flex-col gap-3 p-4">
+        {showKickoffBrief && renderKickoffBrief()}
         {commentList.map((comment) => (
           <div
             key={comment.id}
             className={cn(
               "rounded-lg border p-3 bg-card",
-              comment.is_guest_visible && "border-blue-200 bg-blue-50/50"
+              comment.is_guest_visible && "border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30"
             )}
           >
             <div className="flex items-start gap-3">
@@ -145,7 +181,7 @@ export default function CommentSection({ taskId, boardId = "", workspaceName }: 
                       {format(new Date(comment.created_at), "MMM d, h:mm a")}
                     </span>
                     {comment.is_guest_visible && (
-                      <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                      <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">
                         Guest visible
                       </span>
                     )}
@@ -212,10 +248,10 @@ export default function CommentSection({ taskId, boardId = "", workspaceName }: 
 
         <div className="flex-1 min-h-0 overflow-y-auto">
           <TabsContent value="team" className="m-0 h-full">
-            {renderCommentList(teamComments)}
+            {renderCommentList(teamComments, true)}
           </TabsContent>
           <TabsContent value="guest" className="m-0 h-full">
-            {renderCommentList(guestComments)}
+            {renderCommentList(guestComments, false)}
           </TabsContent>
         </div>
       </Tabs>

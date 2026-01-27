@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,7 +11,10 @@ import {
   Settings, RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PHASE_GUIDES, type PhaseGuide } from '@/config/phaseGuides';
+import { PHASE_GUIDES } from '@/config/phaseGuides';
+
+// Re-export the hook from the new location
+export { useBoardGuidePreference as useBoardGuide } from '@/hooks/useBoardGuidePreference';
 
 // Icon mapping
 const PHASE_ICONS: Record<string, React.ReactNode> = {
@@ -213,33 +216,3 @@ export function BoardGuide({ boardName, isOpen, onClose }: BoardGuideProps) {
   );
 }
 
-// Hook to manage first-time guide display
-export function useBoardGuide(boardId: string, boardName: string) {
-  const [isOpen, setIsOpen] = useState(false);
-  const storageKey = `board-guide-seen-${boardId}`;
-
-  useEffect(() => {
-    // Check if user has seen this board's guide
-    const hasSeen = localStorage.getItem(storageKey);
-    if (!hasSeen && boardName) {
-      // Auto-show on first visit (with small delay for page to load)
-      const timer = setTimeout(() => setIsOpen(true), 500);
-      return () => clearTimeout(timer);
-    }
-  }, [boardId, boardName, storageKey]);
-
-  const openGuide = () => setIsOpen(true);
-  
-  const closeGuide = (dontShowAgain: boolean = false) => {
-    setIsOpen(false);
-    if (dontShowAgain) {
-      localStorage.setItem(storageKey, 'true');
-    }
-  };
-
-  const resetGuide = () => {
-    localStorage.removeItem(storageKey);
-  };
-
-  return { isOpen, openGuide, closeGuide, resetGuide };
-}

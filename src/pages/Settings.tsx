@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Users, Columns, Eye, EyeOff, X, Plus, Minus, Zap, DollarSign } from 'lucide-react';
+import { ArrowLeft, Search, Users, Columns, Eye, EyeOff, X, Plus, Minus, Zap, DollarSign, BookOpen } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,7 @@ import { toast } from 'sonner';
 import { PhaseAutomationsTab } from '@/components/settings/PhaseAutomationsTab';
 import { EditableEmailCell } from '@/components/settings/EditableEmailCell';
 import { BillingTab } from '@/components/settings/BillingTab';
+import { GuideEditorTab } from '@/components/settings/GuideEditorTab';
 
 const BRANCH_COLORS: Record<Branch, string> = {
   Colombia: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
@@ -481,6 +482,10 @@ export default function Settings() {
                   <Columns className="h-4 w-4" />
                   Column Visibility
                 </TabsTrigger>
+                <TabsTrigger value="guides" className="gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Guide Editor
+                </TabsTrigger>
               </>
             )}
             {hasBillingRole && (
@@ -848,6 +853,13 @@ export default function Settings() {
                   {initializeColumnVisibility.isPending ? 'Initializing...' : 'Initialize Missing Columns'}
                 </Button>
               </div>
+            </TabsContent>
+          )}
+
+          {/* Guide Editor Tab */}
+          {(isGod || isAdmin) && (
+            <TabsContent value="guides" className="space-y-6">
+              <GuideEditorTab />
             </TabsContent>
           )}
 

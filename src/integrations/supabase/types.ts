@@ -823,6 +823,51 @@ export type Database = {
           },
         ]
       }
+      phase_guides: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          key_columns: Json
+          next_phase: string | null
+          overview: string
+          phase_key: string
+          roles: Json
+          title: string
+          trigger_condition: string | null
+          updated_at: string
+          workflow: Json
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          key_columns?: Json
+          next_phase?: string | null
+          overview: string
+          phase_key: string
+          roles?: Json
+          title: string
+          trigger_condition?: string | null
+          updated_at?: string
+          workflow?: Json
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          key_columns?: Json
+          next_phase?: string | null
+          overview?: string
+          phase_key?: string
+          roles?: Json
+          title?: string
+          trigger_condition?: string | null
+          updated_at?: string
+          workflow?: Json
+        }
+        Relationships: []
+      }
       task_files: {
         Row: {
           file_category: string

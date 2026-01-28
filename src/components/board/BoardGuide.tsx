@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PHASE_GUIDES } from '@/config/phaseGuides';
+import { usePhaseGuide } from '@/hooks/usePhaseGuides';
 
 // Re-export the hook from the new location
 export { useBoardGuidePreference as useBoardGuide } from '@/hooks/useBoardGuidePreference';
@@ -52,7 +53,9 @@ function extractPhaseKey(boardName: string): string {
 export function BoardGuide({ boardName, isOpen, onClose }: BoardGuideProps) {
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const phaseKey = extractPhaseKey(boardName);
-  const guide = PHASE_GUIDES[phaseKey];
+  
+  // Use the database-backed hook which falls back to static config
+  const { guide, isLoading } = usePhaseGuide(phaseKey);
   const icon = PHASE_ICONS[phaseKey];
 
   const handleClose = () => {

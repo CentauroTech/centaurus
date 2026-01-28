@@ -4,6 +4,7 @@ import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
+import DOMPurify from 'dompurify';
 import { 
   Bold, 
   Italic, 
@@ -448,8 +449,17 @@ export function RichTextEditor({
   );
 }
 
-// Read-only display component for rich text content
+// Read-only display component for rich text content with XSS protection
 export function RichTextDisplay({ content, className }: { content: string; className?: string }) {
+  // Sanitize HTML content to prevent XSS attacks
+  const sanitizedContent = useMemo(() => {
+    return DOMPurify.sanitize(content, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'span', 'mark'],
+      ALLOWED_ATTR: ['class', 'data-id', 'style'],
+      KEEP_CONTENT: true,
+    });
+  }, [content]);
+
   return (
     <div 
       className={cn(
@@ -460,7 +470,7 @@ export function RichTextDisplay({ content, className }: { content: string; class
         "break-words",
         className
       )}
-      dangerouslySetInnerHTML={{ __html: content }}
+      dangerouslySetInnerHTML={{ __html: sanitizedContent }}
     />
   );
 }

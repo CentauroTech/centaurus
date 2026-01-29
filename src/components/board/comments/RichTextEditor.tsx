@@ -188,40 +188,14 @@ export function RichTextEditor({
       const start = $from.pos - mentionMatch[0].length;
       const end = $from.pos;
       
-      // Delete the @query and insert mention as a mark
+      // Delete the @query and insert mention HTML directly with data-id
+      // Using insertContent with HTML string to preserve the span with data-id
       editor
         .chain()
         .focus()
         .deleteRange({ from: start, to: end })
-        .insertContent([
-          {
-            type: 'text',
-            marks: [{ type: 'bold' }],
-            text: `@${user.name}`,
-          },
-          {
-            type: 'text',
-            text: ' ',
-          },
-        ])
+        .insertContent(`<span class="mention" data-id="${user.id}">@${user.name}</span> `)
         .run();
-      
-      // Store the mention data in a data attribute by updating the HTML
-      setTimeout(() => {
-        const html = editor.getHTML();
-        const updatedHtml = html.replace(
-          new RegExp(`<strong>@${user.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}</strong>`),
-          `<span class="mention" data-id="${user.id}">@${user.name}</span>`
-        );
-        if (html !== updatedHtml) {
-          const currentPos = editor.state.selection.from;
-          editor.commands.setContent(updatedHtml, false);
-          // Restore cursor position
-          try {
-            editor.commands.setTextSelection(currentPos);
-          } catch {}
-        }
-      }, 0);
     }
     
     setShowMentions(false);

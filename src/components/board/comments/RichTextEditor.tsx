@@ -188,14 +188,36 @@ export function RichTextEditor({
       const start = $from.pos - mentionMatch[0].length;
       const end = $from.pos;
       
-      // Delete the @query and insert mention HTML directly with data-id
-      // Using insertContent with HTML string to preserve the span with data-id
+      // First, insert a placeholder that we'll replace
       editor
         .chain()
         .focus()
         .deleteRange({ from: start, to: end })
-        .insertContent(`<span class="mention" data-id="${user.id}">@${user.name}</span> `)
+        .insertContent(`@@MENTION_${user.id}_${user.name}@@ `)
         .run();
+      
+      // Now replace the placeholder with actual HTML in the content
+      // We need to do this because TipTap escapes custom HTML elements
+      requestAnimationFrame(() => {
+        const currentHtml = editor.getHTML();
+        const placeholder = `@@MENTION_${user.id}_${user.name}@@`;
+        const mentionHtml = `<span class="mention" data-id="${user.id}">@${user.name}</span>`;
+        
+        if (currentHtml.includes(placeholder)) {
+          const newHtml = currentHtml.replace(placeholder, mentionHtml);
+          const cursorPos = editor.state.selection.from;
+          editor.commands.setContent(newHtml, false);
+          // Try to restore cursor position
+          try {
+            // Adjust for the difference in length between placeholder and mention
+            const lengthDiff = mentionHtml.length - placeholder.length;
+            editor.commands.setTextSelection(Math.max(1, cursorPos + lengthDiff));
+          } catch {
+            // If position restore fails, just focus at end
+            editor.commands.focus('end');
+          }
+        }
+      });
     }
     
     setShowMentions(false);

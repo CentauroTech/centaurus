@@ -3,10 +3,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCurrentTeamMember } from './useCurrentTeamMember';
 import { useEffect } from 'react';
 
+export type NotificationType = 
+  | 'mention' 
+  | 'assignment' 
+  | 'invoice_submitted' 
+  | 'invoice_approved' 
+  | 'invoice_rejected' 
+  | 'invoice_paid';
+
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'mention' | 'assignment';
+  type: NotificationType;
   task_id: string | null;
   triggered_by_id: string | null;
   title: string;

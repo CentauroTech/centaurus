@@ -1,7 +1,7 @@
 import { formatDistanceToNow } from 'date-fns';
-import { AtSign, UserPlus, MoreHorizontal, Mail, MailOpen, Trash2 } from 'lucide-react';
+import { AtSign, UserPlus, MoreHorizontal, Mail, MailOpen, Trash2, FileText, CheckCircle2, XCircle, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Notification } from '@/hooks/useNotifications';
+import { Notification, NotificationType } from '@/hooks/useNotifications';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,25 @@ interface NotificationItemProps {
   showActions?: boolean;
 }
 
+const getNotificationIcon = (type: NotificationType) => {
+  switch (type) {
+    case 'mention':
+      return <AtSign className="w-4 h-4" />;
+    case 'assignment':
+      return <UserPlus className="w-4 h-4" />;
+    case 'invoice_submitted':
+      return <FileText className="w-4 h-4" />;
+    case 'invoice_approved':
+      return <CheckCircle2 className="w-4 h-4" style={{ color: 'hsl(var(--primary))' }} />;
+    case 'invoice_rejected':
+      return <XCircle className="w-4 h-4 text-destructive" />;
+    case 'invoice_paid':
+      return <DollarSign className="w-4 h-4" style={{ color: 'hsl(var(--primary))' }} />;
+    default:
+      return <Mail className="w-4 h-4" />;
+  }
+};
+
 export function NotificationItem({
   notification,
   onMarkRead,
@@ -27,11 +46,7 @@ export function NotificationItem({
   onClick,
   showActions = false,
 }: NotificationItemProps) {
-  const typeIcon = notification.type === 'mention' ? (
-    <AtSign className="w-4 h-4" />
-  ) : (
-    <UserPlus className="w-4 h-4" />
-  );
+  const typeIcon = getNotificationIcon(notification.type);
 
   const triggeredBy = notification.triggered_by;
   const avatarColor = triggeredBy?.color || 'hsl(209, 100%, 46%)';

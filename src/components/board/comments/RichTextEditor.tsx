@@ -171,7 +171,7 @@ export function RichTextEditor({
     } else {
       setShowMentions(false);
     }
-  }, [mentionUsers.length]);
+  }, [allMentionUsers.length]);
 
   const insertMention = useCallback((user: MentionUser) => {
     if (!editor) return;

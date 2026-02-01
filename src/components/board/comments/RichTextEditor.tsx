@@ -4,6 +4,7 @@ import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
+import Mention from '@tiptap/extension-mention';
 import DOMPurify from 'dompurify';
 import { 
   Bold, 
@@ -25,7 +26,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export interface MentionUser {
@@ -86,6 +86,30 @@ export function RichTextEditor({
     user.name.toLowerCase().includes(mentionQuery.toLowerCase())
   ).slice(0, 8);
 
+  // Create custom mention extension that renders with data-id
+  const CustomMention = useMemo(() => {
+    return Mention.configure({
+      HTMLAttributes: {
+        class: 'mention',
+      },
+      renderHTML({ options, node }) {
+        return [
+          'span',
+          { 
+            class: options.HTMLAttributes?.class || 'mention',
+            'data-id': node.attrs.id,
+          },
+          `@${node.attrs.label ?? node.attrs.id}`,
+        ];
+      },
+      suggestion: {
+        // We handle our own suggestion UI, so disable the default
+        items: () => [],
+        render: () => ({ onStart: () => {}, onUpdate: () => {}, onKeyDown: () => false, onExit: () => {} }),
+      },
+    });
+  }, []);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -103,6 +127,7 @@ export function RichTextEditor({
       Placeholder.configure({
         placeholder,
       }),
+      CustomMention,
     ],
     content,
     editable,
@@ -188,36 +213,20 @@ export function RichTextEditor({
       const start = $from.pos - mentionMatch[0].length;
       const end = $from.pos;
       
-      // First, insert a placeholder that we'll replace
+      // Use TipTap's mention node type which properly preserves data-id
       editor
         .chain()
         .focus()
         .deleteRange({ from: start, to: end })
-        .insertContent(`@@MENTION_${user.id}_${user.name}@@ `)
+        .insertContent({
+          type: 'mention',
+          attrs: {
+            id: user.id,
+            label: user.name,
+          },
+        })
+        .insertContent(' ')
         .run();
-      
-      // Now replace the placeholder with actual HTML in the content
-      // We need to do this because TipTap escapes custom HTML elements
-      requestAnimationFrame(() => {
-        const currentHtml = editor.getHTML();
-        const placeholder = `@@MENTION_${user.id}_${user.name}@@`;
-        const mentionHtml = `<span class="mention" data-id="${user.id}">@${user.name}</span>`;
-        
-        if (currentHtml.includes(placeholder)) {
-          const newHtml = currentHtml.replace(placeholder, mentionHtml);
-          const cursorPos = editor.state.selection.from;
-          editor.commands.setContent(newHtml, false);
-          // Try to restore cursor position
-          try {
-            // Adjust for the difference in length between placeholder and mention
-            const lengthDiff = mentionHtml.length - placeholder.length;
-            editor.commands.setTextSelection(Math.max(1, cursorPos + lengthDiff));
-          } catch {
-            // If position restore fails, just focus at end
-            editor.commands.focus('end');
-          }
-        }
-      });
     }
     
     setShowMentions(false);

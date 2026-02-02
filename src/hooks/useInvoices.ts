@@ -321,6 +321,20 @@ export function useSubmitInvoice() {
         }
       }
 
+      // Send email with PDF attachment (fire and forget - don't block submission)
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-invoice-email', {
+          body: { invoice_id: invoiceId },
+        });
+        if (emailError) {
+          console.error('Failed to send invoice email:', emailError);
+        } else {
+          console.log('Invoice email sent successfully');
+        }
+      } catch (emailErr) {
+        console.error('Error calling send-invoice-email:', emailErr);
+      }
+
       return data;
     },
     onSuccess: (_, invoiceId) => {

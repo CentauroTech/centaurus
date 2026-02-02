@@ -2,3 +2,6 @@ project_id = "myxsnhxorstzbrobecgw"
 
 [functions.send-notification-email]
 verify_jwt = false
+
+[functions.send-invoice-email]
+verify_jwt = false

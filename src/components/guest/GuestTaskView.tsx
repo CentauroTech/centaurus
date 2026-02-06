@@ -20,6 +20,18 @@ import { RichTextEditor, RichTextDisplay, MentionUser } from '@/components/board
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+
+// Parse date string as local date (not UTC) to avoid timezone shift
+function parseLocalDate(dateStr: string): Date {
+  const parts = dateStr.split('T')[0].split('-');
+  if (parts.length === 3) {
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // months are 0-indexed
+    const day = parseInt(parts[2], 10);
+    return new Date(year, month, day);
+  }
+  return new Date(dateStr);
+}
 // Match main workspace phase colors
 const PHASE_COLORS: Record<string, string> = {
   'On Hold': 'bg-gray-400 text-white',
@@ -227,7 +239,7 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
                   <span className="text-muted-foreground">Assigned:</span>
-                  <span className="font-medium">{format(new Date(task.dateAssigned), 'MMM d, yyyy')}</span>
+                  <span className="font-medium">{format(parseLocalDate(task.dateAssigned), 'MMM d, yyyy')}</span>
                 </div>
               )}
               
@@ -238,9 +250,9 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
                   <span className="text-muted-foreground">Due:</span>
                   <span className={cn(
                     "font-medium",
-                    new Date(task.guestDueDate) < new Date() && task.status !== 'done' && "text-destructive"
+                    parseLocalDate(task.guestDueDate) < new Date() && task.status !== 'done' && "text-destructive"
                   )}>
-                    {format(new Date(task.guestDueDate), 'MMM d, yyyy')}
+                    {format(parseLocalDate(task.guestDueDate), 'MMM d, yyyy')}
                   </span>
                 </div>
               )}

@@ -48,6 +48,8 @@ interface TaskGroupProps {
   canDeleteTasks?: boolean;
   canDeleteGroups?: boolean;
   allBoardTasks: Task[];
+  selectedTaskId?: string | null;
+  onTaskPanelClose?: () => void;
 }
 export function TaskGroup({
   group,
@@ -65,7 +67,9 @@ export function TaskGroup({
   onReorderColumns,
   canDeleteTasks = true,
   canDeleteGroups = false,
-  allBoardTasks
+  allBoardTasks,
+  selectedTaskId,
+  onTaskPanelClose
 }: TaskGroupProps) {
   const [isCollapsed, setIsCollapsed] = useState(group.isCollapsed ?? false);
   const [groupName, setGroupName] = useState(group.name);
@@ -215,7 +219,7 @@ export function TaskGroup({
                 </tr>
               </thead>
               <tbody>
-                {visibleTasks.map(task => <TaskRow key={task.id} task={task} onUpdate={updates => onUpdateTask(task.id, updates)} onDelete={canDeleteTasks ? () => onDeleteTask(task.id) : undefined} boardId={boardId} boardName={boardName} workspaceName={workspaceName} columns={columns} onSendToPhase={onSendToPhase ? phase => onSendToPhase(task.id, phase) : undefined} />)}
+                {visibleTasks.map(task => <TaskRow key={task.id} task={task} onUpdate={updates => onUpdateTask(task.id, updates)} onDelete={canDeleteTasks ? () => onDeleteTask(task.id) : undefined} boardId={boardId} boardName={boardName} workspaceName={workspaceName} columns={columns} onSendToPhase={onSendToPhase ? phase => onSendToPhase(task.id, phase) : undefined} autoOpenPanel={selectedTaskId === task.id} onPanelClose={onTaskPanelClose} />)}
               </tbody>
             </table>
           </DndContext>

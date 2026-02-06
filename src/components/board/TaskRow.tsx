@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { GripVertical, Trash2, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Task, User, Phase, Status, ColumnConfig, STUDIO_OPTIONS_MIAMI } from '@/types/board';
@@ -41,6 +41,8 @@ interface TaskRowProps {
   workspaceName?: string;
   columns: ColumnConfig[];
   onSendToPhase?: (phase: string) => void;
+  autoOpenPanel?: boolean;
+  onPanelClose?: () => void;
 }
 
 // Map frontend field names to database column names
@@ -115,10 +117,25 @@ export function TaskRow({
   boardName,
   workspaceName,
   columns,
-  onSendToPhase
+  onSendToPhase,
+  autoOpenPanel = false,
+  onPanelClose
 }: TaskRowProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
+  
+  // Auto-open panel when navigating from notifications
+  useEffect(() => {
+    if (autoOpenPanel && !isDetailsPanelOpen) {
+      setIsDetailsPanelOpen(true);
+    }
+  }, [autoOpenPanel]);
+
+  const handlePanelClose = () => {
+    setIsDetailsPanelOpen(false);
+    onPanelClose?.();
+  };
+  
   const {
     toggleTaskSelection,
     isSelected
@@ -454,6 +471,6 @@ export function TaskRow({
         </td>
       </tr>
 
-      <TaskDetailsPanel task={task} isOpen={isDetailsPanelOpen} onClose={() => setIsDetailsPanelOpen(false)} users={[]} boardId={boardId} workspaceName={workspaceName} />
+      <TaskDetailsPanel task={task} isOpen={isDetailsPanelOpen} onClose={handlePanelClose} users={[]} boardId={boardId} workspaceName={workspaceName} />
     </>;
 }

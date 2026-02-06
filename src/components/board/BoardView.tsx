@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy, X, HelpCircle } from 'lucide-react';
 import { BoardGuide, useBoardGuide } from './BoardGuide';
 import { addBusinessDays } from '@/lib/businessDays';
@@ -52,12 +53,26 @@ function BoardViewContent({
   boardId
 }: BoardViewProps) {
   const workspaceName = board.workspaceName || '';
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     data: currentTeamMember
   } = useCurrentTeamMember();
   const currentUserId = currentTeamMember?.id || null;
   const queryClient = useQueryClient();
   const [isMultipleWODialogOpen, setIsMultipleWODialogOpen] = useState(false);
+  
+  // URL-based task selection for notification deep links
+  const urlTaskId = searchParams.get('task');
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(urlTaskId);
+  
+  // Clear URL param after task is opened
+  const handleTaskPanelClose = () => {
+    setSelectedTaskId(null);
+    if (searchParams.has('task')) {
+      searchParams.delete('task');
+      setSearchParams(searchParams, { replace: true });
+    }
+  };
 
   // Board guide for first-time visitors
   const { isOpen: isGuideOpen, openGuide, closeGuide } = useBoardGuide(boardId, board.name);
@@ -628,7 +643,7 @@ function BoardViewContent({
       <div className="flex-1 overflow-auto custom-scrollbar">
       {/* Task Groups */}
         <div className="space-y-6 min-w-max">
-          {transformedGroups.map(group => <TaskGroup key={group.id} group={group} onUpdateTask={handleUpdateTask} onDeleteTask={deleteTask} onAddTask={() => addTask(group.id)} onUpdateGroup={updates => updateGroup(group.id, updates)} onDeleteGroup={() => deleteGroup(group.id)} onSendToPhase={handleSendTaskToPhase} boardId={boardId} boardName={board.name} workspaceName={workspaceName} columns={columns} isLocked={isLocked || !canReorderColumns} onReorderColumns={reorderColumns} canDeleteTasks={canDeleteTasks} canDeleteGroups={canDeleteTasks} allBoardTasks={allBoardTasks} />)}
+          {transformedGroups.map(group => <TaskGroup key={group.id} group={group} onUpdateTask={handleUpdateTask} onDeleteTask={deleteTask} onAddTask={() => addTask(group.id)} onUpdateGroup={updates => updateGroup(group.id, updates)} onDeleteGroup={() => deleteGroup(group.id)} onSendToPhase={handleSendTaskToPhase} boardId={boardId} boardName={board.name} workspaceName={workspaceName} columns={columns} isLocked={isLocked || !canReorderColumns} onReorderColumns={reorderColumns} canDeleteTasks={canDeleteTasks} canDeleteGroups={canDeleteTasks} allBoardTasks={allBoardTasks} selectedTaskId={selectedTaskId} onTaskPanelClose={handleTaskPanelClose} />)}
         </div>
 
         {/* Empty State */}

@@ -10,6 +10,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 
+// Strip HTML tags from notification messages (mentions are stored as HTML spans)
+const stripHtmlTags = (html: string): string => {
+  // Create a temporary element to parse HTML and extract text
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  return tempDiv.textContent || tempDiv.innerText || '';
+};
+
 interface NotificationItemProps {
   notification: Notification;
   onMarkRead?: (id: string) => void;
@@ -90,7 +98,7 @@ export function NotificationItem({
         </div>
         {notification.message && (
           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-            {notification.message}
+            {stripHtmlTags(notification.message)}
           </p>
         )}
         {/* Board name badge */}

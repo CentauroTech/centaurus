@@ -9,6 +9,18 @@ import { GuestFileCell } from './GuestFileCell';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
+// Parse date string as local date (not UTC) to avoid timezone shift
+function parseLocalDate(dateStr: string): Date {
+  const parts = dateStr.split('T')[0].split('-');
+  if (parts.length === 3) {
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // months are 0-indexed
+    const day = parseInt(parts[2], 10);
+    return new Date(year, month, day);
+  }
+  return new Date(dateStr);
+}
+
 interface GuestTaskTableProps {
   tasks: GuestTask[];
   onTaskClick: (task: GuestTask) => void;
@@ -248,7 +260,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                     <TableCell onClick={() => onTaskClick(task)}>
                       {task.dateAssigned ? (
                         <span className="text-sm whitespace-nowrap">
-                          {format(new Date(task.dateAssigned), 'MMM d, yyyy')}
+                          {format(parseLocalDate(task.dateAssigned), 'MMM d, yyyy')}
                         </span>
                       ) : (
                         <span className="text-muted-foreground">—</span>
@@ -262,7 +274,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                           "text-sm whitespace-nowrap",
                           isDelayed && "text-destructive font-medium"
                         )}>
-                          {format(new Date(task.guestDueDate), 'MMM d, yyyy')}
+                          {format(parseLocalDate(task.guestDueDate), 'MMM d, yyyy')}
                         </span>
                       ) : (
                         <span className="text-muted-foreground">—</span>

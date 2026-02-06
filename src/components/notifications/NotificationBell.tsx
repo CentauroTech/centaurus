@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Bell, CheckCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,13 +13,20 @@ import {
   useUnreadNotificationCount,
   useMarkNotificationRead,
   useMarkAllNotificationsRead,
+  Notification,
 } from '@/hooks/useNotifications';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NotificationItem } from './NotificationItem';
 import { cn } from '@/lib/utils';
 
+// Generate board slug from board name (e.g., "MIA HQ" -> "mia-hq")
+function createBoardSlug(boardName: string): string {
+  return boardName.toLowerCase().replace(/\s+/g, '-');
+}
+
 export function NotificationBell() {
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
   const { data: notifications, isLoading } = useNotifications();
   const unreadCount = useUnreadNotificationCount();
   const markRead = useMarkNotificationRead();
@@ -27,22 +35,33 @@ export function NotificationBell() {
 
   const recentNotifications = notifications?.slice(0, 10) ?? [];
 
-  const handleNotificationClick = (notification: { task_id: string | null; id: string }) => {
+  const handleNotificationClick = (notification: Notification) => {
     // Mark as read
     markRead.mutate(notification.id);
+    
+    // Close the popover
+    setOpen(false);
     
     // Navigate based on user role
     if (notification.task_id) {
       if (role === 'guest') {
         navigate(`/guest-dashboard?task=${notification.task_id}`);
       } else {
-        navigate(`/?task=${notification.task_id}`);
+        // Navigate to the correct board with the task
+        const boardName = notification.task?.group?.board?.name;
+        if (boardName) {
+          const boardSlug = createBoardSlug(boardName);
+          navigate(`/${boardSlug}?task=${notification.task_id}`);
+        } else {
+          // Fallback to root if no board info
+          navigate(`/?task=${notification.task_id}`);
+        }
       }
     }
   };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative text-muted-foreground">
           <Bell className="w-5 h-5" />

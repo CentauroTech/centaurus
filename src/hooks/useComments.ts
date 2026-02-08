@@ -98,6 +98,45 @@ export function useAddComment(taskId: string, boardId: string) {
 
       if (error) throw error;
 
+      // If this is a reply, notify the parent comment's author
+      if (parentId) {
+        try {
+          const { data: parentComment } = await supabase
+            .from('comments')
+            .select('user_id')
+            .eq('id', parentId)
+            .single();
+
+          if (parentComment && parentComment.user_id !== userId) {
+            // Only notify if not already in mentionedUserIds
+            if (!mentionedUserIds.includes(parentComment.user_id)) {
+              const { data: task } = await supabase
+                .from('tasks')
+                .select('id, name')
+                .eq('id', taskId)
+                .single();
+
+              const { data: replierName } = await supabase
+                .from('team_members')
+                .select('name')
+                .eq('id', userId)
+                .single();
+
+              await supabase.rpc('create_notification', {
+                p_user_id: parentComment.user_id,
+                p_type: 'mention',
+                p_task_id: taskId,
+                p_triggered_by_id: userId,
+                p_title: `${replierName?.name || 'Someone'} replied to your comment`,
+                p_message: `in ${task?.name || 'a task'}`,
+              });
+            }
+          }
+        } catch (err) {
+          console.error('Failed to notify parent comment author:', err);
+        }
+      }
+
       // Insert mentions to trigger notifications
       if (mentionedUserIds.length > 0) {
         const mentionInserts = mentionedUserIds.map(mentionedUserId => ({

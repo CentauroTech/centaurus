@@ -391,7 +391,8 @@ export default function CommentItem({
                 isSending={isSending}
                 mentionUsers={mentionUsers}
                 showEveryoneOption={true}
-                className="text-[13px] [&_.ProseMirror]:min-h-[48px] [&_.ProseMirror]:p-2 [&_.ProseMirror]:text-[13px] [&_button]:h-6 [&_button]:w-6 [&_button_svg]:w-3 [&_button_svg]:h-3 [&_.flex.items-center.gap-0\\.5]:p-1 [&_.flex.items-center.gap-0\\.5]:gap-px"
+                hideToolbar={true}
+                className="text-[13px] [&_.ProseMirror]:min-h-[80px] [&_.ProseMirror]:p-3 [&_.ProseMirror]:text-[13px]"
               />
               <div className="flex items-center gap-3 mt-1.5">
                 <input

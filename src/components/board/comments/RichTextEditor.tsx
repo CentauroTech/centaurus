@@ -55,6 +55,7 @@ interface RichTextEditorProps {
   className?: string;
   mentionUsers?: MentionUser[];
   showEveryoneOption?: boolean; // Whether to show @everyone option
+  hideToolbar?: boolean; // Hide the formatting toolbar
 }
 
 export function RichTextEditor({
@@ -67,6 +68,7 @@ export function RichTextEditor({
   className,
   mentionUsers = [],
   showEveryoneOption = false,
+  hideToolbar = false,
 }: RichTextEditorProps) {
   const [showMentions, setShowMentions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
@@ -252,7 +254,7 @@ export function RichTextEditor({
   return (
     <div ref={containerRef} className={cn("border border-border rounded-lg bg-background overflow-hidden relative", className)} onKeyDown={handleKeyDown}>
       {/* Toolbar */}
-      {editable && (
+      {editable && !hideToolbar && (
         <div className="flex items-center gap-0.5 p-1.5 border-b border-border bg-muted/30 flex-wrap">
           <Button
             type="button"

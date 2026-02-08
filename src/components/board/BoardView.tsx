@@ -486,6 +486,48 @@ function BoardViewContent({
     });
   };
   const handleBulkUpdate = (params: BulkUpdateParams) => {
+    // If bulk-updating status to 'done', trigger phase progression for each task
+    if (params.field === 'status' && params.value === 'done') {
+      // Add completed_at timestamp
+      const updatesWithTimestamp = {
+        status: 'done' as const,
+        completed_at: new Date().toISOString(),
+        date_delivered: undefined as string | undefined,
+      };
+
+      // Process each task: update status then move to next phase
+      for (const taskId of params.taskIds) {
+        // Find the task's group and pruebaDeVoz from board data
+        let groupId: string | undefined;
+        let pruebaDeVoz: string | null = null;
+        
+        for (const group of board.groups) {
+          const task = group.tasks.find((t: any) => t.id === taskId);
+          if (task) {
+            groupId = group.id;
+            pruebaDeVoz = (task as any).prueba_de_voz ?? (task as any).pruebaDeVoz ?? null;
+            break;
+          }
+        }
+
+        if (groupId) {
+          updateTaskMutation.mutate({
+            taskId,
+            updates: updatesWithTimestamp
+          }, {
+            onSuccess: () => {
+              moveToNextPhaseMutation.mutate({
+                taskId,
+                currentGroupId: groupId!,
+                pruebaDeVoz,
+              });
+            }
+          });
+        }
+      }
+      return;
+    }
+
     bulkUpdateFieldMutation.mutate({
       taskIds: params.taskIds,
       field: params.field,

@@ -135,7 +135,17 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
     const textContent = newComment.replace(/<[^>]*>/g, '').trim();
     if (!textContent || !currentMember?.id) return;
 
-    const mentionedUserIds = extractMentionsFromHtml(newComment);
+    let mentionedUserIds = extractMentionsFromHtml(newComment);
+
+    // Expand @everyone to all centauro team members
+    const hasEveryoneMention = mentionedUserIds.includes('everyone');
+    if (hasEveryoneMention) {
+      mentionedUserIds = mentionedUserIds.filter(id => id !== 'everyone');
+      const centauroMemberIds = teamMembers
+        .filter(m => m.email && m.email.toLowerCase().endsWith('@centauro.com') && m.id !== currentMember.id)
+        .map(m => m.id);
+      mentionedUserIds = [...new Set([...mentionedUserIds, ...centauroMemberIds])];
+    }
 
     try {
       // Pass phase and viewer for comment isolation
@@ -397,6 +407,7 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
                   placeholder="Send a message to the team... Use @ to mention"
                   isSending={addComment.isPending}
                   mentionUsers={mentionUsers}
+                  showEveryoneOption={true}
                 />
                 <p className="text-xs text-muted-foreground mt-1">Ctrl+Enter to send</p>
               </div>

@@ -299,7 +299,7 @@ export function TaskRow({
         }
         return <TextCell value={value as string} onChange={val => handleUpdate(column.field, val)} disabled={disabled} />;
       case 'number':
-        return <NumberCell value={value as number} onChange={val => handleUpdate(column.field, val)} disabled={disabled} />;
+        return <NumberCell value={value as number} onChange={val => handleUpdate(column.field, val)} disabled={disabled} displayFormat={column.field === 'cantidadEpisodios' ? 'episodes' : undefined} />;
       case 'date':
         // Use StudioAssignedDateCell for studioAssigned field to show WO warning
         if (column.field === 'studioAssigned') {

@@ -5,24 +5,32 @@ interface NumberCellProps {
   onChange: (value: number | undefined) => void;
   placeholder?: string;
   disabled?: boolean;
+  displayFormat?: 'episodes';
 }
 
-export function NumberCell({ value, onChange, placeholder = '-', disabled = false }: NumberCellProps) {
+export function NumberCell({ value, onChange, placeholder = '-', disabled = false, displayFormat }: NumberCellProps) {
   const [localValue, setLocalValue] = useState(value?.toString() || '');
+  const [isFocused, setIsFocused] = useState(false);
   const initialValueRef = useRef(value);
 
-  // Sync local value when external value changes (e.g., after bulk update)
   useEffect(() => {
     setLocalValue(value?.toString() || '');
     initialValueRef.current = value;
   }, [value]);
 
+  const formatDisplay = (v?: number) => {
+    if (v == null) return placeholder;
+    if (displayFormat === 'episodes') return `1/${v}`;
+    return v;
+  };
+
   const handleFocus = () => {
-    // Capture the initial value when focusing
     initialValueRef.current = localValue ? parseFloat(localValue) : undefined;
+    setIsFocused(true);
   };
 
   const handleBlur = () => {
+    setIsFocused(false);
     const numValue = localValue ? parseFloat(localValue) : undefined;
     if (numValue !== initialValueRef.current) {
       onChange(numValue);
@@ -42,7 +50,24 @@ export function NumberCell({ value, onChange, placeholder = '-', disabled = fals
   if (disabled) {
     return (
       <span className="w-full text-sm text-inherit opacity-60 cursor-not-allowed">
-        {value ?? placeholder}
+        {formatDisplay(value)}
+      </span>
+    );
+  }
+
+  // Show formatted display when not focused and has a display format
+  if (!isFocused && displayFormat && value != null) {
+    return (
+      <span
+        className="w-full text-sm text-inherit cursor-text"
+        onClick={(e) => {
+          const input = e.currentTarget.nextElementSibling as HTMLInputElement;
+          input?.focus();
+        }}
+        tabIndex={0}
+        onFocus={() => setIsFocused(true)}
+      >
+        {formatDisplay(value)}
       </span>
     );
   }
@@ -55,7 +80,8 @@ export function NumberCell({ value, onChange, placeholder = '-', disabled = fals
       onFocus={handleFocus}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      className="w-full bg-transparent border-0 outline-none text-sm focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-inherit placeholder:text-slate-400"
+      autoFocus={isFocused && displayFormat != null}
+      className="w-full bg-transparent border-0 outline-none text-sm focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-inherit placeholder:text-muted-foreground"
       placeholder={placeholder}
     />
   );

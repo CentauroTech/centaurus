@@ -6,17 +6,10 @@ interface NumberCellProps {
   placeholder?: string;
   disabled?: boolean;
   displayFormat?: 'episodes';
-  taskName?: string;
+  episodeIndex?: number;
 }
 
-function extractEpisodeNumber(name?: string): number | null {
-  if (!name) return null;
-  // Match patterns like "Ep3", "Ep 3", "EP03", "Episode 4", "E03"
-  const match = name.match(/(?:ep(?:isode)?|e)\s*(\d+)/i);
-  return match ? parseInt(match[1], 10) : null;
-}
-
-export function NumberCell({ value, onChange, placeholder = '-', disabled = false, displayFormat, taskName }: NumberCellProps) {
+export function NumberCell({ value, onChange, placeholder = '-', disabled = false, displayFormat, episodeIndex }: NumberCellProps) {
   const [localValue, setLocalValue] = useState(value?.toString() || '');
   const [isFocused, setIsFocused] = useState(false);
   const initialValueRef = useRef(value);
@@ -29,8 +22,8 @@ export function NumberCell({ value, onChange, placeholder = '-', disabled = fals
   const formatDisplay = (v?: number) => {
     if (v == null) return placeholder;
     if (displayFormat === 'episodes') {
-      const epNum = extractEpisodeNumber(taskName);
-      return epNum ? `${epNum}/${v}` : `1/${v}`;
+      const idx = episodeIndex ?? 1;
+      return `${idx}/${v}`;
     }
     return v;
   };

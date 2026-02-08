@@ -219,7 +219,7 @@ export function TaskGroup({
                 </tr>
               </thead>
               <tbody>
-                {visibleTasks.map(task => <TaskRow key={task.id} task={task} onUpdate={updates => onUpdateTask(task.id, updates)} onDelete={canDeleteTasks ? () => onDeleteTask(task.id) : undefined} boardId={boardId} boardName={boardName} workspaceName={workspaceName} columns={columns} onSendToPhase={onSendToPhase ? phase => onSendToPhase(task.id, phase) : undefined} autoOpenPanel={selectedTaskId === task.id} onPanelClose={onTaskPanelClose} />)}
+                {visibleTasks.map((task, index) => <TaskRow key={task.id} task={{ ...task, episodeIndex: index + 1 }} onUpdate={updates => onUpdateTask(task.id, updates)} onDelete={canDeleteTasks ? () => onDeleteTask(task.id) : undefined} boardId={boardId} boardName={boardName} workspaceName={workspaceName} columns={columns} onSendToPhase={onSendToPhase ? phase => onSendToPhase(task.id, phase) : undefined} autoOpenPanel={selectedTaskId === task.id} onPanelClose={onTaskPanelClose} />)}
               </tbody>
             </table>
           </DndContext>

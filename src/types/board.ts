@@ -114,6 +114,8 @@ export interface Task {
   // Kickoff brief
   kickoffBrief?: string;
   kickoff_brief?: string;
+  // Computed: 1-based position within its group (for episode display)
+  episodeIndex?: number;
   createdAt: Date;
   comments?: Comment[];
   files?: TaskFile[];

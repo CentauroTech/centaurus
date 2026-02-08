@@ -461,6 +461,7 @@ export const MemoizedTaskRow = memo(function MemoizedTaskRow({
         users={[]} 
         boardId={boardId}
         workspaceName={workspaceName}
+        viewerIds={viewerIds}
       />
     </>
   );

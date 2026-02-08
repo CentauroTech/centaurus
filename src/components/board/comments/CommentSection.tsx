@@ -3,7 +3,6 @@ import { useComments, useAddComment, useDeleteComment } from "@/hooks/useComment
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useTeamMembers } from "@/hooks/useWorkspaces";
-import { useWorkspaceTeamMembers } from "@/hooks/useWorkspaceTeamMembers";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trash2, Eye, EyeOff, FileText } from "lucide-react";
@@ -41,8 +40,8 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
   const addCommentMutation = useAddComment(taskId, boardId);
   const deleteCommentMutation = useDeleteComment(taskId, boardId);
   
-  // Get workspace team members for @everyone feature
-  const workspaceMembers = useWorkspaceTeamMembers(workspaceName);
+  // Get all centauro team members for @everyone feature
+  const centauroMembers = teamMembers.filter(m => m.email && m.email.toLowerCase().endsWith('@centauro.com'));
 
   const isGuest = role === "guest";
 
@@ -60,15 +59,15 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
 
     let mentionedUserIds = extractMentionsFromHtml(newComment);
     
-    // Check if @everyone was used - expand to all workspace team members
+    // Check if @everyone was used - expand to all centauro team members
     const hasEveryoneMention = mentionedUserIds.includes('everyone');
-    if (hasEveryoneMention && workspaceMembers.length > 0) {
-      // Remove 'everyone' and add all workspace member IDs (except current user)
+    if (hasEveryoneMention && centauroMembers.length > 0) {
+      // Remove 'everyone' and add all centauro member IDs (except current user)
       mentionedUserIds = mentionedUserIds.filter(id => id !== 'everyone');
-      const workspaceMemberIds = workspaceMembers
+      const centauroMemberIds = centauroMembers
         .filter(m => m.id !== currentUser.id) // Don't notify yourself
         .map(m => m.id);
-      mentionedUserIds = [...new Set([...mentionedUserIds, ...workspaceMemberIds])];
+      mentionedUserIds = [...new Set([...mentionedUserIds, ...centauroMemberIds])];
     }
     
     // Guest comments are always guest-visible
@@ -219,7 +218,7 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
             placeholder="Write a message... Use @ to mention"
             isSending={addCommentMutation.isPending}
             mentionUsers={mentionUsers}
-            showEveryoneOption={!!workspaceName && !isGuest}
+            showEveryoneOption={true}
           />
           <p className="text-xs text-muted-foreground mt-1">Ctrl+Enter to send</p>
         </div>
@@ -268,7 +267,7 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
           }
           isSending={addCommentMutation.isPending}
           mentionUsers={mentionUsers}
-          showEveryoneOption={!!workspaceName}
+          showEveryoneOption={true}
         />
         <p className="text-xs text-muted-foreground mt-1">
           {activeTab === "guest"

@@ -63,11 +63,13 @@ export function NotificationBell() {
     
     // Check for invoice deep link
     const invoiceId = extractInvoiceId(notification.message);
-    if (invoiceId && notification.type.startsWith('invoice_')) {
+    if (notification.type.startsWith('invoice_')) {
       if (role === 'guest') {
-        navigate(`/guest-dashboard?tab=invoices&invoice=${invoiceId}`);
+        navigate(invoiceId 
+          ? `/guest-dashboard?tab=invoices&invoice=${invoiceId}` 
+          : `/guest-dashboard?tab=invoices`);
       } else {
-        navigate(`/billing?invoice=${invoiceId}`);
+        navigate(invoiceId ? `/billing?invoice=${invoiceId}` : `/billing`);
       }
       return;
     }

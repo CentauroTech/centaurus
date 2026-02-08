@@ -19,6 +19,7 @@ interface CommentSectionProps {
   kickoffBrief?: string;
   phase?: string;
   viewerId?: string;
+  viewerIds?: string[];
 }
 
 function extractMentionsFromHtml(html: string): string[] {
@@ -31,7 +32,7 @@ function extractMentionsFromHtml(html: string): string[] {
   return mentions;
 }
 
-export default function CommentSection({ taskId, boardId = "", workspaceName, kickoffBrief, phase, viewerId }: CommentSectionProps) {
+export default function CommentSection({ taskId, boardId = "", workspaceName, kickoffBrief, phase, viewerId, viewerIds = [] }: CommentSectionProps) {
   const [newComment, setNewComment] = useState("");
   const [activeTab, setActiveTab] = useState<"team" | "guest">("team");
   const [openReplyId, setOpenReplyId] = useState<string | null>(null);
@@ -91,6 +92,10 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
     return [...new Set([...filtered, ...centauroIds])];
   };
 
+  // Determine effective viewer ID for guest communication
+  // Guest: their own ID (viewerId prop). Team member: first viewer from viewerIds.
+  const effectiveViewerId = viewerId || (viewerIds.length > 0 ? viewerIds[0] : undefined);
+
   const handleSendComment = async () => {
     const textContent = newComment.replace(/<[^>]*>/g, '').trim();
     if (!textContent || !currentUser?.id) return;
@@ -105,7 +110,7 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
         mentionedUserIds,
         isGuestVisible: shouldBeGuestVisible,
         phase: phase || undefined,
-        viewerId: viewerId || undefined,
+        viewerId: shouldBeGuestVisible ? effectiveViewerId : undefined,
       });
 
       // Upload attachments
@@ -139,7 +144,7 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
         isGuestVisible: shouldBeGuestVisible,
         parentId,
         phase: phase || undefined,
-        viewerId: viewerId || undefined,
+        viewerId: shouldBeGuestVisible ? effectiveViewerId : undefined,
       });
 
       if (files) {

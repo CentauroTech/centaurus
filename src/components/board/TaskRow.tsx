@@ -471,6 +471,6 @@ export function TaskRow({
         </td>
       </tr>
 
-      <TaskDetailsPanel task={task} isOpen={isDetailsPanelOpen} onClose={handlePanelClose} users={[]} boardId={boardId} workspaceName={workspaceName} />
+      <TaskDetailsPanel task={task} isOpen={isDetailsPanelOpen} onClose={handlePanelClose} users={[]} boardId={boardId} workspaceName={workspaceName} viewerIds={viewerIds} />
     </>;
 }

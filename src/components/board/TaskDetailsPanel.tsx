@@ -20,6 +20,7 @@ interface TaskDetailsPanelProps {
   users?: User[];
   boardId?: string;
   workspaceName?: string;
+  viewerIds?: string[];
 }
 
 export default function TaskDetailsPanel({
@@ -29,6 +30,7 @@ export default function TaskDetailsPanel({
   users = [],
   boardId = "",
   workspaceName,
+  viewerIds = [],
 }: TaskDetailsPanelProps) {
   const { data: files = [] } = useTaskFiles(task.id);
   const { data: activityLogs = [] } = useActivityLog(task.id);
@@ -119,6 +121,8 @@ export default function TaskDetailsPanel({
                 boardId={boardId} 
                 workspaceName={workspaceName}
                 kickoffBrief={task.kickoffBrief}
+                phase={task.fase}
+                viewerIds={viewerIds}
               />
             </TabsContent>
 

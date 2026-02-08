@@ -9,6 +9,7 @@ export interface CommentWithUser {
   content: string;
   created_at: string;
   updated_at: string;
+  edited_at?: string | null;
   is_guest_visible?: boolean;
   phase?: string;
   viewer_id?: string;

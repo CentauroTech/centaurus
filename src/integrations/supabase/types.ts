@@ -291,6 +291,7 @@ export type Database = {
           created_at: string
           id: string
           is_guest_visible: boolean
+          parent_id: string | null
           phase: string | null
           task_id: string
           updated_at: string
@@ -302,6 +303,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_guest_visible?: boolean
+          parent_id?: string | null
           phase?: string | null
           task_id: string
           updated_at?: string
@@ -313,6 +315,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_guest_visible?: boolean
+          parent_id?: string | null
           phase?: string | null
           task_id?: string
           updated_at?: string
@@ -320,6 +323,13 @@ export type Database = {
           viewer_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "comments_task_id_fkey"
             columns: ["task_id"]

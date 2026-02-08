@@ -1,21 +1,19 @@
-import { useState } from "react";
-import { useComments, useAddComment, useDeleteComment } from "@/hooks/useComments";
+import { useState, useMemo } from "react";
+import { useComments, useAddComment, useDeleteComment, CommentWithUser } from "@/hooks/useComments";
 import { useCurrentTeamMember } from "@/hooks/useCurrentTeamMember";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useTeamMembers } from "@/hooks/useWorkspaces";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trash2, Eye, EyeOff, FileText } from "lucide-react";
-import { format } from "date-fns";
+import { Eye, EyeOff, FileText } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { RichTextEditor, RichTextDisplay, MentionUser, EVERYONE_MENTION } from "./RichTextEditor";
+import { RichTextEditor, MentionUser, EVERYONE_MENTION } from "./RichTextEditor";
+import CommentItem from "./CommentItem";
 
 interface CommentSectionProps {
   taskId: string;
   boardId?: string;
-  workspaceName?: string; // Optional workspace name for @everyone feature
-  kickoffBrief?: string; // Additional instructions from WO creation
+  workspaceName?: string;
+  kickoffBrief?: string;
 }
 
 // Extract @mentions from HTML content
@@ -40,12 +38,9 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
   const addCommentMutation = useAddComment(taskId, boardId);
   const deleteCommentMutation = useDeleteComment(taskId, boardId);
   
-  // Get all centauro team members for @everyone feature
   const centauroMembers = teamMembers.filter(m => m.email && m.email.toLowerCase().endsWith('@centauro.com'));
-
   const isGuest = role === "guest";
 
-  // Convert team members to MentionUser format
   const mentionUsers: MentionUser[] = teamMembers.map((member) => ({
     id: member.id,
     name: member.name,
@@ -53,25 +48,45 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
     color: member.color,
   }));
 
+  // Group comments into threads: top-level + replies
+  const { topLevelComments, repliesByParentId } = useMemo(() => {
+    const top: CommentWithUser[] = [];
+    const replies: Record<string, CommentWithUser[]> = {};
+    
+    for (const comment of comments) {
+      if (comment.parent_id) {
+        if (!replies[comment.parent_id]) replies[comment.parent_id] = [];
+        replies[comment.parent_id].push(comment);
+      } else {
+        top.push(comment);
+      }
+    }
+
+    // Sort replies ascending (oldest first)
+    for (const key in replies) {
+      replies[key].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    }
+    
+    return { topLevelComments: top, repliesByParentId: replies };
+  }, [comments]);
+
+  const expandEveryoneMention = (mentionedIds: string[]): string[] => {
+    const hasEveryone = mentionedIds.includes('everyone');
+    if (!hasEveryone || centauroMembers.length === 0) {
+      return mentionedIds.filter(id => id !== 'everyone');
+    }
+    const filtered = mentionedIds.filter(id => id !== 'everyone');
+    const centauroIds = centauroMembers
+      .filter(m => m.id !== currentUser?.id)
+      .map(m => m.id);
+    return [...new Set([...filtered, ...centauroIds])];
+  };
+
   const handleSendComment = async () => {
     const textContent = newComment.replace(/<[^>]*>/g, '').trim();
     if (!textContent || !currentUser?.id) return;
 
-    let mentionedUserIds = extractMentionsFromHtml(newComment);
-    
-    // Check if @everyone was used - expand to all centauro team members
-    const hasEveryoneMention = mentionedUserIds.includes('everyone');
-    if (hasEveryoneMention && centauroMembers.length > 0) {
-      // Remove 'everyone' and add all centauro member IDs (except current user)
-      mentionedUserIds = mentionedUserIds.filter(id => id !== 'everyone');
-      const centauroMemberIds = centauroMembers
-        .filter(m => m.id !== currentUser.id) // Don't notify yourself
-        .map(m => m.id);
-      mentionedUserIds = [...new Set([...mentionedUserIds, ...centauroMemberIds])];
-    }
-    
-    // Guest comments are always guest-visible
-    // Team comments in guest tab are guest-visible
+    let mentionedUserIds = expandEveryoneMention(extractMentionsFromHtml(newComment));
     const shouldBeGuestVisible = isGuest || activeTab === "guest";
 
     try {
@@ -89,6 +104,27 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
     }
   };
 
+  const handleReply = async (content: string, parentId: string) => {
+    if (!currentUser?.id) return;
+
+    let mentionedUserIds = expandEveryoneMention(extractMentionsFromHtml(content));
+    const shouldBeGuestVisible = isGuest || activeTab === "guest";
+
+    try {
+      await addCommentMutation.mutateAsync({
+        content,
+        userId: currentUser.id,
+        mentionedUserIds,
+        isGuestVisible: shouldBeGuestVisible,
+        parentId,
+      });
+      toast.success("Reply added");
+    } catch (error) {
+      console.error("Failed to add reply:", error);
+      toast.error("Failed to add reply");
+    }
+  };
+
   const handleDeleteComment = async (commentId: string) => {
     try {
       await deleteCommentMutation.mutateAsync(commentId);
@@ -99,14 +135,11 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
     }
   };
 
-  // Filter comments based on tab
-  const teamComments = comments.filter((c) => !c.is_guest_visible);
-  const guestComments = comments.filter((c) => c.is_guest_visible);
+  const teamComments = topLevelComments.filter((c) => !c.is_guest_visible);
+  const guestComments = topLevelComments.filter((c) => c.is_guest_visible);
 
-  // Render kickoff brief as first entry
   const renderKickoffBrief = () => {
     if (!kickoffBrief) return null;
-    
     return (
       <div className="rounded-lg border p-3 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
         <div className="flex items-start gap-3">
@@ -120,16 +153,14 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
                 From WO Creation
               </span>
             </div>
-            <p className="mt-1 text-sm text-foreground whitespace-pre-wrap">
-              {kickoffBrief}
-            </p>
+            <p className="mt-1 text-sm text-foreground whitespace-pre-wrap">{kickoffBrief}</p>
           </div>
         </div>
       </div>
     );
   };
 
-  const renderCommentList = (commentList: typeof comments, showKickoffBrief = false) => {
+  const renderCommentList = (commentList: CommentWithUser[], showKickoffBrief = false) => {
     if (isLoading) {
       return <div className="text-sm text-muted-foreground p-4">Loading comments...</div>;
     }
@@ -154,56 +185,24 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
       <div className="flex flex-col gap-3 p-4">
         {showKickoffBrief && renderKickoffBrief()}
         {commentList.map((comment) => (
-          <div
+          <CommentItem
             key={comment.id}
-            className={cn(
-              "rounded-lg border p-3 bg-card",
-              comment.is_guest_visible && "border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30"
-            )}
-          >
-            <div className="flex items-start gap-3">
-              <Avatar className="h-8 w-8 flex-shrink-0">
-                <AvatarFallback
-                  style={{ backgroundColor: comment.user?.color || "#888" }}
-                  className="text-white text-xs"
-                >
-                  {comment.user?.initials || "?"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">
-                      {comment.user?.name || "Unknown"}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(comment.created_at), "MMM d, h:mm a")}
-                    </span>
-                    {comment.is_guest_visible && (
-                      <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">
-                        Guest visible
-                      </span>
-                    )}
-                  </div>
-                  {currentUser?.id === comment.user_id && (
-                    <button
-                      onClick={() => handleDeleteComment(comment.id)}
-                      className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
-                <RichTextDisplay content={comment.content} className="mt-1" />
-              </div>
-            </div>
-          </div>
+            comment={comment}
+            currentUserId={currentUser?.id}
+            onDelete={handleDeleteComment}
+            onReply={handleReply}
+            isReplying={false}
+            mentionUsers={mentionUsers}
+            isSending={addCommentMutation.isPending}
+            replies={repliesByParentId[comment.id] || []}
+            isGuest={isGuest}
+            activeTab={activeTab}
+          />
         ))}
       </div>
     );
   };
 
-  // Guests only see guest-visible comments in a single list
   if (isGuest) {
     return (
       <div className="flex flex-col h-full">
@@ -226,7 +225,6 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
     );
   }
 
-  // Team members see tabbed view
   return (
     <div className="flex flex-col h-full">
       <Tabs

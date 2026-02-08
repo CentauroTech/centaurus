@@ -12,12 +12,14 @@ export interface CommentWithUser {
   is_guest_visible?: boolean;
   phase?: string;
   viewer_id?: string;
+  parent_id?: string | null;
   user: {
     id: string;
     name: string;
     initials: string;
     color: string;
   } | null;
+  replies?: CommentWithUser[];
 }
 
 export function useComments(taskId: string, enabled: boolean = true) {
@@ -64,6 +66,7 @@ export function useAddComment(taskId: string, boardId: string) {
       isGuestVisible = false,
       phase,
       viewerId,
+      parentId,
     }: { 
       content: string; 
       userId: string; 
@@ -71,6 +74,7 @@ export function useAddComment(taskId: string, boardId: string) {
       isGuestVisible?: boolean;
       phase?: string;
       viewerId?: string;
+      parentId?: string;
     }) => {
       // Insert the comment
       // Comments from guests are always guest-visible
@@ -86,6 +90,7 @@ export function useAddComment(taskId: string, boardId: string) {
           is_guest_visible: shouldBeGuestVisible,
           phase: phase || null,
           viewer_id: viewerId || null,
+          parent_id: parentId || null,
         })
         .select()
         .single();

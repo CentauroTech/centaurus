@@ -17,6 +17,8 @@ interface CommentSectionProps {
   boardId?: string;
   workspaceName?: string;
   kickoffBrief?: string;
+  phase?: string;
+  viewerId?: string;
 }
 
 function extractMentionsFromHtml(html: string): string[] {
@@ -29,7 +31,7 @@ function extractMentionsFromHtml(html: string): string[] {
   return mentions;
 }
 
-export default function CommentSection({ taskId, boardId = "", workspaceName, kickoffBrief }: CommentSectionProps) {
+export default function CommentSection({ taskId, boardId = "", workspaceName, kickoffBrief, phase, viewerId }: CommentSectionProps) {
   const [newComment, setNewComment] = useState("");
   const [activeTab, setActiveTab] = useState<"team" | "guest">("team");
   const [openReplyId, setOpenReplyId] = useState<string | null>(null);
@@ -102,6 +104,8 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
         userId: currentUser.id,
         mentionedUserIds,
         isGuestVisible: shouldBeGuestVisible,
+        phase: phase || undefined,
+        viewerId: viewerId || undefined,
       });
 
       // Upload attachments
@@ -134,6 +138,8 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
         mentionedUserIds,
         isGuestVisible: shouldBeGuestVisible,
         parentId,
+        phase: phase || undefined,
+        viewerId: viewerId || undefined,
       });
 
       if (files) {

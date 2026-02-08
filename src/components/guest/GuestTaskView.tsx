@@ -10,13 +10,11 @@ import { GuestStatusBadge } from './GuestStatusBadge';
 import { GuestCompleteDialog } from './GuestCompleteDialog';
 import { GuestTask } from '@/hooks/useGuestTasks';
 import { useUpdateGuestTask } from '@/hooks/useGuestTasks';
-import { useComments, useAddComment } from '@/hooks/useComments';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useTaskFiles, FILE_CATEGORIES, TaskFileRecord } from '@/hooks/useTaskFiles';
-import { useTeamMembers } from '@/hooks/useWorkspaces';
 import { getSignedFileUrl } from '@/hooks/useSignedUrl';
 import { useCommentsRealtime } from '@/hooks/useRealtimeSubscriptions';
-import { RichTextEditor, RichTextDisplay, MentionUser } from '@/components/board/comments/RichTextEditor';
+import CommentSection from '@/components/board/comments/CommentSection';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -59,38 +57,15 @@ interface GuestTaskViewProps {
 }
 
 export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
-  const [newComment, setNewComment] = useState('');
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
 
   const { data: currentMember } = useCurrentTeamMember();
-  const { data: comments, isLoading: commentsLoading } = useComments(task.id, isOpen);
   const { data: taskFiles, isLoading: filesLoading } = useTaskFiles(task.id, isOpen);
-  const { data: teamMembers = [] } = useTeamMembers();
   const updateTask = useUpdateGuestTask();
-  const addComment = useAddComment(task.id, '');
 
   // Real-time subscription for comments
   useCommentsRealtime(task.id, isOpen);
-
-  // Convert team members to MentionUser format
-  const mentionUsers: MentionUser[] = teamMembers.map((member) => ({
-    id: member.id,
-    name: member.name,
-    initials: member.initials,
-    color: member.color,
-  }));
-
-  // Extract @mentions from HTML content
-  const extractMentionsFromHtml = (html: string): string[] => {
-    const mentionRegex = /data-id="([^"]+)"/g;
-    const mentions: string[] = [];
-    let match;
-    while ((match = mentionRegex.exec(html)) !== null) {
-      mentions.push(match[1]);
-    }
-    return mentions;
-  };
 
   // Filter to only guest-accessible files
   const guestFiles = taskFiles?.filter(f => f.is_guest_accessible) || [];
@@ -128,39 +103,6 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
       toast.success('Status updated');
     } catch (error: any) {
       toast.error(error.message || 'Failed to update status');
-    }
-  };
-
-  const handleSendComment = async () => {
-    const textContent = newComment.replace(/<[^>]*>/g, '').trim();
-    if (!textContent || !currentMember?.id) return;
-
-    let mentionedUserIds = extractMentionsFromHtml(newComment);
-
-    // Expand @everyone to all centauro team members
-    const hasEveryoneMention = mentionedUserIds.includes('everyone');
-    if (hasEveryoneMention) {
-      mentionedUserIds = mentionedUserIds.filter(id => id !== 'everyone');
-      const centauroMemberIds = teamMembers
-        .filter(m => m.email && m.email.toLowerCase().endsWith('@centauro.com') && m.id !== currentMember.id)
-        .map(m => m.id);
-      mentionedUserIds = [...new Set([...mentionedUserIds, ...centauroMemberIds])];
-    }
-
-    try {
-      // Pass phase and viewer for comment isolation
-      await addComment.mutateAsync({
-        content: newComment,
-        userId: currentMember.id,
-        mentionedUserIds,
-        isGuestVisible: true,
-        phase: task.fase,
-        viewerId: currentMember.id,
-      });
-      setNewComment('');
-      toast.success('Comment sent');
-    } catch (error) {
-      toast.error('Failed to send comment');
     }
   };
 
@@ -358,59 +300,11 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
             </TabsList>
 
             <TabsContent value="updates" className="flex-1 flex flex-col m-0 overflow-hidden">
-              <ScrollArea className="flex-1 p-4">
-                {commentsLoading ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Loading...
-                  </div>
-                ) : comments && comments.length > 0 ? (
-                  <div className="space-y-4">
-                    {comments.map((comment) => (
-                      <div key={comment.id} className="flex gap-3">
-                        <Avatar className="h-8 w-8 shrink-0">
-                          <AvatarFallback 
-                            style={{ backgroundColor: comment.user?.color || '#888' }}
-                            className="text-xs text-white"
-                          >
-                            {comment.user?.initials || '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-sm">
-                              {comment.user?.name || 'Unknown'}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                            </span>
-                          </div>
-                          <RichTextDisplay content={comment.content} className="text-sm" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <MessageSquare className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                    <p className="text-sm">No messages yet</p>
-                    <p className="text-xs mt-1">Start a conversation with the team</p>
-                  </div>
-                )}
-              </ScrollArea>
-
-              {/* Comment input - always visible so team can communicate even after done */}
-              <div className="p-3 border-t bg-card">
-                <RichTextEditor
-                  content={newComment}
-                  onChange={setNewComment}
-                  onSend={handleSendComment}
-                  placeholder="Send a message to the team... Use @ to mention"
-                  isSending={addComment.isPending}
-                  mentionUsers={mentionUsers}
-                  showEveryoneOption={true}
-                />
-                <p className="text-xs text-muted-foreground mt-1">Ctrl+Enter to send</p>
-              </div>
+              <CommentSection
+                taskId={task.id}
+                phase={task.fase}
+                viewerId={currentMember?.id}
+              />
             </TabsContent>
 
             <TabsContent value="files" className="flex-1 m-0 overflow-hidden">

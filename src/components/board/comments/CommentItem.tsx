@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useLayoutEffect, useCallback } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Trash2, Reply, ThumbsUp, Pencil, Paperclip, FileIcon, X } from "lucide-react";
 import { format } from "date-fns";
@@ -7,9 +7,8 @@ import { RichTextEditor, RichTextDisplay, MentionUser } from "./RichTextEditor";
 import { CommentWithUser } from "@/hooks/useComments";
 import { CommentLike } from "@/hooks/useCommentLikes";
 import { CommentAttachment } from "@/hooks/useCommentAttachments";
-import { Button } from "@/components/ui/button";
 
-const COLLAPSED_HEIGHT = 100; // ~5 lines
+const COLLAPSED_HEIGHT = 100;
 
 interface CommentItemProps {
   comment: CommentWithUser;
@@ -90,79 +89,7 @@ function TruncatedContent({ content, className }: { content: string; className?:
   );
 }
 
-function CommentFooter({
-  comment,
-  currentUserId,
-  likeCount,
-  isLiked,
-  replyCount,
-  onToggleLike,
-  onReplyClick,
-  onEditClick,
-  onDelete,
-}: {
-  comment: CommentWithUser;
-  currentUserId?: string;
-  likeCount: number;
-  isLiked: boolean;
-  replyCount: number;
-  onToggleLike: () => void;
-  onReplyClick: () => void;
-  onEditClick: () => void;
-  onDelete: () => void;
-}) {
-  const isAuthor = currentUserId === comment.user_id;
-  const isEdited = !!(comment as any).edited_at;
-
-  return (
-    <div className="flex items-center gap-1 mt-2 -ml-1">
-      <button
-        onClick={onToggleLike}
-        className={cn(
-          "flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors",
-          isLiked
-            ? "text-primary font-medium hover:bg-primary/10"
-            : "text-muted-foreground hover:text-foreground hover:bg-muted"
-        )}
-      >
-        <ThumbsUp className={cn("h-3.5 w-3.5", isLiked && "fill-primary")} />
-        {likeCount > 0 && <span>{likeCount}</span>}
-      </button>
-
-      <button
-        onClick={onReplyClick}
-        className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-      >
-        <Reply className="h-3.5 w-3.5" />
-        Reply
-        {replyCount > 0 && <span className="text-muted-foreground">· {replyCount}</span>}
-      </button>
-
-      {isAuthor && (
-        <>
-          <button
-            onClick={onEditClick}
-            className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            <Pencil className="h-3 w-3" />
-          </button>
-          <button
-            onClick={onDelete}
-            className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-          >
-            <Trash2 className="h-3 w-3" />
-          </button>
-        </>
-      )}
-
-      {isEdited && (
-        <span className="text-[10px] text-muted-foreground italic ml-auto">Edited</span>
-      )}
-    </div>
-  );
-}
-
-// --- Reply item (lighter weight) ---
+/* ─── Reply item (lighter weight, nested) ─── */
 function ReplyItem({
   reply,
   currentUserId,
@@ -172,6 +99,7 @@ function ReplyItem({
   likeCount,
   isLiked,
   attachments,
+  mentionUsers,
 }: {
   reply: CommentWithUser;
   currentUserId?: string;
@@ -181,6 +109,7 @@ function ReplyItem({
   likeCount: number;
   isLiked: boolean;
   attachments: CommentAttachment[];
+  mentionUsers: MentionUser[];
 }) {
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(reply.content);
@@ -195,7 +124,7 @@ function ReplyItem({
   };
 
   return (
-    <div className="flex items-start gap-2.5 py-2.5">
+    <div className="flex items-start gap-2 py-2.5">
       <Avatar className="h-7 w-7 flex-shrink-0 mt-0.5">
         <AvatarFallback
           style={{ backgroundColor: reply.user?.color || "#888" }}
@@ -219,7 +148,9 @@ function ReplyItem({
               onChange={setEditContent}
               onSend={handleSaveEdit}
               placeholder="Edit reply..."
-              className="text-sm"
+              className="text-sm [&_.ProseMirror]:min-h-[48px] [&_.ProseMirror]:p-2 [&_.ProseMirror]:text-[13px]"
+              mentionUsers={mentionUsers}
+              showEveryoneOption={true}
             />
             <div className="flex gap-2 mt-1">
               <button onClick={handleSaveEdit} className="text-xs text-primary font-medium hover:underline">Save</button>
@@ -228,7 +159,7 @@ function ReplyItem({
           </div>
         ) : (
           <>
-            <TruncatedContent content={reply.content} className="mt-0.5 text-sm" />
+            <TruncatedContent content={reply.content} className="mt-0.5 text-[13px]" />
             <AttachmentList attachments={attachments} />
           </>
         )}
@@ -267,7 +198,7 @@ function ReplyItem({
   );
 }
 
-// --- Main CommentItem ---
+/* ─── Main CommentItem ─── */
 export default function CommentItem({
   comment,
   currentUserId,
@@ -294,6 +225,8 @@ export default function CommentItem({
   const commentLikes = likes.filter((l) => l.comment_id === comment.id);
   const isLiked = commentLikes.some((l) => l.user_id === currentUserId);
   const commentAttachments = attachments.filter((a) => a.comment_id === comment.id);
+  const isAuthor = currentUserId === comment.user_id;
+  const isEdited = !!(comment as any).edited_at;
 
   const handleSendReply = () => {
     const textContent = replyContent.replace(/<[^>]*>/g, "").trim();
@@ -317,9 +250,11 @@ export default function CommentItem({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const hasRepliesOrComposer = replies.length > 0 || isReplyOpen;
+
   return (
     <div className="rounded-lg border border-border bg-card shadow-sm">
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="flex items-start gap-3 px-4 pt-4 pb-2">
         <Avatar className="h-9 w-9 flex-shrink-0">
           <AvatarFallback
@@ -344,7 +279,7 @@ export default function CommentItem({
         </div>
       </div>
 
-      {/* Body */}
+      {/* ── Body ── */}
       <div className="px-4 pb-1">
         {editing ? (
           <div>
@@ -369,91 +304,131 @@ export default function CommentItem({
         )}
       </div>
 
-      {/* Footer */}
-      <div className="px-4 pb-2 border-b border-border">
-        <CommentFooter
-          comment={comment}
-          currentUserId={currentUserId}
-          likeCount={commentLikes.length}
-          isLiked={isLiked}
-          replyCount={replies.length}
-          onToggleLike={() => onToggleLike(comment.id, isLiked)}
-          onReplyClick={() => onOpenReply(isReplyOpen ? null : comment.id)}
-          onEditClick={() => { setEditing(true); setEditContent(comment.content); }}
-          onDelete={() => onDelete(comment.id)}
-        />
+      {/* ── Footer actions ── */}
+      <div className={cn("px-4 pb-2", hasRepliesOrComposer && "border-b border-border")}>
+        <div className="flex items-center gap-1 mt-1 -ml-1">
+          <button
+            onClick={() => onToggleLike(comment.id, isLiked)}
+            className={cn(
+              "flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors",
+              isLiked
+                ? "text-primary font-medium hover:bg-primary/10"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            )}
+          >
+            <ThumbsUp className={cn("h-3.5 w-3.5", isLiked && "fill-primary")} />
+            {commentLikes.length > 0 && <span>{commentLikes.length}</span>}
+          </button>
+
+          <button
+            onClick={() => onOpenReply(isReplyOpen ? null : comment.id)}
+            className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <Reply className="h-3.5 w-3.5" />
+            Reply
+            {replies.length > 0 && <span className="text-muted-foreground">· {replies.length}</span>}
+          </button>
+
+          {isAuthor && (
+            <>
+              <button
+                onClick={() => { setEditing(true); setEditContent(comment.content); }}
+                className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+              <button
+                onClick={() => onDelete(comment.id)}
+                className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </>
+          )}
+
+          {isEdited && (
+            <span className="text-[10px] text-muted-foreground italic ml-auto">Edited</span>
+          )}
+        </div>
       </div>
 
-      {/* Replies */}
-      {replies.length > 0 && (
-        <div className="px-4 pl-8 divide-y divide-border">
-          {replies.map((reply) => {
-            const replyLikes = likes.filter((l) => l.comment_id === reply.id);
-            const replyIsLiked = replyLikes.some((l) => l.user_id === currentUserId);
-            const replyAttachments = attachments.filter((a) => a.comment_id === reply.id);
-            return (
-              <ReplyItem
-                key={reply.id}
-                reply={reply}
-                currentUserId={currentUserId}
-                onDelete={onDelete}
-                onEdit={onEdit}
-                onToggleLike={onToggleLike}
-                likeCount={replyLikes.length}
-                isLiked={replyIsLiked}
-                attachments={replyAttachments}
-              />
-            );
-          })}
-        </div>
-      )}
+      {/* ── Replies container (visually nested) ── */}
+      {hasRepliesOrComposer && (
+        <div className="ml-6 mr-3 my-2 border-l-2 border-muted pl-4">
+          {/* Existing replies */}
+          {replies.length > 0 && (
+            <div className="divide-y divide-border/50">
+              {replies.map((reply) => {
+                const replyLikes = likes.filter((l) => l.comment_id === reply.id);
+                const replyIsLiked = replyLikes.some((l) => l.user_id === currentUserId);
+                const replyAttachments = attachments.filter((a) => a.comment_id === reply.id);
+                return (
+                  <ReplyItem
+                    key={reply.id}
+                    reply={reply}
+                    currentUserId={currentUserId}
+                    onDelete={onDelete}
+                    onEdit={onEdit}
+                    onToggleLike={onToggleLike}
+                    likeCount={replyLikes.length}
+                    isLiked={replyIsLiked}
+                    attachments={replyAttachments}
+                    mentionUsers={mentionUsers}
+                  />
+                );
+              })}
+            </div>
+          )}
 
-      {/* Inline reply composer */}
-      {isReplyOpen && (
-        <div className="px-4 pl-8 py-3 bg-muted/20 border-t border-border">
-          <RichTextEditor
-            content={replyContent}
-            onChange={setReplyContent}
-            onSend={handleSendReply}
-            placeholder="Write a reply… Use @ to mention"
-            isSending={isSending}
-            mentionUsers={mentionUsers}
-            showEveryoneOption={true}
-          />
-          <div className="flex items-center gap-3 mt-1.5">
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              className="hidden"
-              onChange={handleFileSelect}
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Paperclip className="h-3.5 w-3.5" />
-              Attach
-            </button>
-            <span className="text-[11px] text-muted-foreground">Ctrl+Enter to send</span>
-            <button
-              onClick={() => { onOpenReply(null); setReplyContent(""); setReplyFiles([]); }}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors ml-auto"
-            >
-              Cancel
-            </button>
-          </div>
-          {replyFiles.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-1.5">
-              {replyFiles.map((f, i) => (
-                <span key={i} className="flex items-center gap-1 text-[11px] bg-muted px-2 py-0.5 rounded">
-                  <FileIcon className="h-3 w-3" />
-                  <span className="truncate max-w-[100px]">{f.name}</span>
-                  <button onClick={() => setReplyFiles((prev) => prev.filter((_, j) => j !== i))}>
-                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                  </button>
-                </span>
-              ))}
+          {/* Inline reply composer (compact, secondary) */}
+          {isReplyOpen && (
+            <div className="py-2.5">
+              <RichTextEditor
+                content={replyContent}
+                onChange={setReplyContent}
+                onSend={handleSendReply}
+                placeholder="Write a reply… Use @ to mention"
+                isSending={isSending}
+                mentionUsers={mentionUsers}
+                showEveryoneOption={true}
+                className="text-[13px] [&_.ProseMirror]:min-h-[48px] [&_.ProseMirror]:p-2 [&_.ProseMirror]:text-[13px] [&_button]:h-6 [&_button]:w-6 [&_button_svg]:w-3 [&_button_svg]:h-3 [&_.flex.items-center.gap-0\\.5]:p-1 [&_.flex.items-center.gap-0\\.5]:gap-px"
+              />
+              <div className="flex items-center gap-3 mt-1.5">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Paperclip className="h-3 w-3" />
+                  Attach
+                </button>
+                <span className="text-[10px] text-muted-foreground">Ctrl+Enter to send</span>
+                <button
+                  onClick={() => { onOpenReply(null); setReplyContent(""); setReplyFiles([]); }}
+                  className="text-[11px] text-muted-foreground hover:text-foreground transition-colors ml-auto"
+                >
+                  Cancel
+                </button>
+              </div>
+              {replyFiles.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {replyFiles.map((f, i) => (
+                    <span key={i} className="flex items-center gap-1 text-[10px] bg-muted px-2 py-0.5 rounded">
+                      <FileIcon className="h-2.5 w-2.5" />
+                      <span className="truncate max-w-[100px]">{f.name}</span>
+                      <button onClick={() => setReplyFiles((prev) => prev.filter((_, j) => j !== i))}>
+                        <X className="h-2.5 w-2.5 text-muted-foreground hover:text-foreground" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

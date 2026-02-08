@@ -409,7 +409,7 @@ export default function CommentItem({
                   <Paperclip className="h-3 w-3" />
                   Attach
                 </button>
-                <span className="text-[10px] text-muted-foreground">Ctrl+Enter to send</span>
+                <span className="text-[10px] text-muted-foreground">Enter to send · Shift+Enter for newline</span>
                 <button
                   onClick={() => { onOpenReply(null); setReplyContent(""); setReplyFiles([]); }}
                   className="text-[11px] text-muted-foreground hover:text-foreground transition-colors ml-auto"

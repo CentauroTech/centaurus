@@ -164,6 +164,12 @@ export function RichTextEditor({
             return true;
           }
         }
+        // Enter sends, Shift+Enter inserts newline
+        if (event.key === 'Enter' && !event.shiftKey && onSend) {
+          event.preventDefault();
+          onSend();
+          return true;
+        }
         return false;
       },
     },
@@ -241,7 +247,8 @@ export function RichTextEditor({
   }, [content, editor]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && e.ctrlKey && onSend) {
+    // Ctrl/Cmd+Enter also sends as a fallback
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && onSend) {
       e.preventDefault();
       onSend();
     }
@@ -418,6 +425,23 @@ export function RichTextEditor({
       
       {/* Editor Content */}
       <EditorContent editor={editor} />
+
+      {/* Send button when toolbar is hidden */}
+      {hideToolbar && onSend && (
+        <div className="flex items-center justify-between px-3 py-1.5 border-t border-border">
+          <span className="text-[10px] text-muted-foreground">Enter to send · Shift+Enter for newline</span>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onSend}
+            disabled={isSending || !editor.getText().trim()}
+            className="h-7 px-3"
+          >
+            <Send className="w-3.5 h-3.5 mr-1" />
+            Send
+          </Button>
+        </div>
+      )}
 
       {/* Mention Dropdown */}
       {showMentions && filteredUsers.length > 0 && (

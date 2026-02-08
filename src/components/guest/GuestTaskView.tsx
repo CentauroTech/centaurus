@@ -173,7 +173,7 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
                 <div className="flex items-center gap-2">
                   <Film className="w-4 h-4 text-muted-foreground shrink-0" />
                   <span className="text-muted-foreground">Episodes:</span>
-                  <span className="font-medium">{task.cantidadEpisodios}</span>
+                  <span className="font-medium">1/{task.cantidadEpisodios}</span>
                 </div>
               )}
               
@@ -209,43 +209,6 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
                 </div>
               )}
               
-              {/* Translator */}
-              {task.translator && (
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <span className="text-muted-foreground">Translator:</span>
-                  <div className="flex items-center gap-1.5">
-                    <Avatar className="h-5 w-5">
-                      <AvatarFallback 
-                        style={{ backgroundColor: task.translator.color }}
-                        className="text-[8px] text-white"
-                      >
-                        {task.translator.initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">{task.translator.name.split(' ')[0]}</span>
-                  </div>
-                </div>
-              )}
-              
-              {/* Adapter */}
-              {task.adapter && (
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <span className="text-muted-foreground">Adapter:</span>
-                  <div className="flex items-center gap-1.5">
-                    <Avatar className="h-5 w-5">
-                      <AvatarFallback 
-                        style={{ backgroundColor: task.adapter.color }}
-                        className="text-[8px] text-white"
-                      >
-                        {task.adapter.initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">{task.adapter.name.split(' ')[0]}</span>
-                  </div>
-                </div>
-              )}
               
               {/* Last Updated */}
               {task.lastUpdated && (

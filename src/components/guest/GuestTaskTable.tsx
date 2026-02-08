@@ -128,8 +128,6 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                 <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Due Date</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Status</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Last Updated</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Translator</TableHead>
-                <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Adapter</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Branch</TableHead>
                 <TableHead className="font-semibold whitespace-nowrap bg-slate-100 dark:bg-slate-800">Date Delivered</TableHead>
               </TableRow>
@@ -252,7 +250,9 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                     {/* Episodes */}
                     <TableCell onClick={() => onTaskClick(task)} className="text-center">
                       <span className="text-sm">
-                        {task.cantidadEpisodios || '—'}
+                        {task.cantidadEpisodios 
+                          ? `1/${task.cantidadEpisodios}` 
+                          : '—'}
                       </span>
                     </TableCell>
 
@@ -309,61 +309,6 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                       )}
                     </TableCell>
 
-                    {/* Translator */}
-                    <TableCell onClick={() => onTaskClick(task)}>
-                      {task.translator ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex items-center gap-2 whitespace-nowrap">
-                              <Avatar className="h-6 w-6 shrink-0">
-                                <AvatarFallback 
-                                  style={{ backgroundColor: task.translator.color }}
-                                  className="text-[10px] text-white"
-                                >
-                                  {task.translator.initials}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="text-sm">
-                                {task.translator.name.split(' ')[0]}
-                              </span>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{task.translator.name}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-
-                    {/* Adapter */}
-                    <TableCell onClick={() => onTaskClick(task)}>
-                      {task.adapter ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex items-center gap-2 whitespace-nowrap">
-                              <Avatar className="h-6 w-6 shrink-0">
-                                <AvatarFallback 
-                                  style={{ backgroundColor: task.adapter.color }}
-                                  className="text-[10px] text-white"
-                                >
-                                  {task.adapter.initials}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="text-sm">
-                                {task.adapter.name.split(' ')[0]}
-                              </span>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{task.adapter.name}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
 
                     {/* Branch */}
                     <TableCell onClick={() => onTaskClick(task)}>

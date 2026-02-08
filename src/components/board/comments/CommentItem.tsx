@@ -100,6 +100,7 @@ function ReplyItem({
   isLiked,
   attachments,
   mentionUsers,
+  onReplyToReply,
 }: {
   reply: CommentWithUser;
   currentUserId?: string;
@@ -110,6 +111,7 @@ function ReplyItem({
   isLiked: boolean;
   attachments: CommentAttachment[];
   mentionUsers: MentionUser[];
+  onReplyToReply: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(reply.content);
@@ -175,6 +177,12 @@ function ReplyItem({
           >
             <ThumbsUp className={cn("h-3 w-3", isLiked && "fill-primary")} />
             {likeCount > 0 && <span>{likeCount}</span>}
+          </button>
+          <button
+            onClick={onReplyToReply}
+            className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <Reply className="h-3 w-3" />
           </button>
           {isAuthor && (
             <>
@@ -374,6 +382,7 @@ export default function CommentItem({
                     isLiked={replyIsLiked}
                     attachments={replyAttachments}
                     mentionUsers={mentionUsers}
+                    onReplyToReply={() => onOpenReply(comment.id)}
                   />
                 );
               })}

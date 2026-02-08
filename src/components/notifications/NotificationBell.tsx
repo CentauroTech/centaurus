@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Bell, CheckCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -16,12 +16,15 @@ import {
   Notification,
 } from '@/hooks/useNotifications';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAccessibleWorkspaces } from '@/hooks/useAccessibleWorkspaces';
 import { NotificationItem } from './NotificationItem';
 import { cn } from '@/lib/utils';
 
-// Generate board slug from board name (e.g., "MIA HQ" -> "mia-hq")
-function createBoardSlug(boardName: string): string {
-  return boardName.toLowerCase().replace(/\s+/g, '-');
+// Generate board slug matching Index.tsx format: wsPrefix-boardSlug
+function createBoardSlug(workspaceName: string, boardName: string): string {
+  const wsPrefix = workspaceName.toLowerCase().replace(/\s+/g, '-').slice(0, 3);
+  const boardSlug = boardName.toLowerCase().replace(/\s+/g, '-');
+  return `${wsPrefix}-${boardSlug}`;
 }
 
 export function NotificationBell() {
@@ -32,28 +35,35 @@ export function NotificationBell() {
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const { role } = usePermissions();
+  const { data: workspaces } = useAccessibleWorkspaces();
+
+  // Build boardId -> slug map
+  const boardIdToSlug = useMemo(() => {
+    const map = new Map<string, string>();
+    workspaces?.forEach(ws => {
+      ws.boards.forEach(board => {
+        map.set(board.id, createBoardSlug(ws.name, board.name));
+      });
+    });
+    return map;
+  }, [workspaces]);
 
   const recentNotifications = notifications?.slice(0, 10) ?? [];
 
   const handleNotificationClick = (notification: Notification) => {
-    // Mark as read
     markRead.mutate(notification.id);
-    
-    // Close the popover
     setOpen(false);
     
-    // Navigate based on user role
     if (notification.task_id) {
       if (role === 'guest') {
         navigate(`/guest-dashboard?task=${notification.task_id}`);
       } else {
-        // Navigate to the correct board with the task
-        const boardName = notification.task?.group?.board?.name;
-        if (boardName) {
-          const boardSlug = createBoardSlug(boardName);
-          navigate(`/${boardSlug}?task=${notification.task_id}`);
+        // Look up the correct slug using the board ID
+        const boardId = notification.task?.group?.board?.id;
+        const slug = boardId ? boardIdToSlug.get(boardId) : null;
+        if (slug) {
+          navigate(`/${slug}?task=${notification.task_id}`);
         } else {
-          // Fallback to root if no board info
           navigate(`/?task=${notification.task_id}`);
         }
       }

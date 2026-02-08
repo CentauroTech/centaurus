@@ -10,12 +10,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 
-// Strip HTML tags from notification messages (mentions are stored as HTML spans)
+// Strip HTML tags and metadata from notification messages
 const stripHtmlTags = (html: string): string => {
-  // Create a temporary element to parse HTML and extract text
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
-  return tempDiv.textContent || tempDiv.innerText || '';
+  const text = tempDiv.textContent || tempDiv.innerText || '';
+  // Remove invoice_id:: metadata suffix
+  return text.replace(/\s*invoice_id::[a-f0-9-]+/g, '');
 };
 
 interface NotificationItemProps {

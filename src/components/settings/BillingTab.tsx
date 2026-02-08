@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { format } from 'date-fns';
 import { 
   Check, 
@@ -63,7 +63,11 @@ const STATUS_CONFIG: Record<InvoiceStatus, { label: string; variant: 'default' |
   paid: { label: 'Paid', variant: 'default', className: 'bg-blue-500/20 text-blue-700 border-blue-500/30' },
 };
 
-export function BillingTab() {
+interface BillingTabProps {
+  initialInvoiceId?: string | null;
+}
+
+export function BillingTab({ initialInvoiceId }: BillingTabProps = {}) {
   const { data: invoices, isLoading } = useAllInvoices();
   const approveInvoice = useApproveInvoice();
   const rejectInvoice = useRejectInvoice();
@@ -75,6 +79,16 @@ export function BillingTab() {
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectingInvoice, setRejectingInvoice] = useState<Invoice | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+
+  // Auto-open invoice from deep link
+  useEffect(() => {
+    if (initialInvoiceId && invoices && !viewingInvoice) {
+      const invoice = invoices.find(i => i.id === initialInvoiceId);
+      if (invoice) {
+        setViewingInvoice(invoice);
+      }
+    }
+  }, [initialInvoiceId, invoices]);
 
   // Filter invoices
   const filteredInvoices = useMemo(() => {

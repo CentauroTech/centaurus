@@ -27,6 +27,13 @@ function createBoardSlug(workspaceName: string, boardName: string): string {
   return `${wsPrefix}-${boardSlug}`;
 }
 
+// Extract invoice_id from notification message if present
+function extractInvoiceId(message: string | null): string | null {
+  if (!message) return null;
+  const match = message.match(/invoice_id::([a-f0-9-]+)/);
+  return match ? match[1] : null;
+}
+
 export function NotificationBell() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -53,6 +60,17 @@ export function NotificationBell() {
   const handleNotificationClick = (notification: Notification) => {
     markRead.mutate(notification.id);
     setOpen(false);
+    
+    // Check for invoice deep link
+    const invoiceId = extractInvoiceId(notification.message);
+    if (invoiceId && notification.type.startsWith('invoice_')) {
+      if (role === 'guest') {
+        navigate(`/guest-dashboard?tab=invoices&invoice=${invoiceId}`);
+      } else {
+        navigate(`/billing?invoice=${invoiceId}`);
+      }
+      return;
+    }
     
     if (notification.task_id) {
       if (role === 'guest') {

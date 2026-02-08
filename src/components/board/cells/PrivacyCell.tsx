@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Lock, Unlock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getLocalDateString } from '@/lib/businessDays';
 import {
   Tooltip,
   TooltipContent,
@@ -155,7 +156,7 @@ export function PrivacyCell({
     
     // Set date_assigned to today when guest is assigned
     if (onDateAssignedChange && selectedViewers.length > 0) {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       onDateAssignedChange(today);
     }
     
@@ -168,7 +169,7 @@ export function PrivacyCell({
       while (tomorrow.getDay() === 0 || tomorrow.getDay() === 6) {
         tomorrow.setDate(tomorrow.getDate() + 1);
       }
-      const dueDateStr = tomorrow.toISOString().split('T')[0];
+      const dueDateStr = getLocalDateString(tomorrow);
       onGuestDueDateChange(dueDateStr);
     }
     setDialogOpen(false);

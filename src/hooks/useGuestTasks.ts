@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentTeamMember } from './useCurrentTeamMember';
+import { getLocalDateString } from '@/lib/businessDays';
 
 export interface GuestAssignedPerson {
   id: string;
@@ -273,7 +274,7 @@ export function useCompleteGuestTask() {
     }) => {
       if (!currentMember?.id) throw new Error('User not authenticated');
 
-      const currentDate = new Date().toISOString().split('T')[0];
+      const currentDate = getLocalDateString();
       const now = new Date().toISOString();
 
       // Fetch task details for the completion record

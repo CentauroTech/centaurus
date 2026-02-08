@@ -241,7 +241,7 @@ export const MemoizedTaskRow = memo(function MemoizedTaskRow({
         }
         return <TextCell value={value as string} onChange={val => handleUpdate(column.field, val)} />;
       case 'number':
-        return <NumberCell value={value as number} onChange={val => handleUpdate(column.field, val)} displayFormat={column.field === 'cantidadEpisodios' ? 'episodes' : undefined} />;
+        return <NumberCell value={value as number} onChange={val => handleUpdate(column.field, val)} displayFormat={column.field === 'cantidadEpisodios' ? 'episodes' : undefined} taskName={column.field === 'cantidadEpisodios' ? task.name : undefined} />;
       case 'date':
         // Use StudioAssignedDateCell for studioAssigned field to show WO warning
         if (column.field === 'studioAssigned') {

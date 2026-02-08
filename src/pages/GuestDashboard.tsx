@@ -68,6 +68,9 @@ export default function GuestDashboard() {
   };
 
   // Handle deep link from notifications
+  const initialTab = searchParams.get('tab') || 'active';
+  const initialInvoiceId = searchParams.get('invoice');
+
   useEffect(() => {
     const taskId = searchParams.get('task');
     if (taskId && tasks) {
@@ -231,7 +234,7 @@ export default function GuestDashboard() {
         </div>
 
         {/* Tasks */}
-        <Tabs defaultValue="active" className="w-full">
+        <Tabs defaultValue={initialTab} className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="active" className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
@@ -453,7 +456,7 @@ export default function GuestDashboard() {
 
           {/* Invoices Tab */}
           <TabsContent value="invoices">
-            <InvoicesTab />
+            <InvoicesTab initialInvoiceId={initialInvoiceId} />
           </TabsContent>
         </Tabs>
       </main>

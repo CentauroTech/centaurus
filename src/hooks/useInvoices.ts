@@ -314,7 +314,7 @@ export function useSubmitInvoice() {
             p_user_id: pm.id,
             p_type: 'invoice_submitted',
             p_title: `Invoice ${invoiceData.invoice_number} Submitted`,
-            p_message: `${currentMember.name || 'A team member'} submitted an invoice for approval.`,
+            p_message: `${currentMember.name || 'A team member'} submitted an invoice for approval. invoice_id::${invoiceId}`,
             p_task_id: null,
             p_triggered_by_id: currentMember.id,
           });
@@ -415,7 +415,7 @@ export function useApproveInvoice() {
           p_user_id: invoiceData.team_member_id,
           p_type: 'invoice_approved',
           p_title: `Invoice ${invoiceData.invoice_number} Approved`,
-          p_message: 'Your invoice has been approved and is ready for payment.',
+          p_message: `Your invoice has been approved and is ready for payment. invoice_id::${invoiceId}`,
           p_task_id: null,
           p_triggered_by_id: currentMember.id,
         });

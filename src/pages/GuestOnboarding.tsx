@@ -8,6 +8,7 @@ import { BillingProfileForm, BillingFormData } from '@/components/guest/BillingP
 import { PlatformGuide } from '@/components/guest/PlatformGuide';
 import { useAuth } from '@/hooks/useAuth';
 import { useCreateBillingProfile, useBillingProfile } from '@/hooks/useBillingProfile';
+import { getLocalDateString } from '@/lib/businessDays';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -125,7 +126,7 @@ export default function GuestOnboarding() {
         .maybeSingle();
       
       if (!existing) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString();
         
         // Update the tutorial task with dynamic data
         await supabase
@@ -135,7 +136,7 @@ export default function GuestOnboarding() {
             adaptador_id: SYSTEM_MEMBER_ID, // "Tutorial" system user
             date_assigned: today,
             cantidad_episodios: 1,
-            guest_due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+            guest_due_date: getLocalDateString(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000))
           })
           .eq('id', TUTORIAL_TASK_ID);
 

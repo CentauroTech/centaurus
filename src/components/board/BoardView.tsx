@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy, X, HelpCircle } from 'lucide-react';
 import { BoardGuide, useBoardGuide } from './BoardGuide';
-import { addBusinessDays } from '@/lib/businessDays';
+import { addBusinessDays, getLocalDateString } from '@/lib/businessDays';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TaskGroup } from './TaskGroup';
@@ -220,7 +220,7 @@ function BoardViewContent({
     if (updates.status !== undefined) {
       dbUpdates.status = updates.status;
       if (updates.status === 'done') {
-        dbUpdates.date_delivered = new Date().toISOString().split('T')[0];
+        dbUpdates.date_delivered = getLocalDateString();
         dbUpdates.completed_at = new Date().toISOString();
       }
       if (updates.status === 'working' && !rawTask?.started_at) {
@@ -333,8 +333,8 @@ function BoardViewContent({
     });
 
     // Set guest assignment dates
-    const today = new Date().toISOString().split('T')[0];
-    const dueDate = addBusinessDays(new Date(), 1).toISOString().split('T')[0];
+    const today = getLocalDateString();
+    const dueDate = getLocalDateString(addBusinessDays(new Date(), 1));
 
     await supabase
       .from('tasks')

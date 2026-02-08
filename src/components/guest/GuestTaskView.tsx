@@ -31,12 +31,6 @@ function parseLocalDate(dateStr: string): Date {
   return new Date(dateStr);
 }
 
-// Extract episode number from task name
-const extractEpFromName = (name?: string): number => {
-  if (!name) return 1;
-  const match = name.match(/(?:ep(?:isode)?|e)\s*(\d+)/i);
-  return match ? parseInt(match[1], 10) : 1;
-};
 
 // Match main workspace phase colors
 const PHASE_COLORS: Record<string, string> = {
@@ -62,9 +56,10 @@ interface GuestTaskViewProps {
   task: GuestTask;
   isOpen: boolean;
   onClose: () => void;
+  episodeIndex?: number;
 }
 
-export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
+export function GuestTaskView({ task, isOpen, onClose, episodeIndex }: GuestTaskViewProps) {
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
 
@@ -181,7 +176,7 @@ export function GuestTaskView({ task, isOpen, onClose }: GuestTaskViewProps) {
                 <div className="flex items-center gap-2">
                   <Film className="w-4 h-4 text-muted-foreground shrink-0" />
                   <span className="text-muted-foreground">Episodes:</span>
-                  <span className="font-medium">{extractEpFromName(task.name)}/{task.cantidadEpisodios}</span>
+                  <span className="font-medium">{(episodeIndex ?? 1)}/{task.cantidadEpisodios}</span>
                 </div>
               )}
               

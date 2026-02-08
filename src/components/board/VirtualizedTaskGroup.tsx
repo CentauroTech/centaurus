@@ -193,12 +193,13 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
                 </tr>
               </thead>
               <tbody>
-                {visibleTasks.map((task) => {
+                {visibleTasks.map((task, index) => {
                   const viewerIds = taskViewersMap?.get(task.id) || [];
+                  const taskWithIndex = { ...task, episodeIndex: index + 1 };
                   return (
                     <MemoizedTaskRow
                       key={task.id}
-                      task={task}
+                      task={taskWithIndex}
                       onUpdate={(updates) => onUpdateTask(task.id, updates)}
                       onDelete={canDeleteTasks ? () => onDeleteTask(task.id) : undefined}
                       boardId={boardId}

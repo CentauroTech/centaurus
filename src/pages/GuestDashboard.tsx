@@ -467,6 +467,7 @@ export default function GuestDashboard() {
           task={selectedTask}
           isOpen={!!selectedTask}
           onClose={() => setSelectedTask(null)}
+          episodeIndex={tasks ? tasks.findIndex(t => t.id === selectedTask.id) + 1 : 1}
         />
       )}
 

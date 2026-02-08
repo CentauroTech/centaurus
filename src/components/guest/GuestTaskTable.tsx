@@ -71,12 +71,6 @@ const isTranslationPhase = (fase?: string): boolean => {
   return normalized === 'translation' || normalized.includes('translat');
 };
 
-// Extract episode number from task name (e.g. "Baby Boss S1 Ep3" → 3)
-const extractEpFromName = (name?: string): number => {
-  if (!name) return 1;
-  const match = name.match(/(?:ep(?:isode)?|e)\s*(\d+)/i);
-  return match ? parseInt(match[1], 10) : 1;
-};
 
 export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTaskTableProps) {
   // Check if any task is NOT in translation phase (to show File to Adapt column)
@@ -139,7 +133,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tasks.map((task) => {
+              {tasks.map((task, index) => {
                 const isDone = task.status === 'done';
                 const isDelayed = task.guestDueDate && 
                   !isDone && 
@@ -257,7 +251,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                     <TableCell onClick={() => onTaskClick(task)} className="text-center">
                       <span className="text-sm">
                         {task.cantidadEpisodios 
-                          ? `${extractEpFromName(task.name)}/${task.cantidadEpisodios}` 
+                          ? `${index + 1}/${task.cantidadEpisodios}` 
                           : '—'}
                       </span>
                     </TableCell>

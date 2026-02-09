@@ -5,6 +5,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useTeamMembers } from "@/hooks/useWorkspaces";
 import { useCommentLikes, useToggleCommentLike } from "@/hooks/useCommentLikes";
 import { useCommentAttachments, useAddCommentAttachment } from "@/hooks/useCommentAttachments";
+import { useUploadTaskFile } from "@/hooks/useTaskFiles";
 import { useEditComment } from "@/hooks/useEditComment";
 import { FILE_CATEGORIES } from "@/hooks/useTaskFiles";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -56,6 +57,7 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
   const toggleLikeMutation = useToggleCommentLike(taskId);
   const { data: attachments = [] } = useCommentAttachments(taskId);
   const addAttachmentMutation = useAddCommentAttachment(taskId);
+  const uploadTaskFileMutation = useUploadTaskFile(taskId);
 
   const centauroMembers = teamMembers.filter(m => m.email && m.email.toLowerCase().endsWith('@centauro.com'));
   const isGuest = role === "guest";
@@ -119,9 +121,10 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
         viewerId: shouldBeGuestVisible ? effectiveViewerId : undefined,
       });
 
-      // Upload attachments
-      for (const { file } of newFiles) {
+      // Upload attachments to task files (Files tab) and comment attachments
+      for (const { file, category } of newFiles) {
         try {
+          await uploadTaskFileMutation.mutateAsync({ file, category, phase: phase || null });
           await addAttachmentMutation.mutateAsync({ commentId: comment.id, file });
         } catch (e) {
           console.error("Failed to upload attachment:", e);
@@ -156,6 +159,7 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
       if (files) {
         for (const file of files) {
           try {
+            await uploadTaskFileMutation.mutateAsync({ file, category: 'general', phase: phase || null });
             await addAttachmentMutation.mutateAsync({ commentId: comment.id, file });
           } catch (e) {
             console.error("Failed to upload attachment:", e);

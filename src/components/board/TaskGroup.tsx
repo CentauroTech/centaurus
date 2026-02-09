@@ -118,6 +118,19 @@ export function TaskGroup({
     return filterTasks(group.tasks);
   }, [group.tasks, filterTasks]);
 
+  // Compute per-project episode indices
+  const episodeIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const counters = new Map<string, number>();
+    for (const task of filteredTasks) {
+      const projectName = task.name || '';
+      const count = (counters.get(projectName) || 0) + 1;
+      counters.set(projectName, count);
+      map.set(task.id, count);
+    }
+    return map;
+  }, [filteredTasks]);
+
   // Paginated tasks - only render visible tasks
   const visibleTasks = useMemo(() => {
     return filteredTasks.slice(0, visibleCount);
@@ -219,7 +232,7 @@ export function TaskGroup({
                 </tr>
               </thead>
               <tbody>
-                {visibleTasks.map((task, index) => <TaskRow key={task.id} task={{ ...task, episodeIndex: index + 1 }} onUpdate={updates => onUpdateTask(task.id, updates)} onDelete={canDeleteTasks ? () => onDeleteTask(task.id) : undefined} boardId={boardId} boardName={boardName} workspaceName={workspaceName} columns={columns} onSendToPhase={onSendToPhase ? phase => onSendToPhase(task.id, phase) : undefined} autoOpenPanel={selectedTaskId === task.id} onPanelClose={onTaskPanelClose} />)}
+                {visibleTasks.map((task) => <TaskRow key={task.id} task={{ ...task, episodeIndex: episodeIndexMap.get(task.id) || 1 }} onUpdate={updates => onUpdateTask(task.id, updates)} onDelete={canDeleteTasks ? () => onDeleteTask(task.id) : undefined} boardId={boardId} boardName={boardName} workspaceName={workspaceName} columns={columns} onSendToPhase={onSendToPhase ? phase => onSendToPhase(task.id, phase) : undefined} autoOpenPanel={selectedTaskId === task.id} onPanelClose={onTaskPanelClose} />)}
               </tbody>
             </table>
           </DndContext>

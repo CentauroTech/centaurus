@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Users, Columns, X, Plus, Minus, Zap, DollarSign, BookOpen } from 'lucide-react';
+import { ArrowLeft, Search, Users, Columns, X, Plus, Minus, Zap, DollarSign, BookOpen, LogOut } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -65,6 +66,7 @@ const TYPE_COLORS: Record<MemberType, string> = {
 
 export default function Settings() {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const { canManageTeamMembers, isGod, isAdmin, isProjectManager } = usePermissions();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBranch, setFilterBranch] = useState<Branch | 'all'>('all');
@@ -287,12 +289,16 @@ export default function Settings() {
             <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div>
+            <div className="flex-1">
               <h1 className="text-2xl font-bold">Settings</h1>
               <p className="text-sm text-muted-foreground">
                 Manage team members, types, branches, roles, and column visibility
               </p>
             </div>
+            <Button variant="outline" size="sm" onClick={signOut} className="gap-2 text-destructive hover:text-destructive">
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </Button>
           </div>
         </div>
       </header>

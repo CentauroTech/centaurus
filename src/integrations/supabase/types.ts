@@ -225,6 +225,35 @@ export type Database = {
           },
         ]
       }
+      column_member_visibility: {
+        Row: {
+          column_id: string
+          created_at: string | null
+          id: string
+          team_member_id: string
+        }
+        Insert: {
+          column_id: string
+          created_at?: string | null
+          id?: string
+          team_member_id: string
+        }
+        Update: {
+          column_id?: string
+          created_at?: string | null
+          id?: string
+          team_member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "column_member_visibility_team_member_id_fkey"
+            columns: ["team_member_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       column_visibility: {
         Row: {
           column_id: string

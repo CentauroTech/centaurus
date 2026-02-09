@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Users, Columns, Eye, EyeOff, X, Plus, Minus, Zap, DollarSign, BookOpen } from 'lucide-react';
+import { ArrowLeft, Search, Users, Columns, X, Plus, Minus, Zap, DollarSign, BookOpen } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -33,11 +33,7 @@ import {
   ROLE_LABELS, 
   RoleType 
 } from '@/hooks/useTeamMemberRoles';
-import {
-  useColumnVisibility,
-  useUpdateColumnVisibility,
-  useInitializeColumnVisibility,
-} from '@/hooks/useColumnVisibility';
+// Column visibility is handled by ColumnVisibilityTab component
 import {
   MemberType,
   MEMBER_TYPES,
@@ -45,12 +41,13 @@ import {
   useUpdateTeamMemberType,
 } from '@/hooks/useUpdateTeamMemberType';
 import { useHasBillingRole } from '@/hooks/useMyRoles';
-import { COLUMNS } from '@/types/board';
+
 import { toast } from 'sonner';
 import { PhaseAutomationsTab } from '@/components/settings/PhaseAutomationsTab';
 import { EditableEmailCell } from '@/components/settings/EditableEmailCell';
 import { BillingTab } from '@/components/settings/BillingTab';
 import { GuideEditorTab } from '@/components/settings/GuideEditorTab';
+import { ColumnVisibilityTab } from '@/components/settings/ColumnVisibilityTab';
 
 const BRANCH_COLORS: Record<Branch, string> = {
   Colombia: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
@@ -98,26 +95,6 @@ export default function Settings() {
   // Check billing role access
   const { hasBillingRole } = useHasBillingRole();
 
-  // Column visibility
-  const { data: columnVisibility, isLoading: loadingColumnVisibility } = useColumnVisibility();
-  const updateColumnVisibility = useUpdateColumnVisibility();
-  const initializeColumnVisibility = useInitializeColumnVisibility();
-
-  // Initialize column visibility settings on first load
-  useEffect(() => {
-    if (columnVisibility && columnVisibility.length === 0 && isGod) {
-      initializeColumnVisibility.mutate();
-    }
-  }, [columnVisibility, isGod]);
-
-  // Create column visibility map
-  const columnVisibilityMap = useMemo(() => {
-    const map = new Map<string, boolean>();
-    columnVisibility?.forEach((cv) => {
-      map.set(cv.column_id, cv.visible_to_team_members);
-    });
-    return map;
-  }, [columnVisibility]);
 
   // Create maps for quick lookup
   const branchesMap = useMemo(() => {
@@ -282,13 +259,6 @@ export default function Settings() {
     updateMemberType.mutate({ teamMemberId: memberId, type });
   };
 
-  const handleColumnVisibilityToggle = (columnId: string, columnLabel: string, currentVisibility: boolean) => {
-    updateColumnVisibility.mutate({
-      columnId,
-      columnLabel,
-      visibleToTeamMembers: !currentVisibility,
-    });
-  };
 
   const isLoading = loadingMembers || loadingBranches || loadingRoles;
   const allSelected = filteredMembers.length > 0 && filteredMembers.every(m => selectedMembers.has(m.id));
@@ -768,91 +738,7 @@ export default function Settings() {
 
           {(isGod || isAdmin) && (
             <TabsContent value="columns" className="space-y-6">
-              <div className="bg-muted/30 rounded-lg p-4 mb-6">
-                <h3 className="font-medium mb-2">Column Visibility Settings</h3>
-                <p className="text-sm text-muted-foreground">
-                  Control which columns are visible to Team Members. God and Admin users can always see all columns.
-                  Hidden columns will not appear for Team Members in the board view.
-                </p>
-              </div>
-
-              {loadingColumnVisibility ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  Loading column visibility settings...
-                </div>
-              ) : (
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          <th className="text-left px-4 py-3 font-medium">Column</th>
-                          <th className="text-left px-4 py-3 font-medium">Type</th>
-                          <th className="text-left px-4 py-3 font-medium w-48">Visible to Team Members</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {COLUMNS.filter(col => col.label).map((column) => {
-                          const isVisible = columnVisibilityMap.get(column.id) ?? true;
-                          
-                          return (
-                            <tr key={column.id} className="hover:bg-muted/30">
-                              <td className="px-4 py-3">
-                                <div className="font-medium">{column.label}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {column.id}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3">
-                                <Badge variant="outline">
-                                  {column.type}
-                                </Badge>
-                              </td>
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-3">
-                                  <Switch
-                                    checked={isVisible}
-                                    onCheckedChange={() => 
-                                      handleColumnVisibilityToggle(
-                                        column.id, 
-                                        column.label, 
-                                        isVisible
-                                      )
-                                    }
-                                  />
-                                  <span className="flex items-center gap-1 text-sm">
-                                    {isVisible ? (
-                                      <>
-                                        <Eye className="h-4 w-4 text-green-600" />
-                                        Visible
-                                      </>
-                                    ) : (
-                                      <>
-                                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                                        Hidden
-                                      </>
-                                    )}
-                                  </span>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => initializeColumnVisibility.mutate()}
-                  disabled={initializeColumnVisibility.isPending}
-                >
-                  {initializeColumnVisibility.isPending ? 'Initializing...' : 'Initialize Missing Columns'}
-                </Button>
-              </div>
+              <ColumnVisibilityTab />
             </TabsContent>
           )}
 

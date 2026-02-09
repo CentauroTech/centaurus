@@ -12,6 +12,13 @@ interface ColumnVisibility {
   updated_at: string;
 }
 
+interface ColumnMemberVisibility {
+  id: string;
+  column_id: string;
+  team_member_id: string;
+  created_at: string;
+}
+
 export function useColumnVisibility() {
   return useQuery({
     queryKey: ['column-visibility'],
@@ -23,6 +30,20 @@ export function useColumnVisibility() {
       
       if (error) throw error;
       return data as ColumnVisibility[];
+    },
+  });
+}
+
+export function useColumnMemberVisibility() {
+  return useQuery({
+    queryKey: ['column-member-visibility'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('column_member_visibility')
+        .select('*');
+      
+      if (error) throw error;
+      return data as ColumnMemberVisibility[];
     },
   });
 }
@@ -40,7 +61,6 @@ export function useUpdateColumnVisibility() {
       columnLabel: string; 
       visibleToTeamMembers: boolean;
     }) => {
-      // Try to upsert the column visibility setting
       const { error } = await supabase
         .from('column_visibility')
         .upsert(
@@ -66,12 +86,54 @@ export function useUpdateColumnVisibility() {
   });
 }
 
+export function useSetColumnMemberVisibility() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      columnId,
+      teamMemberIds,
+    }: {
+      columnId: string;
+      teamMemberIds: string[];
+    }) => {
+      // Delete existing entries for this column
+      const { error: deleteError } = await supabase
+        .from('column_member_visibility')
+        .delete()
+        .eq('column_id', columnId);
+
+      if (deleteError) throw deleteError;
+
+      // Insert new entries
+      if (teamMemberIds.length > 0) {
+        const rows = teamMemberIds.map(id => ({
+          column_id: columnId,
+          team_member_id: id,
+        }));
+        const { error: insertError } = await supabase
+          .from('column_member_visibility')
+          .insert(rows);
+
+        if (insertError) throw insertError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['column-member-visibility'] });
+      toast.success('Column member visibility updated');
+    },
+    onError: (error: Error) => {
+      console.error('Error updating column member visibility:', error);
+      toast.error('Failed to update column member visibility');
+    },
+  });
+}
+
 export function useInitializeColumnVisibility() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
-      // Get existing column visibility settings
       const { data: existing, error: fetchError } = await supabase
         .from('column_visibility')
         .select('column_id');
@@ -80,7 +142,6 @@ export function useInitializeColumnVisibility() {
 
       const existingIds = new Set(existing?.map(c => c.column_id) || []);
       
-      // Find columns that don't have visibility settings yet
       const columnsToInsert = COLUMNS
         .filter(col => !existingIds.has(col.id))
         .map(col => ({

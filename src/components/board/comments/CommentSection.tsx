@@ -111,6 +111,14 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
     let mentionedUserIds = expandEveryoneMention(extractMentionsFromHtml(newComment));
     const shouldBeGuestVisible = isGuest || activeTab === "guest";
 
+    // Determine viewer ID: use effectiveViewerId, or fall back to first mentioned guest
+    let commentViewerId = effectiveViewerId;
+    if (!commentViewerId && shouldBeGuestVisible && mentionedUserIds.length > 0) {
+      const guestMembers = teamMembers.filter(m => m.role === 'guest');
+      const mentionedGuest = mentionedUserIds.find(id => guestMembers.some(g => g.id === id));
+      if (mentionedGuest) commentViewerId = mentionedGuest;
+    }
+
     try {
       const comment = await addCommentMutation.mutateAsync({
         content: newComment,
@@ -118,7 +126,7 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
         mentionedUserIds,
         isGuestVisible: shouldBeGuestVisible,
         phase: phase || undefined,
-        viewerId: shouldBeGuestVisible ? effectiveViewerId : undefined,
+        viewerId: shouldBeGuestVisible ? commentViewerId : undefined,
       });
 
       // Upload attachments to task files (Files tab) and comment attachments
@@ -145,6 +153,14 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
     let mentionedUserIds = expandEveryoneMention(extractMentionsFromHtml(content));
     const shouldBeGuestVisible = isGuest || activeTab === "guest";
 
+    // Determine viewer ID: use effectiveViewerId, or fall back to first mentioned guest
+    let commentViewerId = effectiveViewerId;
+    if (!commentViewerId && shouldBeGuestVisible && mentionedUserIds.length > 0) {
+      const guestMembers = teamMembers.filter(m => m.role === 'guest');
+      const mentionedGuest = mentionedUserIds.find(id => guestMembers.some(g => g.id === id));
+      if (mentionedGuest) commentViewerId = mentionedGuest;
+    }
+
     try {
       const comment = await addCommentMutation.mutateAsync({
         content,
@@ -153,7 +169,7 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
         isGuestVisible: shouldBeGuestVisible,
         parentId,
         phase: phase || undefined,
-        viewerId: shouldBeGuestVisible ? effectiveViewerId : undefined,
+        viewerId: shouldBeGuestVisible ? commentViewerId : undefined,
       });
 
       if (files) {

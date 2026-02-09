@@ -1,0 +1,30 @@
+UPDATE storage.buckets 
+SET allowed_mime_types = ARRAY[
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'audio/mpeg',
+  'audio/wav',
+  'audio/x-wav',
+  'audio/mp4',
+  'audio/aac',
+  'video/mp4',
+  'video/quicktime',
+  'video/x-msvideo',
+  'text/plain',
+  'text/csv',
+  'application/zip',
+  'application/x-zip-compressed',
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+  'image/svg+xml',
+  'image/bmp',
+  'image/tiff'
+]
+WHERE name = 'production-files';

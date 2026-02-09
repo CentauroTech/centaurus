@@ -74,7 +74,7 @@ export function NotificationItem({
         "flex items-start gap-3 p-3 rounded-lg transition-colors cursor-pointer group",
         notification.is_read 
           ? "bg-background hover:bg-muted/50" 
-          : "bg-primary/5 hover:bg-primary/10"
+          : "bg-destructive/20 hover:bg-destructive/25"
       )}
       onClick={handleClick}
     >

@@ -214,13 +214,14 @@ export default function Auth() {
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success('Password updated successfully!');
+        toast.success('Password updated successfully! Please log in with your new password.');
         setIsPasswordRecovery(false);
         setNewPassword('');
         setConfirmPassword('');
         // Clear the URL hash
         window.history.replaceState(null, '', window.location.pathname);
-        navigate('/');
+        // Sign out so they log in fresh with the new password
+        await supabase.auth.signOut();
       }
     } finally {
       setIsUpdatingPassword(false);

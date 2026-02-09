@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface Workspace {
   id: string;
@@ -516,7 +517,13 @@ export function useDeleteTask(boardId: string) {
       if (error) throw error;
     },
     onSuccess: () => {
+      toast.success('Task deleted');
       queryClient.invalidateQueries({ queryKey: ['board', boardId] });
+      queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+    },
+    onError: (error) => {
+      console.error('Failed to delete task:', error);
+      toast.error('Failed to delete task');
     },
   });
 }

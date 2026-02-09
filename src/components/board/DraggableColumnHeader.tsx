@@ -40,8 +40,8 @@ export function DraggableColumnHeader({ column, index, isLocked, allTasks }: Dra
     ? index === 0 
       ? 48  // after checkbox + drag
       : index === 1
-        ? 72  // after checkbox + drag + privacy (48 + 24)
-        : 296  // after checkbox + drag + privacy + name (48 + 24 + 224)
+        ? 80  // after checkbox + drag + privacy (48 + 32)
+        : 464  // after checkbox + drag + privacy + name (48 + 32 + 384)
     : undefined;
 
   // Determine if this column type supports filtering

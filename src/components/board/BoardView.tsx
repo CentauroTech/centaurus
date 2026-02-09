@@ -515,6 +515,41 @@ function BoardViewContent({
         console.error('Some tasks failed to move:', failures);
       }
 
+      // Apply phase automations for successfully moved tasks
+      for (const result of results) {
+        if (!result.error && (result.data as any)?.success) {
+          const data = result.data as any;
+          const newPhase = data.new_phase;
+          if (newPhase) {
+            // Find the task ID from the original params by matching result order
+            const idx = results.indexOf(result);
+            const taskId = params.taskIds[idx];
+            const normalizedPhase = newPhase.toLowerCase().replace(/[^a-z0-9]/g, '');
+            try {
+              const { fetchPhaseAutomations } = await import('@/hooks/usePhaseAutomations');
+              const phaseAutomations = await fetchPhaseAutomations(board.workspace_id);
+              const assigneeIds = phaseAutomations.get(normalizedPhase);
+              if (assigneeIds && assigneeIds.length > 0) {
+                // Get existing assignments
+                const { data: existing } = await supabase
+                  .from('task_people')
+                  .select('team_member_id')
+                  .eq('task_id', taskId);
+                const existingSet = new Set(existing?.map(a => a.team_member_id) || []);
+                const newIds = assigneeIds.filter(id => !existingSet.has(id));
+                if (newIds.length > 0) {
+                  await supabase.from('task_people').insert(
+                    newIds.map(id => ({ task_id: taskId, team_member_id: id }))
+                  );
+                }
+              }
+            } catch (e) {
+              console.error('Failed to apply phase automation for task:', taskId, e);
+            }
+          }
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ['board'] });
       queryClient.invalidateQueries({ queryKey: ['workspaces'] });
       return;

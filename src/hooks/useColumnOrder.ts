@@ -1,60 +1,70 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ColumnConfig, COLUMNS, COLUMNS_COLOMBIA } from '@/types/board';
 import { usePermissions } from './usePermissions';
 import { useColumnVisibility, useColumnMemberVisibility } from './useColumnVisibility';
 import { useCurrentTeamMember } from './useCurrentTeamMember';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ColumnOrderState {
   order: string[]; // Array of column IDs in order
   isLocked: boolean;
 }
 
-const STORAGE_KEY_PREFIX = 'board-column-order-';
-
-function getStorageKey(boardId: string): string {
-  return `${STORAGE_KEY_PREFIX}${boardId}`;
-}
-
-// Clear all Miami board column orders from localStorage
-export function clearAllMiamiBoardOrders(): void {
-  if (typeof window === 'undefined') return;
-  
-  const keysToRemove: string[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith(STORAGE_KEY_PREFIX)) {
-      keysToRemove.push(key);
-    }
-  }
-  
-  keysToRemove.forEach(key => {
-    localStorage.removeItem(key);
+// Fetch column order from DB for a board
+function useBoardColumnOrder(boardId: string) {
+  return useQuery({
+    queryKey: ['board-column-order', boardId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('board_column_orders')
+        .select('*')
+        .eq('board_id', boardId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!boardId,
   });
-  
-  console.log(`Cleared ${keysToRemove.length} board column order(s) from localStorage`);
 }
 
-// Sync column order from source board to all other boards in the same workspace
-export function syncColumnOrderToWorkspace(sourceBoardId: string, allBoardIds: string[]): void {
-  if (typeof window === 'undefined') return;
-  
-  const sourceKey = getStorageKey(sourceBoardId);
-  const sourceData = localStorage.getItem(sourceKey);
-  
-  if (!sourceData) {
-    console.log('No source column order found, nothing to sync');
+// Sync column order from source board to all other boards in the same workspace (DB-backed)
+export async function syncColumnOrderToWorkspace(sourceBoardId: string, allBoardIds: string[], currentUserId: string | null): Promise<void> {
+  // Read the source board's column order
+  const { data: source, error: readError } = await supabase
+    .from('board_column_orders')
+    .select('column_order, is_locked')
+    .eq('board_id', sourceBoardId)
+    .maybeSingle();
+
+  if (readError || !source) {
+    console.log('No source column order found in DB, nothing to sync');
     return;
   }
-  
-  let synced = 0;
-  allBoardIds.forEach(boardId => {
-    if (boardId !== sourceBoardId) {
-      localStorage.setItem(getStorageKey(boardId), sourceData);
-      synced++;
-    }
-  });
-  
-  console.log(`Synced column order from ${sourceBoardId} to ${synced} other board(s)`);
+
+  const targetBoardIds = allBoardIds.filter(id => id !== sourceBoardId);
+
+  // Upsert for each target board
+  await Promise.all(
+    targetBoardIds.map(async (boardId) => {
+      const { error } = await supabase
+        .from('board_column_orders')
+        .upsert(
+          {
+            board_id: boardId,
+            column_order: source.column_order,
+            is_locked: source.is_locked,
+            updated_by: currentUserId,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'board_id' }
+        );
+      if (error) console.error('Failed to sync column order to board:', boardId, error);
+    })
+  );
+
+  console.log(`Synced column order from ${sourceBoardId} to ${targetBoardIds.length} other board(s)`);
 }
 
 export function useColumnOrder(boardId: string, workspaceName: string) {
@@ -62,39 +72,57 @@ export function useColumnOrder(boardId: string, workspaceName: string) {
   const { data: columnVisibility } = useColumnVisibility();
   const { data: memberVisibility } = useColumnMemberVisibility();
   const { data: currentTeamMember } = useCurrentTeamMember();
+  const queryClient = useQueryClient();
   
   // Get default columns based on workspace
   const defaultColumns = workspaceName === 'Colombia' ? COLUMNS_COLOMBIA : COLUMNS;
   const defaultOrder = defaultColumns.map(col => col.id);
-  
-  const [state, setState] = useState<ColumnOrderState>(() => {
-    if (typeof window === 'undefined') {
-      return { order: defaultOrder, isLocked: false };
+
+  // Fetch DB-persisted column order
+  const { data: dbColumnOrder } = useBoardColumnOrder(boardId);
+
+  // Derive state from DB or defaults
+  const state: ColumnOrderState = useMemo(() => {
+    if (dbColumnOrder && Array.isArray(dbColumnOrder.column_order) && dbColumnOrder.column_order.length > 0) {
+      const storedOrder = dbColumnOrder.column_order as string[];
+      // Validate stored IDs still exist
+      const validOrder = storedOrder.filter(id => defaultColumns.some(col => col.id === id));
+      // Add any new columns not in stored order
+      const newColumns = defaultColumns
+        .filter(col => !validOrder.includes(col.id))
+        .map(col => col.id);
+      return {
+        order: [...validOrder, ...newColumns],
+        isLocked: dbColumnOrder.is_locked ?? false,
+      };
     }
-    
-    try {
-      const stored = localStorage.getItem(getStorageKey(boardId));
-      if (stored) {
-        const parsed = JSON.parse(stored) as ColumnOrderState;
-        // Validate that all stored column IDs still exist
-        const validOrder = parsed.order.filter(id => 
-          defaultColumns.some(col => col.id === id)
-        );
-        // Add any new columns that weren't in storage
-        const newColumns = defaultColumns
-          .filter(col => !validOrder.includes(col.id))
-          .map(col => col.id);
-        
-        return {
-          order: [...validOrder, ...newColumns],
-          isLocked: parsed.isLocked ?? false,
-        };
-      }
-    } catch (e) {
-      console.error('Failed to parse column order from localStorage:', e);
-    }
-    
     return { order: defaultOrder, isLocked: false };
+  }, [dbColumnOrder, defaultColumns, defaultOrder]);
+
+  // Mutation to save column order to DB
+  const saveOrderMutation = useMutation({
+    mutationFn: async (newState: ColumnOrderState) => {
+      const { error } = await supabase
+        .from('board_column_orders')
+        .upsert(
+          {
+            board_id: boardId,
+            column_order: newState.order as any,
+            is_locked: newState.isLocked,
+            updated_by: currentTeamMember?.id || null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'board_id' }
+        );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['board-column-order', boardId] });
+    },
+    onError: (err) => {
+      console.error('Failed to save column order:', err);
+      toast.error('Failed to save column order');
+    },
   });
 
   // Create column visibility map for quick lookup
@@ -117,42 +145,6 @@ export function useColumnOrder(boardId: string, workspaceName: string) {
     });
     return map;
   }, [memberVisibility]);
-
-  // Update state when boardId changes
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(getStorageKey(boardId));
-      if (stored) {
-        const parsed = JSON.parse(stored) as ColumnOrderState;
-        const validOrder = parsed.order.filter(id => 
-          defaultColumns.some(col => col.id === id)
-        );
-        const newColumns = defaultColumns
-          .filter(col => !validOrder.includes(col.id))
-          .map(col => col.id);
-        
-        setState({
-          order: [...validOrder, ...newColumns],
-          isLocked: parsed.isLocked ?? false,
-        });
-      } else {
-        setState({ order: defaultOrder, isLocked: false });
-      }
-    } catch (e) {
-      setState({ order: defaultOrder, isLocked: false });
-    }
-  }, [boardId, workspaceName]);
-
-  // Save to localStorage whenever state changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(getStorageKey(boardId), JSON.stringify(state));
-      } catch (e) {
-        console.error('Failed to save column order to localStorage:', e);
-      }
-    }
-  }, [boardId, state]);
 
   // Get ordered columns, filtering based on permissions and visibility settings
   const orderedColumns: ColumnConfig[] = useMemo(() => {
@@ -191,39 +183,36 @@ export function useColumnOrder(boardId: string, workspaceName: string) {
       });
   }, [state.order, defaultColumns, isGod, isAdmin, isTeamMember, columnVisibilityMap, memberVisibilityMap, currentTeamMember]);
 
-  // Reorder columns
+  // Reorder columns (saves to DB)
   const reorderColumns = useCallback((activeId: string, overId: string) => {
     if (state.isLocked) return;
     
-    setState(prev => {
-      const oldIndex = prev.order.indexOf(activeId);
-      const newIndex = prev.order.indexOf(overId);
-      
-      if (oldIndex === -1 || newIndex === -1) return prev;
-      if (oldIndex === newIndex) return prev;
-      
-      // First 3 columns (indices 0, 1, 2 in order) are sticky and shouldn't be moved
-      if (oldIndex <= 2 || newIndex <= 2) return prev;
-      
-      const newOrder = [...prev.order];
-      newOrder.splice(oldIndex, 1);
-      newOrder.splice(newIndex, 0, activeId);
-      
-      console.log('Column reorder:', { activeId, overId, oldIndex, newIndex, newOrder });
-      
-      return { ...prev, order: newOrder };
-    });
-  }, [state.isLocked]);
+    const oldIndex = state.order.indexOf(activeId);
+    const newIndex = state.order.indexOf(overId);
+    
+    if (oldIndex === -1 || newIndex === -1) return;
+    if (oldIndex === newIndex) return;
+    
+    // First 3 columns (indices 0, 1, 2 in order) are sticky and shouldn't be moved
+    if (oldIndex <= 2 || newIndex <= 2) return;
+    
+    const newOrder = [...state.order];
+    newOrder.splice(oldIndex, 1);
+    newOrder.splice(newIndex, 0, activeId);
+    
+    saveOrderMutation.mutate({ order: newOrder, isLocked: state.isLocked });
+  }, [state, saveOrderMutation]);
 
-  // Toggle lock
+  // Toggle lock (saves to DB)
   const toggleLock = useCallback(() => {
-    setState(prev => ({ ...prev, isLocked: !prev.isLocked }));
-  }, []);
+    const newState = { ...state, isLocked: !state.isLocked };
+    saveOrderMutation.mutate(newState);
+  }, [state, saveOrderMutation]);
 
-  // Reset to default order
+  // Reset to default order (saves to DB)
   const resetOrder = useCallback(() => {
-    setState({ order: defaultOrder, isLocked: false });
-  }, [defaultOrder]);
+    saveOrderMutation.mutate({ order: defaultOrder, isLocked: false });
+  }, [defaultOrder, saveOrderMutation]);
 
   return {
     columns: orderedColumns,

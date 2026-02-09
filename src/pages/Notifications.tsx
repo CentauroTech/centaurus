@@ -12,10 +12,9 @@ import {
   useDeleteNotification,
   Notification,
 } from '@/hooks/useNotifications';
-import { useConversations } from '@/hooks/useChat';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAccessibleWorkspaces } from '@/hooks/useAccessibleWorkspaces';
-import { formatDistanceToNow } from 'date-fns';
+import { InboxChat } from '@/components/inbox/InboxChat';
 import { cn } from '@/lib/utils';
 
 function createBoardSlug(workspaceName: string, boardName: string): string {
@@ -39,7 +38,6 @@ export default function Notifications() {
   const deleteNotification = useDeleteNotification();
   const { role } = usePermissions();
   const { data: workspaces } = useAccessibleWorkspaces();
-  const { data: conversations, isLoading: isLoadingConversations } = useConversations();
 
   const [tab, setTab] = useState<string>('all');
 
@@ -133,8 +131,7 @@ export default function Notifications() {
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="max-w-3xl mx-auto px-4 py-6">
+      <main className={cn("mx-auto px-4 py-6", tab === 'messages' ? 'max-w-5xl' : 'max-w-3xl')}>
         <Tabs value={tab} onValueChange={setTab} className="mb-6">
           <TabsList>
             <TabsTrigger value="all" className="gap-2">
@@ -192,10 +189,7 @@ export default function Notifications() {
 
           {/* Messages tab */}
           <TabsContent value="messages">
-            <ConversationsList
-              conversations={conversations ?? []}
-              isLoading={isLoadingConversations}
-            />
+            <InboxChat />
           </TabsContent>
         </Tabs>
       </main>
@@ -259,88 +253,3 @@ function NotificationsList({
   );
 }
 
-function ConversationsList({
-  conversations,
-  isLoading,
-}: {
-  conversations: Array<{
-    id: string;
-    otherParticipant?: { id: string; name: string; initials: string; color: string } | null;
-    lastMessage?: { content: string; created_at: string; sender_id: string } | null;
-    unreadCount: number;
-  }>;
-  isLoading: boolean;
-}) {
-  const navigate = useNavigate();
-
-  if (isLoading) {
-    return (
-      <div className="text-center py-12 text-muted-foreground">
-        Loading messages...
-      </div>
-    );
-  }
-
-  if (conversations.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <MessageSquare className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
-        <p className="text-lg font-medium text-muted-foreground">No messages</p>
-        <p className="text-sm text-muted-foreground/70 mt-1">
-          Start a conversation from the chat widget
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      {conversations.map((conv) => {
-        const participant = conv.otherParticipant;
-        if (!participant) return null;
-
-        return (
-          <div
-            key={conv.id}
-            className={cn(
-              "flex items-center gap-3 p-3 rounded-lg transition-colors cursor-pointer",
-              conv.unreadCount > 0
-                ? "bg-primary/5 hover:bg-primary/10"
-                : "bg-background hover:bg-muted/50"
-            )}
-            onClick={() => navigate(`/?chat=${conv.id}`)}
-          >
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-medium shrink-0"
-              style={{ backgroundColor: participant.color }}
-            >
-              {participant.initials}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className={cn("text-sm", conv.unreadCount > 0 && "font-medium")}>
-                  {participant.name}
-                </p>
-              </div>
-              {conv.lastMessage && (
-                <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                  {conv.lastMessage.content}
-                </p>
-              )}
-              {conv.lastMessage && (
-                <p className="text-xs text-muted-foreground/70 mt-1">
-                  {formatDistanceToNow(new Date(conv.lastMessage.created_at), { addSuffix: true })}
-                </p>
-              )}
-            </div>
-            {conv.unreadCount > 0 && (
-              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-medium flex items-center justify-center">
-                {conv.unreadCount}
-              </span>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}

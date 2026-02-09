@@ -97,6 +97,19 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
 
   const columnIds = useMemo(() => columns.map(col => col.id), [columns]);
 
+  // Compute per-project episode indices
+  const episodeIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const counters = new Map<string, number>();
+    for (const task of filteredTasks) {
+      const projectName = task.name || '';
+      const count = (counters.get(projectName) || 0) + 1;
+      counters.set(projectName, count);
+      map.set(task.id, count);
+    }
+    return map;
+  }, [filteredTasks]);
+
   // Paginated tasks
   const visibleTasks = useMemo(() => {
     return filteredTasks.slice(0, visibleCount);
@@ -193,9 +206,9 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
                 </tr>
               </thead>
               <tbody>
-                {visibleTasks.map((task, index) => {
+              {visibleTasks.map((task) => {
                   const viewerIds = taskViewersMap?.get(task.id) || [];
-                  const taskWithIndex = { ...task, episodeIndex: index + 1 };
+                  const taskWithIndex = { ...task, episodeIndex: episodeIndexMap.get(task.id) || 1 };
                   return (
                     <MemoizedTaskRow
                       key={task.id}

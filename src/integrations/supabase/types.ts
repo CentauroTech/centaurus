@@ -1534,6 +1534,7 @@ export type Database = {
         Args: { p_task_id: string; p_user_id: string }
         Returns: Json
       }
+      start_conversation: { Args: { other_member_id: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

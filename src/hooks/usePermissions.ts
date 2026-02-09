@@ -50,12 +50,6 @@ export function usePermissions(): Permissions {
     enabled: !!user?.email,
   });
 
-  // Check if user has @centauro.com email - only they are full team members
-  const isCentauroEmail = user?.email?.toLowerCase().endsWith('@centauro.com') ?? false;
-  
-  // Non-centauro emails are always treated as guests, regardless of role column
-  const isGuestByEmail = !isCentauroEmail;
-  
   // Map old roles to new types for backward compatibility
   const dbRole = teamMember?.role as string | null;
   let mappedRole: MemberType | null = null;
@@ -66,8 +60,8 @@ export function usePermissions(): Permissions {
   else if (dbRole === 'guest') mappedRole = 'guest';
   else if (dbRole) mappedRole = 'team_member'; // Default to team_member for unknown roles
   
-  // Override role to 'guest' if not a centauro email
-  const role: MemberType | null = isGuestByEmail ? 'guest' : mappedRole;
+  // Role is determined by the database role column, not email domain
+  const role: MemberType | null = mappedRole;
   
   const isGod = role === 'god';
   const isAdmin = role === 'admin' || isGod;

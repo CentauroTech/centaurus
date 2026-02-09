@@ -27,10 +27,11 @@ const PHASE_ORDER = [
 async function applyPhaseAutomation(
   taskId: string,
   normalizedPhase: string,
-  currentUserId: string | null | undefined
+  currentUserId: string | null | undefined,
+  workspaceId?: string
 ): Promise<void> {
   // Fetch phase automations from database
-  const phaseAutomations = await fetchPhaseAutomations();
+  const phaseAutomations = await fetchPhaseAutomations(workspaceId);
   const assigneeIds = phaseAutomations.get(normalizedPhase);
   
   if (!assigneeIds || assigneeIds.length === 0) return;
@@ -252,10 +253,10 @@ export function useBulkMoveToPhase(boardId: string, currentUserId?: string | nul
 
       if (updateError) throw updateError;
 
-      // Apply phase automation (assign people based on phase)
+      // Apply phase automation (assign people based on phase and workspace)
       const normalizedPhase = normalizePhase(targetPhase);
       for (const taskId of taskIds) {
-        await applyPhaseAutomation(taskId, normalizedPhase, currentUserId);
+        await applyPhaseAutomation(taskId, normalizedPhase, currentUserId, currentBoard.workspace_id);
       }
 
       // Log activity for each task with user attribution and semantic type
@@ -381,9 +382,9 @@ export function useMoveTaskToPhase(boardId: string, currentUserId?: string | nul
 
       if (updateError) throw updateError;
 
-      // Apply phase automation (assign people based on phase)
+      // Apply phase automation (assign people based on phase and workspace)
       const normalizedPhase = normalizePhase(targetPhase);
-      await applyPhaseAutomation(taskId, normalizedPhase, currentUserId);
+      await applyPhaseAutomation(taskId, normalizedPhase, currentUserId, currentBoard.workspace_id);
 
       // Log activity with user attribution and semantic type
       await supabase.from('activity_log').insert({

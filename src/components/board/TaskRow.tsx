@@ -415,10 +415,10 @@ export function TaskRow({
         // Make privacy (index 0), name (index 1), and WO# (index 2) columns sticky
         const isSticky = index <= 2;
         // Calculate left offset: checkbox (24px) + drag handle (24px) + previous sticky columns
-        // privacy (w-6 = 24px), name (w-56 = 224px), WO# (w-32 = 128px)
+        // privacy (w-8 = 32px), name (w-96 = 384px), WO# (w-32 = 128px)
         const leftOffset = isSticky ? index === 0 ? 48 // after checkbox + drag
-        : index === 1 ? 72 // after checkbox + drag + privacy (48 + 24)
-        : 296 // after checkbox + drag + privacy + name (48 + 24 + 224)
+        : index === 1 ? 80 // after checkbox + drag + privacy (48 + 32)
+        : 464 // after checkbox + drag + privacy + name (48 + 32 + 384)
         : undefined;
 
         // Handle current-phase column with background directly on td

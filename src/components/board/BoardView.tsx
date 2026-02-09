@@ -14,7 +14,7 @@ import { TaskSelectionProvider } from '@/contexts/TaskSelectionContext';
 import { BulkEditProvider, BulkUpdateParams } from '@/contexts/BulkEditContext';
 import { ColumnFiltersProvider, useColumnFilters } from '@/contexts/ColumnFiltersContext';
 import { useAddTaskGroup, useUpdateTaskGroup, useDeleteTaskGroup, useAddTask, useUpdateTask, useDeleteTask, useWorkspaces } from '@/hooks/useWorkspaces';
-import { useMoveToNextPhase } from '@/hooks/usePhaseProgression';
+import { isKickoffPhase } from '@/hooks/usePhaseProgression';
 import { useBulkDuplicate, useBulkDelete, useBulkMoveToPhase, useMoveTaskToPhase, useBulkUpdateField, AVAILABLE_PHASES } from '@/hooks/useBulkTaskActions';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useAddMultipleTasks } from '@/hooks/useAddMultipleTasks';
@@ -113,7 +113,7 @@ function BoardViewContent({
   const addTaskMutation = useAddTask(boardId);
   const updateTaskMutation = useUpdateTask(boardId, currentUserId);
   const deleteTaskMutation = useDeleteTask(boardId);
-  const moveToNextPhaseMutation = useMoveToNextPhase(boardId, currentUserId);
+  
   const moveTaskToPhaseMutation = useMoveTaskToPhase(boardId, currentUserId);
   const bulkDuplicateMutation = useBulkDuplicate(boardId);
   const bulkDeleteMutation = useBulkDelete(boardId);
@@ -420,19 +420,53 @@ function BoardViewContent({
       updates.completed_at = new Date().toISOString();
     }
 
-    // If status is changing to 'done', trigger phase progression
+    // If status is changing to 'done', trigger phase progression via DB function
     if (updates.status === 'done' && groupId) {
       updateTaskMutation.mutate({
         taskId,
         updates
       }, {
-        onSuccess: () => {
-          // Move to next phase after status update
-          moveToNextPhaseMutation.mutate({
-            taskId,
-            currentGroupId: groupId,
-            pruebaDeVoz: pruebaDeVoz ?? null
+        onSuccess: async () => {
+          // Use DB function which handles auto-privatization for guest assignments
+          const { data: result, error } = await supabase.rpc('move_task_to_next_phase', {
+            p_task_id: taskId,
+            p_user_id: currentUserId || '',
           });
+
+          if (error) {
+            console.error('Failed to move task:', error);
+            toast.error('Failed to move task to next phase');
+          } else if (result && (result as any).success) {
+            const newPhase = (result as any).new_phase;
+            toast.success(`Task moved to ${newPhase}`);
+            
+            // Apply phase automations (people assignments)
+            if (newPhase && board) {
+              const normalizedPhase = newPhase.toLowerCase().replace(/[^a-z0-9]/g, '');
+              try {
+                const { fetchPhaseAutomations } = await import('@/hooks/usePhaseAutomations');
+                const phaseAutomations = await fetchPhaseAutomations(board.workspace_id);
+                const assigneeIds = phaseAutomations.get(normalizedPhase);
+                if (assigneeIds && assigneeIds.length > 0) {
+                  const { data: existing } = await supabase
+                    .from('task_people')
+                    .select('team_member_id')
+                    .eq('task_id', taskId);
+                  const existingSet = new Set(existing?.map(a => a.team_member_id) || []);
+                  const newIds = assigneeIds.filter(id => !existingSet.has(id));
+                  if (newIds.length > 0) {
+                    await supabase.from('task_people').insert(
+                      newIds.map(id => ({ task_id: taskId, team_member_id: id }))
+                    );
+                  }
+                }
+              } catch (e) {
+                console.error('Failed to apply phase automation:', e);
+              }
+            }
+          }
+          queryClient.invalidateQueries({ queryKey: ['board'] });
+          queryClient.invalidateQueries({ queryKey: ['workspaces'] });
         }
       });
     } else {

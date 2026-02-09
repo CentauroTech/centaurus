@@ -1527,6 +1527,7 @@ export type Database = {
         Returns: boolean
       }
       is_guest: { Args: never; Returns: boolean }
+      is_internal_member: { Args: never; Returns: boolean }
       is_project_manager: { Args: never; Returns: boolean }
       is_team_member: { Args: never; Returns: boolean }
       move_task_to_next_phase: {

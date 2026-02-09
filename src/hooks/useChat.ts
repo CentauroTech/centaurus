@@ -294,49 +294,12 @@ export function useStartConversation() {
     mutationFn: async (otherUserId: string) => {
       if (!currentUser?.id) throw new Error('User not found');
 
-      // Check if conversation already exists
-      const { data: existingParticipations } = await supabase
-        .from('conversation_participants')
-        .select('conversation_id')
-        .eq('team_member_id', currentUser.id);
+      const { data, error } = await supabase.rpc('start_conversation', {
+        other_member_id: otherUserId,
+      });
 
-      if (existingParticipations?.length) {
-        // Check each conversation to see if other user is also a participant
-        for (const part of existingParticipations) {
-          const { data: otherPart } = await supabase
-            .from('conversation_participants')
-            .select('id')
-            .eq('conversation_id', part.conversation_id)
-            .eq('team_member_id', otherUserId)
-            .single();
-
-          if (otherPart) {
-            // Conversation already exists, return it
-            return part.conversation_id;
-          }
-        }
-      }
-
-      // Create new conversation
-      const { data: newConv, error: convError } = await supabase
-        .from('conversations')
-        .insert({})
-        .select()
-        .single();
-
-      if (convError) throw convError;
-
-      // Add both participants
-      const { error: partError } = await supabase
-        .from('conversation_participants')
-        .insert([
-          { conversation_id: newConv.id, team_member_id: currentUser.id },
-          { conversation_id: newConv.id, team_member_id: otherUserId },
-        ]);
-
-      if (partError) throw partError;
-
-      return newConv.id;
+      if (error) throw error;
+      return data as string;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });

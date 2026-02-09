@@ -36,9 +36,9 @@ export function ColumnVisibilityTab() {
     },
   });
 
-  // Filter to only team_member role (not god/admin since they always see everything)
+  // Filter to non-god members (god always sees everything, but admins and members can be controlled)
   const selectableMembers = useMemo(() => {
-    return teamMembers.filter(m => m.role === 'team_member' || m.role === 'member');
+    return teamMembers.filter(m => m.role !== 'god');
   }, [teamMembers]);
 
   // Create per-member visibility map: column_id -> Set of team_member_ids

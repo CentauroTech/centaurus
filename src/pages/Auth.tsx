@@ -60,6 +60,7 @@ export default function Auth() {
   const [lastName, setLastName] = useState('');
   const [selectedRole, setSelectedRole] = useState<RoleType | ''>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingReset, setIsCheckingReset] = useState(false);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [isResetting, setIsResetting] = useState(false);
@@ -88,10 +89,10 @@ export default function Auth() {
   }, []);
 
   useEffect(() => {
-    if (user && !loading && !isPasswordRecovery) {
+    if (user && !loading && !isPasswordRecovery && !isCheckingReset) {
       navigate('/');
     }
-  }, [user, loading, navigate, isPasswordRecovery]);
+  }, [user, loading, navigate, isPasswordRecovery, isCheckingReset]);
 
   const handleLogin = async () => {
     try {
@@ -102,9 +103,11 @@ export default function Auth() {
       }
 
       setIsSubmitting(true);
+      setIsCheckingReset(true); // Block useEffect redirect during check
 
       const { error } = await signIn(email, password);
       if (error) {
+        setIsCheckingReset(false);
         if (error.message.includes('Invalid login credentials')) {
           toast.error('Invalid email or password');
         } else {
@@ -115,11 +118,14 @@ export default function Auth() {
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         if (currentUser?.user_metadata?.must_reset_password) {
           setIsPasswordRecovery(true);
+          setIsCheckingReset(false);
           toast.info('Please set a new password to continue.');
+          setIsSubmitting(false);
           return;
         }
+        setIsCheckingReset(false);
         toast.success('Welcome back!');
-        navigate('/');
+        // Navigation will happen via useEffect
       }
     } finally {
       setIsSubmitting(false);

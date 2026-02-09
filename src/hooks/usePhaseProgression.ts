@@ -69,6 +69,34 @@ async function applyPhaseAutomation(
     return;
   }
 
+  // Get task name for notification message
+  const { data: taskData } = await supabase
+    .from('tasks')
+    .select('name')
+    .eq('id', taskId)
+    .single();
+
+  const taskName = taskData?.name || 'a task';
+
+  // Create notifications for each newly assigned member
+  for (const assigneeId of newAssigneeIds) {
+    // Skip notifying the user who triggered the automation
+    if (assigneeId === currentUserId) continue;
+
+    try {
+      await supabase.rpc('create_notification', {
+        p_user_id: assigneeId,
+        p_type: 'assignment',
+        p_task_id: taskId,
+        p_triggered_by_id: currentUserId || assigneeId,
+        p_title: 'You were assigned to a task',
+        p_message: `You were assigned to "${taskName}" via phase automation (${normalizedPhase})`,
+      });
+    } catch (err) {
+      console.error('Failed to create assignment notification:', err);
+    }
+  }
+
   // Log the assignment with semantic type
   const assignedNames = teamMembers?.map(tm => tm.name).join(', ') || '';
   if (assignedNames) {

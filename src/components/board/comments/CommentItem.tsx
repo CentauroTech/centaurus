@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Trash2, Reply, ThumbsUp, Pencil, Paperclip, FileIcon, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import { RichTextEditor, RichTextDisplay, MentionUser } from "./RichTextEditor";
 import { CommentWithUser } from "@/hooks/useComments";
 import { CommentLike } from "@/hooks/useCommentLikes";
@@ -36,20 +37,32 @@ function formatFileSize(bytes: number): string {
 
 function AttachmentList({ attachments }: { attachments: CommentAttachment[] }) {
   if (attachments.length === 0) return null;
+
+  const handleClick = async (att: CommentAttachment) => {
+    // The url field stores a storage path, not a full URL
+    const { data, error } = await supabase.storage
+      .from('production-files')
+      .createSignedUrl(att.url, 3600, { download: att.name });
+
+    if (error || !data?.signedUrl) {
+      console.error('Failed to create signed URL:', error);
+      return;
+    }
+    window.open(data.signedUrl, '_blank');
+  };
+
   return (
     <div className="mt-2 flex flex-wrap gap-2">
       {attachments.map((att) => (
-        <a
+        <button
           key={att.id}
-          href={att.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md border border-border bg-muted/40 hover:bg-muted transition-colors"
+          onClick={() => handleClick(att)}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md border border-border bg-muted/40 hover:bg-muted transition-colors cursor-pointer"
         >
           <FileIcon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
           <span className="truncate max-w-[140px]">{att.name}</span>
           <span className="text-muted-foreground">{formatFileSize(att.size)}</span>
-        </a>
+        </button>
       ))}
     </div>
   );

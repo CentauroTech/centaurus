@@ -56,7 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Use local scope to clear session even if server session is already invalid
+    await supabase.auth.signOut({ scope: 'local' });
+    setUser(null);
+    setSession(null);
   };
 
   return (

@@ -199,6 +199,7 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
                         index={index}
                         isLocked={isLocked}
                         allTasks={allBoardTasks}
+                        allColumns={columns}
                       />
                     ))}
                   </SortableContext>

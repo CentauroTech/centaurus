@@ -2,6 +2,7 @@ import { useState, useCallback, memo, CSSProperties } from 'react';
 import { GripVertical, Trash2, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Task, User, Phase, Status, ColumnConfig } from '@/types/board';
+import { isStickyColumn, getStickyLeftOffset } from './stickyColumns';
 import { StatusBadge } from './StatusBadge';
 import { OwnerCell } from './OwnerCell';
 import { DateCell } from './DateCell';
@@ -373,8 +374,9 @@ export const MemoizedTaskRow = memo(function MemoizedTaskRow({
 
         {/* Dynamic Columns */}
         {columns.map((column, index) => {
-          const isSticky = index <= 2;
-          const leftOffset = isSticky ? index === 0 ? 48 : index === 1 ? 72 : 296 : undefined;
+          const isSticky = isStickyColumn(column.id);
+          const leftOffset = getStickyLeftOffset(column.id, columns);
+          const isLastSticky = isSticky && column.id === 'workOrderNumber';
           
           const isPhaseColumn = column.type === 'current-phase';
           if (isPhaseColumn) {
@@ -431,8 +433,8 @@ export const MemoizedTaskRow = memo(function MemoizedTaskRow({
                 "border-r border-border/50 px-0 py-0 whitespace-nowrap", 
                 column.width, 
                 isSticky && cn("sticky z-20", stickyBg), 
-                index === 2 && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]", 
-                isPrivate && index !== 2 && "border-r-slate-600"
+                isLastSticky && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]", 
+                isPrivate && !isLastSticky && "border-r-slate-600"
               )} 
               style={isSticky ? { left: leftOffset } : undefined}
             >

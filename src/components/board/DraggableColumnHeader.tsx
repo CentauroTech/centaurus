@@ -5,15 +5,18 @@ import { GripVertical } from 'lucide-react';
 import { ColumnConfig, Task } from '@/types/board';
 import { ColumnFilterPopover } from './ColumnFilterPopover';
 import { useColumnFilters, ColumnFilter } from '@/contexts/ColumnFiltersContext';
+import { isStickyColumn, getStickyLeftOffset } from './stickyColumns';
 
 interface DraggableColumnHeaderProps {
   column: ColumnConfig;
   index: number;
   isLocked: boolean;
   allTasks: Task[];
+  allColumns: ColumnConfig[];
 }
 
-export function DraggableColumnHeader({ column, index, isLocked, allTasks }: DraggableColumnHeaderProps) {
+export function DraggableColumnHeader({ column, index, isLocked, allTasks, allColumns }: DraggableColumnHeaderProps) {
+  const isSticky = isStickyColumn(column.id);
   const {
     attributes,
     listeners,
@@ -23,7 +26,7 @@ export function DraggableColumnHeader({ column, index, isLocked, allTasks }: Dra
     isDragging,
   } = useSortable({
     id: column.id,
-    disabled: isLocked || index <= 2, // First 3 columns (privacy, WO#, name) are sticky and not draggable
+    disabled: isLocked || isSticky,
   });
 
   const { filters, setFilter, clearFilter } = useColumnFilters();
@@ -34,15 +37,8 @@ export function DraggableColumnHeader({ column, index, isLocked, allTasks }: Dra
     transition,
   };
 
-  // Make first 3 columns (privacy, name, WO#) sticky
-  const isSticky = index <= 2;
-  const leftOffset = isSticky 
-    ? index === 0 
-      ? 48  // after checkbox + drag
-      : index === 1
-        ? 80  // after checkbox + drag + privacy (48 + 32)
-        : 464  // after checkbox + drag + privacy + name (48 + 32 + 384)
-    : undefined;
+  const leftOffset = getStickyLeftOffset(column.id, allColumns);
+  const isLastSticky = isSticky && column.id === 'workOrderNumber';
 
   // Determine if this column type supports filtering
   const supportsFiltering = !['privacy', 'time-tracked', 'last-updated', 'file'].includes(column.type);
@@ -66,7 +62,7 @@ export function DraggableColumnHeader({ column, index, isLocked, allTasks }: Dra
         "py-1 px-1.5 text-left text-[10px] font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap bg-slate-100 group/header border-r border-border/50",
         column.width,
         isSticky && "sticky z-40",
-        index === 2 && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]",
+        isLastSticky && "border-r-2 border-r-slate-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]",
         isDragging && "opacity-50 bg-slate-200",
         !isLocked && !isSticky && "cursor-grab active:cursor-grabbing"
       )}

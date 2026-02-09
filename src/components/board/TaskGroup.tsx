@@ -226,7 +226,7 @@ export function TaskGroup({
                   </th>
                   <th className="w-6 sticky left-6 bg-slate-100 z-40" />
                 <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-                    {columns.map((column, index) => <DraggableColumnHeader key={column.id} column={column} index={index} isLocked={isLocked} allTasks={allBoardTasks} />)}
+                    {columns.map((column, index) => <DraggableColumnHeader key={column.id} column={column} index={index} isLocked={isLocked} allTasks={allBoardTasks} allColumns={columns} />)}
                   </SortableContext>
                   <th className="w-10" />
                 </tr>

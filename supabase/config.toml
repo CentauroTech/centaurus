@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.send-invoice-email]
 verify_jwt = false
+
+[functions.provision-auth-user]
+verify_jwt = false

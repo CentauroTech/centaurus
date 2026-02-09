@@ -13,6 +13,24 @@ export function useUpdateTeamMemberEmail() {
         .eq('id', teamMemberId);
 
       if (error) throw error;
+
+      // If email was set (not cleared), provision an auth user with default password
+      if (email?.trim()) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const response = await supabase.functions.invoke('provision-auth-user', {
+            body: { email: email.trim(), teamMemberId },
+          });
+
+          if (response.error) {
+            console.warn('Failed to provision auth user:', response.error);
+          } else {
+            console.log('Auth user provisioned:', response.data);
+          }
+        } catch (e) {
+          console.warn('Error provisioning auth user:', e);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members-settings'] });

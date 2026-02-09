@@ -89,6 +89,7 @@ function BoardViewContent({
 
   // Permissions
   const {
+    isGod,
     isAdmin,
     canReorderColumns,
     canCreateGroups,
@@ -625,8 +626,8 @@ function BoardViewContent({
             <TooltipContent>View workflow guide for this phase</TooltipContent>
           </Tooltip>
 
-          {/* Column Lock/Unlock - Admin only */}
-          {isAdmin && <>
+          {/* Column Lock/Unlock - God only */}
+          {isGod && <>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button onClick={toggleLock} size="sm" variant={isLocked ? "default" : "outline"} className="gap-2">
@@ -653,14 +654,13 @@ function BoardViewContent({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button 
-                        onClick={() => {
-                          // Get all board IDs from the same workspace
+                        onClick={async () => {
                           const currentWorkspace = workspaces?.find(ws => 
                             ws.boards.some(b => b.id === boardId)
                           );
                           if (currentWorkspace) {
                             const allBoardIds = currentWorkspace.boards.map(b => b.id);
-                            syncColumnOrderToWorkspace(boardId, allBoardIds);
+                            await syncColumnOrderToWorkspace(boardId, allBoardIds, currentUserId);
                             toast.success(`Column order synced to all ${currentWorkspace.name} boards`);
                           }
                         }} 

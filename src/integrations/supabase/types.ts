@@ -187,6 +187,51 @@ export type Database = {
           },
         ]
       }
+      board_column_orders: {
+        Row: {
+          board_id: string
+          column_order: Json
+          created_at: string
+          id: string
+          is_locked: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          board_id: string
+          column_order?: Json
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          board_id?: string
+          column_order?: Json
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_column_orders_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: true
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_column_orders_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       boards: {
         Row: {
           created_at: string

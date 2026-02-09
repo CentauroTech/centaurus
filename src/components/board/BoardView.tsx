@@ -64,6 +64,13 @@ function BoardViewContent({
   // URL-based task selection for notification deep links
   const urlTaskId = searchParams.get('task');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(urlTaskId);
+
+  // Sync selectedTaskId when URL ?task= param changes (e.g. notification deep link)
+  useEffect(() => {
+    if (urlTaskId) {
+      setSelectedTaskId(urlTaskId);
+    }
+  }, [urlTaskId]);
   
   // Clear URL param after task is opened
   const handleTaskPanelClose = () => {

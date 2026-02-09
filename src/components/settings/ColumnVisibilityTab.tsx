@@ -24,12 +24,12 @@ export function ColumnVisibilityTab() {
 
   // Fetch team members (only centauro / non-guest)
   const { data: teamMembers = [] } = useQuery({
-    queryKey: ['team-members-centauro'],
+    queryKey: ['team-members-for-visibility'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('team_members')
         .select('id, name, initials, color, email, role')
-        .ilike('email', '%@centauro.com')
+        .neq('role', 'guest')
         .order('name');
       if (error) throw error;
       return data;

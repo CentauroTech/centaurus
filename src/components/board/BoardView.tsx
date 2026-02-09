@@ -440,26 +440,12 @@ function BoardViewContent({
             const newPhase = (result as any).new_phase;
             toast.success(`Task moved to ${newPhase}`);
             
-            // Apply phase automations (people assignments)
+            // Apply phase automations (people assignments + notifications)
             if (newPhase && board) {
-              const normalizedPhase = newPhase.toLowerCase().replace(/[^a-z0-9]/g, '');
               try {
-                const { fetchPhaseAutomations } = await import('@/hooks/usePhaseAutomations');
-                const phaseAutomations = await fetchPhaseAutomations(board.workspace_id);
-                const assigneeIds = phaseAutomations.get(normalizedPhase);
-                if (assigneeIds && assigneeIds.length > 0) {
-                  const { data: existing } = await supabase
-                    .from('task_people')
-                    .select('team_member_id')
-                    .eq('task_id', taskId);
-                  const existingSet = new Set(existing?.map(a => a.team_member_id) || []);
-                  const newIds = assigneeIds.filter(id => !existingSet.has(id));
-                  if (newIds.length > 0) {
-                    await supabase.from('task_people').insert(
-                      newIds.map(id => ({ task_id: taskId, team_member_id: id }))
-                    );
-                  }
-                }
+                const { applyPhaseAutomation, normalizePhase } = await import('@/hooks/usePhaseProgression');
+                const normalizedPhase = normalizePhase(newPhase);
+                await applyPhaseAutomation(taskId, normalizedPhase, board.workspace_id, currentUserId);
               } catch (e) {
                 console.error('Failed to apply phase automation:', e);
               }
@@ -562,28 +548,12 @@ function BoardViewContent({
           const data = result.data as any;
           const newPhase = data.new_phase;
           if (newPhase) {
-            // Find the task ID from the original params by matching result order
             const idx = results.indexOf(result);
             const taskId = params.taskIds[idx];
-            const normalizedPhase = newPhase.toLowerCase().replace(/[^a-z0-9]/g, '');
             try {
-              const { fetchPhaseAutomations } = await import('@/hooks/usePhaseAutomations');
-              const phaseAutomations = await fetchPhaseAutomations(board.workspace_id);
-              const assigneeIds = phaseAutomations.get(normalizedPhase);
-              if (assigneeIds && assigneeIds.length > 0) {
-                // Get existing assignments
-                const { data: existing } = await supabase
-                  .from('task_people')
-                  .select('team_member_id')
-                  .eq('task_id', taskId);
-                const existingSet = new Set(existing?.map(a => a.team_member_id) || []);
-                const newIds = assigneeIds.filter(id => !existingSet.has(id));
-                if (newIds.length > 0) {
-                  await supabase.from('task_people').insert(
-                    newIds.map(id => ({ task_id: taskId, team_member_id: id }))
-                  );
-                }
-              }
+              const { applyPhaseAutomation, normalizePhase } = await import('@/hooks/usePhaseProgression');
+              const normalizedPhase = normalizePhase(newPhase);
+              await applyPhaseAutomation(taskId, normalizedPhase, board.workspace_id, currentUserId);
             } catch (e) {
               console.error('Failed to apply phase automation for task:', taskId, e);
             }

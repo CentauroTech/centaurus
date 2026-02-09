@@ -23,7 +23,7 @@ const PHASE_ORDER = [
 ];
 
 // Helper function to assign people to a task based on phase automation (fetched from database)
-async function applyPhaseAutomation(
+export async function applyPhaseAutomation(
   taskId: string,
   normalizedPhase: string,
   workspaceId: string,
@@ -113,7 +113,7 @@ async function applyPhaseAutomation(
 }
 
 // Map various phase name variations to normalized names
-const normalizePhase = (phaseName: string): string => {
+export const normalizePhase = (phaseName: string): string => {
   const lower = phaseName.toLowerCase().replace(/[^a-z0-9]/g, '');
   
   // Map common variations

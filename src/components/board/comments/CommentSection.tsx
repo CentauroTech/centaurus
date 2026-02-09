@@ -59,7 +59,7 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
   const addAttachmentMutation = useAddCommentAttachment(taskId);
   const uploadTaskFileMutation = useUploadTaskFile(taskId);
 
-  const centauroMembers = teamMembers.filter(m => m.email && m.email.toLowerCase().endsWith('@centauro.com'));
+  const internalMembers = teamMembers.filter(m => m.role !== 'guest');
   const isGuest = role === "guest";
 
   const mentionUsers: MentionUser[] = teamMembers.map((member) => ({
@@ -90,14 +90,14 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
 
   const expandEveryoneMention = (mentionedIds: string[]): string[] => {
     const hasEveryone = mentionedIds.includes('everyone');
-    if (!hasEveryone || centauroMembers.length === 0) {
+    if (!hasEveryone || internalMembers.length === 0) {
       return mentionedIds.filter(id => id !== 'everyone');
     }
     const filtered = mentionedIds.filter(id => id !== 'everyone');
-    const centauroIds = centauroMembers
+    const internalIds = internalMembers
       .filter(m => m.id !== currentUser?.id)
       .map(m => m.id);
-    return [...new Set([...filtered, ...centauroIds])];
+    return [...new Set([...filtered, ...internalIds])];
   };
 
   // Determine effective viewer ID for guest communication

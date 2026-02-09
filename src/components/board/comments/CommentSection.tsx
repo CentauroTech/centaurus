@@ -6,7 +6,10 @@ import { useTeamMembers } from "@/hooks/useWorkspaces";
 import { useCommentLikes, useToggleCommentLike } from "@/hooks/useCommentLikes";
 import { useCommentAttachments, useAddCommentAttachment } from "@/hooks/useCommentAttachments";
 import { useEditComment } from "@/hooks/useEditComment";
+import { FILE_CATEGORIES } from "@/hooks/useTaskFiles";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, FileText, Paperclip, X, FileIcon } from "lucide-react";
 import { toast } from "sonner";
 import { RichTextEditor, MentionUser, EVERYONE_MENTION } from "./RichTextEditor";
@@ -36,8 +39,11 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
   const [newComment, setNewComment] = useState("");
   const [activeTab, setActiveTab] = useState<"team" | "guest">("team");
   const [openReplyId, setOpenReplyId] = useState<string | null>(null);
-  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [newFiles, setNewFiles] = useState<{ file: File; category: string }[]>([]);
+  const [attachPopoverOpen, setAttachPopoverOpen] = useState(false);
+  const [customCategory, setCustomCategory] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingCategoryRef = useRef<string>("general");
 
   const { data: comments = [], isLoading } = useComments(taskId);
   const { data: currentUser } = useCurrentTeamMember();
@@ -114,7 +120,7 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
       });
 
       // Upload attachments
-      for (const file of newFiles) {
+      for (const { file } of newFiles) {
         try {
           await addAttachmentMutation.mutateAsync({ commentId: comment.id, file });
         } catch (e) {
@@ -192,8 +198,16 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setNewFiles((prev) => [...prev, ...files]);
+    const category = pendingCategoryRef.current;
+    setNewFiles((prev) => [...prev, ...files.map(f => ({ file: f, category }))]);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleCategorySelect = (category: string) => {
+    pendingCategoryRef.current = category;
+    setAttachPopoverOpen(false);
+    setCustomCategory("");
+    fileInputRef.current?.click();
   };
 
   const teamComments = topLevelComments.filter((c) => !c.is_guest_visible);
@@ -280,13 +294,53 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
       />
       <div className="flex items-center gap-3 mt-1.5">
         <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileSelect} />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Paperclip className="h-3.5 w-3.5" />
-          Attach
-        </button>
+        <Popover open={attachPopoverOpen} onOpenChange={setAttachPopoverOpen}>
+          <PopoverTrigger asChild>
+            <button
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Paperclip className="h-3.5 w-3.5" />
+              Attach
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-56 p-1.5" sideOffset={8}>
+            <p className="text-xs font-medium text-muted-foreground px-2 py-1.5">What type of file?</p>
+            {FILE_CATEGORIES.map((cat) => (
+              <button
+                key={cat.value}
+                onClick={() => handleCategorySelect(cat.value)}
+                className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-accent transition-colors"
+              >
+                {cat.label}
+              </button>
+            ))}
+            <div className="border-t border-border mt-1 pt-1">
+              <p className="text-xs text-muted-foreground px-2 py-1">Other</p>
+              <div className="flex gap-1 px-2 pb-1">
+                <Input
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  placeholder="Type category..."
+                  className="h-7 text-xs"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && customCategory.trim()) {
+                      handleCategorySelect(customCategory.trim());
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (customCategory.trim()) handleCategorySelect(customCategory.trim());
+                  }}
+                  disabled={!customCategory.trim()}
+                  className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  Go
+                </button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
         <span className="text-[11px] text-muted-foreground">
           {isGuest
             ? "Ctrl+Enter to send"
@@ -300,7 +354,8 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
           {newFiles.map((f, i) => (
             <span key={i} className="flex items-center gap-1 text-[11px] bg-muted px-2 py-0.5 rounded">
               <FileIcon className="h-3 w-3" />
-              <span className="truncate max-w-[100px]">{f.name}</span>
+              <span className="truncate max-w-[100px]">{f.file.name}</span>
+              <span className="text-muted-foreground">({f.category})</span>
               <button onClick={() => setNewFiles((prev) => prev.filter((_, j) => j !== i))}>
                 <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
               </button>

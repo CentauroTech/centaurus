@@ -111,6 +111,13 @@ export default function Auth() {
           toast.error(error.message);
         }
       } else {
+        // Check if user needs to reset password (provisioned by admin)
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser?.user_metadata?.must_reset_password) {
+          setIsPasswordRecovery(true);
+          toast.info('Please set a new password to continue.');
+          return;
+        }
         toast.success('Welcome back!');
         navigate('/');
       }
@@ -199,7 +206,10 @@ export default function Auth() {
 
     setIsUpdatingPassword(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      const { error } = await supabase.auth.updateUser({ 
+        password: newPassword,
+        data: { must_reset_password: false },
+      });
 
       if (error) {
         toast.error(error.message);

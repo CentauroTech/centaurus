@@ -773,6 +773,7 @@ function BoardViewContent({
         <CalendarView
           tasks={allBoardTasks}
           onTaskClick={(taskId) => setSelectedTaskId(taskId)}
+          onUpdateTask={handleUpdateTask}
           boardName={board.name}
           isHQ={board.is_hq}
         />

@@ -162,6 +162,7 @@ export function CalendarView({ tasks, onTaskClick, onUpdateTask, boardName, isHQ
   const [addDateCell, setAddDateCell] = useState<Date | null>(null);
   const [addDateTaskSearch, setAddDateTaskSearch] = useState('');
   const [addDateType, setAddDateType] = useState<string>('');
+  const [addDateSelectedTasks, setAddDateSelectedTasks] = useState<Set<string>>(new Set());
 
   const dateSources = useMemo(() => getDateSources(boardName, isHQ), [boardName, isHQ]);
 
@@ -359,18 +360,44 @@ export function CalendarView({ tasks, onTaskClick, onUpdateTask, boardName, isHQ
     }
   }, [onUpdateTask]);
 
-  // Add date handler
-  const handleAddDate = useCallback((taskId: string, dateType: string, targetDate: Date) => {
-    if (!onUpdateTask) return;
-    const field = DATE_SOURCE_FIELD_MAP[dateType];
+  // Add date handler - supports multiple tasks at once
+  const handleAddDate = useCallback((targetDate: Date) => {
+    if (!onUpdateTask || addDateSelectedTasks.size === 0 || !addDateType) return;
+    const field = DATE_SOURCE_FIELD_MAP[addDateType];
     if (!field) return;
     const dateStr = formatDateForDB(targetDate);
-    onUpdateTask(taskId, { [field]: dateStr } as Partial<Task>);
-    toast.success(`${dateSources.find(s => s.key === dateType)?.label || 'Date'} set to ${format(targetDate, 'MMM d, yyyy')}`);
+    const taskIds = Array.from(addDateSelectedTasks);
+    taskIds.forEach(taskId => {
+      onUpdateTask(taskId, { [field]: dateStr } as Partial<Task>);
+    });
+    const label = dateSources.find(s => s.key === addDateType)?.label || 'Date';
+    toast.success(`${label} set for ${taskIds.length} task${taskIds.length > 1 ? 's' : ''}`);
     setAddDateCell(null);
     setAddDateTaskSearch('');
     setAddDateType('');
-  }, [onUpdateTask, dateSources]);
+    setAddDateSelectedTasks(new Set());
+  }, [onUpdateTask, dateSources, addDateSelectedTasks, addDateType]);
+
+  const toggleAddDateTask = useCallback((taskId: string) => {
+    setAddDateSelectedTasks(prev => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  }, []);
+
+  // All date type options (not filtered by enabled sources)
+  const allDateTypeOptions = useMemo(() => {
+    const base: { key: string; label: string }[] = [
+      { key: 'miami', label: 'Miami Due Date' },
+      { key: 'client', label: 'Client Due Date' },
+    ];
+    ALL_PHASE_DUE_DATE_FIELDS.forEach(p => {
+      base.push({ key: p.key, label: p.label });
+    });
+    return base;
+  }, []);
 
   // Render a single day cell
   const renderDayCell = (day: Date, isCompact: boolean) => {
@@ -412,8 +439,10 @@ export function CalendarView({ tasks, onTaskClick, onUpdateTask, boardName, isHQ
                   setAddDateCell(day);
                   setAddDateTaskSearch('');
                   setAddDateType(dateSources[0]?.key || 'miami');
+                  setAddDateSelectedTasks(new Set());
                 } else {
                   setAddDateCell(null);
+                  setAddDateSelectedTasks(new Set());
                 }
               }}
             >
@@ -422,7 +451,7 @@ export function CalendarView({ tasks, onTaskClick, onUpdateTask, boardName, isHQ
                   <Plus className="w-3 h-3 text-muted-foreground" />
                 </button>
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-72 p-3 z-[100]" side="right">
+              <PopoverContent align="start" className="w-80 p-3 z-[100]" side="right">
                 <div className="space-y-3">
                   <h4 className="font-medium text-sm">Add due date – {format(day, 'MMM d')}</h4>
                   <Select value={addDateType} onValueChange={setAddDateType}>
@@ -430,33 +459,46 @@ export function CalendarView({ tasks, onTaskClick, onUpdateTask, boardName, isHQ
                       <SelectValue placeholder="Date type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {dateSources.filter(s => enabledSources.has(s.key)).map(s => (
+                      {allDateTypeOptions.map(s => (
                         <SelectItem key={s.key} value={s.key} className="text-xs">{s.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   <Input
-                    placeholder="Search task..."
+                    placeholder="Search tasks..."
                     value={addDateTaskSearch}
                     onChange={(e) => setAddDateTaskSearch(e.target.value)}
                     className="h-8 text-xs"
                   />
-                  <ScrollArea className="max-h-40">
+                  <ScrollArea className="max-h-48">
                     <div className="space-y-0.5">
-                      {tasksWithoutDates.slice(0, 20).map(task => (
+                      {tasksWithoutDates.slice(0, 30).map(task => (
                         <button
                           key={task.id}
-                          onClick={() => handleAddDate(task.id, addDateType, day)}
-                          className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors truncate"
+                          onClick={() => toggleAddDateTask(task.id)}
+                          className={cn(
+                            "w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors text-left",
+                            addDateSelectedTasks.has(task.id) && "bg-primary/10"
+                          )}
                         >
-                          <span className="font-medium">{task.name}</span>
+                          <Checkbox checked={addDateSelectedTasks.has(task.id)} className="pointer-events-none h-3.5 w-3.5" />
+                          <span className="flex-1 truncate font-medium">{task.name}</span>
                           {task.workOrderNumber && (
-                            <span className="text-muted-foreground ml-1">({task.workOrderNumber})</span>
+                            <span className="text-muted-foreground flex-shrink-0">({task.workOrderNumber})</span>
                           )}
                         </button>
                       ))}
                     </div>
                   </ScrollArea>
+                  {addDateSelectedTasks.size > 0 && (
+                    <Button
+                      size="sm"
+                      className="w-full h-8 text-xs"
+                      onClick={() => handleAddDate(day)}
+                    >
+                      Set date for {addDateSelectedTasks.size} task{addDateSelectedTasks.size > 1 ? 's' : ''}
+                    </Button>
+                  )}
                 </div>
               </PopoverContent>
             </Popover>

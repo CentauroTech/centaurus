@@ -101,6 +101,19 @@ export interface Task {
   hq?: string;
   people?: User[];
   phaseDueDate?: Date | string;
+  // Individual phase due dates (Miami workflow)
+  assetsDueDate?: Date | string;
+  translationDueDate?: Date | string;
+  adaptingDueDate?: Date | string;
+  voiceTestsDueDate?: Date | string;
+  recordingDueDate?: Date | string;
+  premixDueDate?: Date | string;
+  qcPremixDueDate?: Date | string;
+  retakesDueDate?: Date | string;
+  qcRetakesDueDate?: Date | string;
+  mixDueDate?: Date | string;
+  qcMixDueDate?: Date | string;
+  mixRetakesDueDate?: Date | string;
   linkToColHQ?: string;
   rateInfo?: string;
   premixRetakeList?: string;
@@ -264,6 +277,42 @@ export const VOICE_TEST_OPTIONS = ['Yes', 'No', 'Voice Bank'];
 
 export const STUDIO_OPTIONS = ['Studio A', 'Studio B', 'Studio C', 'External'];
 export const STUDIO_OPTIONS_MIAMI = ['Studio 2', 'Studio 3', 'Studio 4'];
+
+// Mapping from Miami board phase suffix to task field for phase-specific due dates
+export const PHASE_DUE_DATE_MAP: Record<string, { field: keyof Task; label: string }> = {
+  'assets': { field: 'assetsDueDate', label: 'Assets Due Date' },
+  'translation': { field: 'translationDueDate', label: 'Translation Due Date' },
+  'adapting': { field: 'adaptingDueDate', label: 'Adapting Due Date' },
+  'voice tests': { field: 'voiceTestsDueDate', label: 'Voice Tests Due Date' },
+  'recording': { field: 'recordingDueDate', label: 'Recording Due Date' },
+  'premix': { field: 'premixDueDate', label: 'Premix Due Date' },
+  'qc premix': { field: 'qcPremixDueDate', label: 'QC Premix Due Date' },
+  'qc-premix': { field: 'qcPremixDueDate', label: 'QC Premix Due Date' },
+  'retakes': { field: 'retakesDueDate', label: 'Retakes Due Date' },
+  'qc retakes': { field: 'qcRetakesDueDate', label: 'QC Retakes Due Date' },
+  'qc-retakes': { field: 'qcRetakesDueDate', label: 'QC Retakes Due Date' },
+  'mix': { field: 'mixDueDate', label: 'Mix Due Date' },
+  'qc mix': { field: 'qcMixDueDate', label: 'QC Mix Due Date' },
+  'qc-mix': { field: 'qcMixDueDate', label: 'QC Mix Due Date' },
+  'mix retakes': { field: 'mixRetakesDueDate', label: 'Mix Retakes Due Date' },
+  'mix-retakes': { field: 'mixRetakesDueDate', label: 'Mix Retakes Due Date' },
+};
+
+// All phase due date fields for HQ calendar
+export const ALL_PHASE_DUE_DATE_FIELDS: { field: keyof Task; label: string; key: string }[] = [
+  { field: 'assetsDueDate', label: 'Assets Due Date', key: 'assets' },
+  { field: 'translationDueDate', label: 'Translation Due Date', key: 'translation' },
+  { field: 'adaptingDueDate', label: 'Adapting Due Date', key: 'adapting' },
+  { field: 'voiceTestsDueDate', label: 'Voice Tests Due Date', key: 'voice_tests' },
+  { field: 'recordingDueDate', label: 'Recording Due Date', key: 'recording' },
+  { field: 'premixDueDate', label: 'Premix Due Date', key: 'premix' },
+  { field: 'qcPremixDueDate', label: 'QC Premix Due Date', key: 'qc_premix' },
+  { field: 'retakesDueDate', label: 'Retakes Due Date', key: 'retakes' },
+  { field: 'qcRetakesDueDate', label: 'QC Retakes Due Date', key: 'qc_retakes' },
+  { field: 'mixDueDate', label: 'Mix Due Date', key: 'mix' },
+  { field: 'qcMixDueDate', label: 'QC Mix Due Date', key: 'qc_mix' },
+  { field: 'mixRetakesDueDate', label: 'Mix Retakes Due Date', key: 'mix_retakes' },
+];
 
 // Columns that team members (non-PM) can edit after kickoff
 export const TEAM_MEMBER_EDITABLE_COLUMNS = [

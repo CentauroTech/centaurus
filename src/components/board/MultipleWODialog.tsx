@@ -56,8 +56,8 @@ export interface TaskTemplate {
   servicios?: string[];
   formato?: string[];
   cantidad_episodios?: number;
-  branches?: string[];  // Changed from branch to branches for multi-select
-  branch?: string;      // Keep for backward compatibility (single branch when creating)
+  branches?: string[];
+  branch?: string;
   genre?: string;
   lenguaje_original?: string;
   target_language?: string[];
@@ -82,6 +82,19 @@ export interface TaskTemplate {
   entrega_mix_retakes?: string;
   entrega_final_script?: string;
   entrega_final_dub_audio?: string;
+  // Phase-specific due dates
+  assets_due_date?: string;
+  translation_due_date?: string;
+  adapting_due_date?: string;
+  voice_tests_due_date?: string;
+  recording_due_date?: string;
+  premix_due_date?: string;
+  qc_premix_due_date?: string;
+  retakes_due_date?: string;
+  qc_retakes_due_date?: string;
+  mix_due_date?: string;
+  qc_mix_due_date?: string;
+  mix_retakes_due_date?: string;
 }
 
 // Map database field names to template keys
@@ -115,6 +128,19 @@ const FIELD_TO_TEMPLATE_KEY: Record<string, keyof TaskTemplate> = {
   entregaMixRetakes: 'entrega_mix_retakes',
   entregaFinalScript: 'entrega_final_script',
   entregaFinalDubAudio: 'entrega_final_dub_audio',
+  // Phase due dates
+  assetsDueDate: 'assets_due_date',
+  translationDueDate: 'translation_due_date',
+  adaptingDueDate: 'adapting_due_date',
+  voiceTestsDueDate: 'voice_tests_due_date',
+  recordingDueDate: 'recording_due_date',
+  premixDueDate: 'premix_due_date',
+  qcPremixDueDate: 'qc_premix_due_date',
+  retakesDueDate: 'retakes_due_date',
+  qcRetakesDueDate: 'qc_retakes_due_date',
+  mixDueDate: 'mix_due_date',
+  qcMixDueDate: 'qc_mix_due_date',
+  mixRetakesDueDate: 'mix_retakes_due_date',
 };
 
 // Get options for a field
@@ -160,6 +186,23 @@ const COLUMN_CATEGORIES = {
   deliveryDates: {
     label: 'Delivery Dates',
     columns: TEMPLATE_COLUMNS.filter(c => ['entregaCliente', 'entregaMiamiStart', 'entregaMiamiEnd', 'entregaSesiones', 'entregaMixRetakes', 'entregaFinalScript', 'entregaFinalDubAudio'].includes(c.id)),
+  },
+  phaseDueDates: {
+    label: 'Phase Due Dates',
+    columns: [
+      { id: 'assetsDueDate', label: 'Assets Due Date', type: 'date' as const, width: 'w-28', field: 'assetsDueDate' as any },
+      { id: 'translationDueDate', label: 'Translation Due Date', type: 'date' as const, width: 'w-28', field: 'translationDueDate' as any },
+      { id: 'adaptingDueDate', label: 'Adapting Due Date', type: 'date' as const, width: 'w-28', field: 'adaptingDueDate' as any },
+      { id: 'voiceTestsDueDate', label: 'Voice Tests Due Date', type: 'date' as const, width: 'w-28', field: 'voiceTestsDueDate' as any },
+      { id: 'recordingDueDate', label: 'Recording Due Date', type: 'date' as const, width: 'w-28', field: 'recordingDueDate' as any },
+      { id: 'premixDueDate', label: 'Premix Due Date', type: 'date' as const, width: 'w-28', field: 'premixDueDate' as any },
+      { id: 'qcPremixDueDate', label: 'QC Premix Due Date', type: 'date' as const, width: 'w-28', field: 'qcPremixDueDate' as any },
+      { id: 'retakesDueDate', label: 'Retakes Due Date', type: 'date' as const, width: 'w-28', field: 'retakesDueDate' as any },
+      { id: 'qcRetakesDueDate', label: 'QC Retakes Due Date', type: 'date' as const, width: 'w-28', field: 'qcRetakesDueDate' as any },
+      { id: 'mixDueDate', label: 'Mix Due Date', type: 'date' as const, width: 'w-28', field: 'mixDueDate' as any },
+      { id: 'qcMixDueDate', label: 'QC Mix Due Date', type: 'date' as const, width: 'w-28', field: 'qcMixDueDate' as any },
+      { id: 'mixRetakesDueDate', label: 'Mix Retakes Due Date', type: 'date' as const, width: 'w-28', field: 'mixRetakesDueDate' as any },
+    ],
   },
   deliverables: {
     label: 'Deliverables',
@@ -348,6 +391,7 @@ export function MultipleWODialog({
     production: false,
     content: false,
     deliveryDates: false,
+    phaseDueDates: false,
     deliverables: false,
     rates: false,
   });

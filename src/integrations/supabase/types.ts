@@ -1199,8 +1199,10 @@ export type Database = {
       tasks: {
         Row: {
           adaptador_id: string | null
+          adapting_due_date: string | null
           aor_complete: boolean | null
           aor_needed: boolean | null
+          assets_due_date: string | null
           branch: string
           cantidad_episodios: number | null
           client_name: string | null
@@ -1235,17 +1237,25 @@ export type Database = {
           lenguaje_original: string | null
           link_to_col_hq: string | null
           locked_runtime: string | null
+          mix_due_date: string | null
+          mix_retakes_due_date: string | null
           mixer_bogota_id: string | null
           mixer_miami_id: string | null
           name: string
           phase_due_date: string | null
+          premix_due_date: string | null
           project_manager_id: string
           prueba_de_voz: string | null
           qc_1_id: string | null
+          qc_mix_due_date: string | null
           qc_mix_id: string | null
+          qc_premix_due_date: string | null
+          qc_retakes_due_date: string | null
           qc_retakes_id: string | null
           rate_info: string | null
           rates: number | null
+          recording_due_date: string | null
+          retakes_due_date: string | null
           servicios: string[] | null
           show_guide: string | null
           sort_order: number
@@ -1257,12 +1267,16 @@ export type Database = {
           tecnico_id: string | null
           titulo_aprobado_espanol: string | null
           traductor_id: string | null
+          translation_due_date: string | null
+          voice_tests_due_date: string | null
           work_order_number: string | null
         }
         Insert: {
           adaptador_id?: string | null
+          adapting_due_date?: string | null
           aor_complete?: boolean | null
           aor_needed?: boolean | null
+          assets_due_date?: string | null
           branch: string
           cantidad_episodios?: number | null
           client_name?: string | null
@@ -1297,17 +1311,25 @@ export type Database = {
           lenguaje_original?: string | null
           link_to_col_hq?: string | null
           locked_runtime?: string | null
+          mix_due_date?: string | null
+          mix_retakes_due_date?: string | null
           mixer_bogota_id?: string | null
           mixer_miami_id?: string | null
           name?: string
           phase_due_date?: string | null
+          premix_due_date?: string | null
           project_manager_id: string
           prueba_de_voz?: string | null
           qc_1_id?: string | null
+          qc_mix_due_date?: string | null
           qc_mix_id?: string | null
+          qc_premix_due_date?: string | null
+          qc_retakes_due_date?: string | null
           qc_retakes_id?: string | null
           rate_info?: string | null
           rates?: number | null
+          recording_due_date?: string | null
+          retakes_due_date?: string | null
           servicios?: string[] | null
           show_guide?: string | null
           sort_order?: number
@@ -1319,12 +1341,16 @@ export type Database = {
           tecnico_id?: string | null
           titulo_aprobado_espanol?: string | null
           traductor_id?: string | null
+          translation_due_date?: string | null
+          voice_tests_due_date?: string | null
           work_order_number?: string | null
         }
         Update: {
           adaptador_id?: string | null
+          adapting_due_date?: string | null
           aor_complete?: boolean | null
           aor_needed?: boolean | null
+          assets_due_date?: string | null
           branch?: string
           cantidad_episodios?: number | null
           client_name?: string | null
@@ -1359,17 +1385,25 @@ export type Database = {
           lenguaje_original?: string | null
           link_to_col_hq?: string | null
           locked_runtime?: string | null
+          mix_due_date?: string | null
+          mix_retakes_due_date?: string | null
           mixer_bogota_id?: string | null
           mixer_miami_id?: string | null
           name?: string
           phase_due_date?: string | null
+          premix_due_date?: string | null
           project_manager_id?: string
           prueba_de_voz?: string | null
           qc_1_id?: string | null
+          qc_mix_due_date?: string | null
           qc_mix_id?: string | null
+          qc_premix_due_date?: string | null
+          qc_retakes_due_date?: string | null
           qc_retakes_id?: string | null
           rate_info?: string | null
           rates?: number | null
+          recording_due_date?: string | null
+          retakes_due_date?: string | null
           servicios?: string[] | null
           show_guide?: string | null
           sort_order?: number
@@ -1381,6 +1415,8 @@ export type Database = {
           tecnico_id?: string | null
           titulo_aprobado_espanol?: string | null
           traductor_id?: string | null
+          translation_due_date?: string | null
+          voice_tests_due_date?: string | null
           work_order_number?: string | null
         }
         Relationships: [

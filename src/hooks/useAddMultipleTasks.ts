@@ -131,6 +131,19 @@ export function useAddMultipleTasks(boardId: string) {
           entrega_mix_retakes: template.entrega_mix_retakes || null,
           entrega_final_script: template.entrega_final_script || null,
           entrega_final_dub_audio: template.entrega_final_dub_audio || null,
+          // Phase due dates
+          assets_due_date: template.assets_due_date || null,
+          translation_due_date: template.translation_due_date || null,
+          adapting_due_date: template.adapting_due_date || null,
+          voice_tests_due_date: template.voice_tests_due_date || null,
+          recording_due_date: template.recording_due_date || null,
+          premix_due_date: template.premix_due_date || null,
+          qc_premix_due_date: template.qc_premix_due_date || null,
+          retakes_due_date: template.retakes_due_date || null,
+          qc_retakes_due_date: template.qc_retakes_due_date || null,
+          mix_due_date: template.mix_due_date || null,
+          qc_mix_due_date: template.qc_mix_due_date || null,
+          mix_retakes_due_date: template.mix_retakes_due_date || null,
         }));
 
         const { data, error } = await supabase

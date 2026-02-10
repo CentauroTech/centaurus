@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy, X, HelpCircle } from 'lucide-react';
+import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy, X, HelpCircle, LayoutGrid } from 'lucide-react';
 import { BoardGuide, useBoardGuide } from './BoardGuide';
 import { addBusinessDays, getLocalDateString } from '@/lib/businessDays';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Task, User, TaskGroup as TaskGroupType } from '@/types/board';
 import { BulkActionsToolbar } from './BulkActionsToolbar';
 import { MultipleWODialog } from './MultipleWODialog';
 import { TaskSelectionProvider } from '@/contexts/TaskSelectionContext';
+import { CalendarView } from './CalendarView';
 import { BulkEditProvider, BulkUpdateParams } from '@/contexts/BulkEditContext';
 import { ColumnFiltersProvider, useColumnFilters } from '@/contexts/ColumnFiltersContext';
 import { useAddTaskGroup, useUpdateTaskGroup, useDeleteTaskGroup, useAddTask, useUpdateTask, useDeleteTask, useWorkspaces } from '@/hooks/useWorkspaces';
@@ -60,6 +61,7 @@ function BoardViewContent({
   const currentUserId = currentTeamMember?.id || null;
   const queryClient = useQueryClient();
   const [isMultipleWODialogOpen, setIsMultipleWODialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
   
   // URL-based task selection for notification deep links
   const urlTaskId = searchParams.get('task');
@@ -589,20 +591,22 @@ function BoardViewContent({
 
   return <BulkEditProvider onBulkUpdate={handleBulkUpdate}>
     <div className="flex-1 flex flex-col p-6 overflow-hidden">
-      {/* Filter Bar */}
-      <div className="flex-shrink-0 px-[10px]">
-        <BoardFilterBar
-          allTasks={allBoardTasks}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          statusFilters={statusFilters}
-          onStatusFiltersChange={setStatusFilters}
-          personFilters={personFilters}
-          onPersonFiltersChange={setPersonFilters}
-          clientFilters={clientFilters}
-          onClientFiltersChange={setClientFilters}
-        />
-      </div>
+      {/* Filter Bar - only show in table mode */}
+      {viewMode === 'table' && (
+        <div className="flex-shrink-0 px-[10px]">
+          <BoardFilterBar
+            allTasks={allBoardTasks}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            statusFilters={statusFilters}
+            onStatusFiltersChange={setStatusFilters}
+            personFilters={personFilters}
+            onPersonFiltersChange={setPersonFilters}
+            clientFilters={clientFilters}
+            onClientFiltersChange={setClientFilters}
+          />
+        </div>
+      )}
 
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-4 flex-shrink-0 px-[10px]">
@@ -615,7 +619,27 @@ function BoardViewContent({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Board Guide Button */}
+          {/* View Mode Toggle */}
+          <div className="flex items-center border border-border rounded-md overflow-hidden">
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              className="rounded-none h-8 px-3"
+              onClick={() => setViewMode('table')}
+            >
+              <LayoutGrid className="w-4 h-4 mr-1" />
+              Table
+            </Button>
+            <Button
+              variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+              size="sm"
+              className="rounded-none h-8 px-3"
+              onClick={() => setViewMode('calendar')}
+            >
+              <Calendar className="w-4 h-4 mr-1" />
+              Calendar
+            </Button>
+          </div>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button onClick={openGuide} size="sm" variant="ghost" className="gap-2">
@@ -719,28 +743,38 @@ function BoardViewContent({
         onClose={closeGuide} 
       />
 
-      {/* Scrollable Board Area */}
-      <div className="flex-1 overflow-auto custom-scrollbar">
-      {/* Task Groups */}
-        <div className="space-y-6 min-w-max">
-          {transformedGroups.map(group => <TaskGroup key={group.id} group={group} onUpdateTask={handleUpdateTask} onDeleteTask={deleteTask} onAddTask={() => addTask(group.id)} onUpdateGroup={updates => updateGroup(group.id, updates)} onDeleteGroup={() => deleteGroup(group.id)} onSendToPhase={handleSendTaskToPhase} boardId={boardId} boardName={board.name} workspaceName={workspaceName} columns={columns} isLocked={isLocked || !canReorderColumns} onReorderColumns={reorderColumns} canDeleteTasks={canDeleteTasks} canDeleteGroups={canDeleteTasks} allBoardTasks={allBoardTasks} selectedTaskId={selectedTaskId} onTaskPanelClose={handleTaskPanelClose} />)}
-        </div>
+      {/* Calendar View */}
+      {viewMode === 'calendar' && (
+        <CalendarView
+          tasks={allBoardTasks}
+          onTaskClick={(taskId) => setSelectedTaskId(taskId)}
+        />
+      )}
 
-        {/* Empty State */}
-        {board.groups.length === 0 && <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <Plus className="w-8 h-8 text-primary" />
-            </div>
-            <h3 className="font-display font-semibold text-lg mb-2">No groups yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Create your first group to start organizing tasks
-            </p>
-            <Button onClick={addGroup} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Add Group
-            </Button>
-          </div>}
-      </div>
+      {/* Scrollable Board Area */}
+      {viewMode === 'table' && (
+        <div className="flex-1 overflow-auto custom-scrollbar">
+        {/* Task Groups */}
+          <div className="space-y-6 min-w-max">
+            {transformedGroups.map(group => <TaskGroup key={group.id} group={group} onUpdateTask={handleUpdateTask} onDeleteTask={deleteTask} onAddTask={() => addTask(group.id)} onUpdateGroup={updates => updateGroup(group.id, updates)} onDeleteGroup={() => deleteGroup(group.id)} onSendToPhase={handleSendTaskToPhase} boardId={boardId} boardName={board.name} workspaceName={workspaceName} columns={columns} isLocked={isLocked || !canReorderColumns} onReorderColumns={reorderColumns} canDeleteTasks={canDeleteTasks} canDeleteGroups={canDeleteTasks} allBoardTasks={allBoardTasks} selectedTaskId={selectedTaskId} onTaskPanelClose={handleTaskPanelClose} />)}
+          </div>
+
+          {/* Empty State */}
+          {board.groups.length === 0 && <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <Plus className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="font-display font-semibold text-lg mb-2">No groups yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Create your first group to start organizing tasks
+              </p>
+              <Button onClick={addGroup} className="gap-2">
+                <Plus className="w-4 h-4" />
+                Add Group
+              </Button>
+            </div>}
+        </div>
+      )}
 
       {/* Bulk Actions Toolbar */}
       <BulkActionsToolbar onDuplicate={handleBulkDuplicate} onDelete={handleBulkDelete} onMoveToPhase={handleBulkMove} availablePhases={AVAILABLE_PHASES} />

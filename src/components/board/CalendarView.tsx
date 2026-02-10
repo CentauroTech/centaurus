@@ -1,26 +1,32 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, DragEvent } from 'react';
 import {
   format,
   startOfMonth,
   endOfMonth,
   startOfWeek,
   endOfWeek,
+  startOfDay,
   addDays,
+  addWeeks,
+  subWeeks,
   addMonths,
   subMonths,
   isSameMonth,
+  isSameDay,
   isToday,
   isValid,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, Search, X, User, ChevronDown, Eye, EyeOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, X, User, ChevronDown, Eye, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { Task, User as UserType, PHASE_DUE_DATE_MAP, ALL_PHASE_DUE_DATE_FIELDS } from '@/types/board';
+import { toast } from 'sonner';
 
 function parseLocalDate(dateStr: string): Date {
   const parts = dateStr.split('T')[0].split('-');
@@ -39,37 +45,11 @@ function toDate(d: Date | string | undefined): Date | null {
   return isValid(parsed) ? parsed : null;
 }
 
-// Color palette for phase due dates
-const PHASE_COLORS: Record<string, string> = {
-  assets: 'cyan',
-  translation: 'indigo',
-  adapting: 'teal',
-  voice_tests: 'yellow',
-  recording: 'red',
-  premix: 'pink',
-  qc_premix: 'purple',
-  retakes: 'violet',
-  qc_retakes: 'amber',
-  mix: 'sky',
-  qc_mix: 'fuchsia',
-  mix_retakes: 'rose',
-};
-
-function getEventColor(type: string): { bg: string; text: string; border: string } {
-  switch (type) {
-    case 'miami':
-      return { bg: 'bg-orange-500/15', text: 'text-orange-700 dark:text-orange-300', border: 'border-orange-500' };
-    case 'client':
-      return { bg: 'bg-blue-500/15', text: 'text-blue-700 dark:text-blue-300', border: 'border-blue-500' };
-    default: {
-      const c = PHASE_COLORS[type] || 'gray';
-      return {
-        bg: `bg-${c}-500/15`,
-        text: `text-${c}-700 dark:text-${c}-300`,
-        border: `border-${c}-500`,
-      };
-    }
-  }
+function formatDateForDB(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 // Static Tailwind classes for phase colors (so they aren't purged)
@@ -108,18 +88,39 @@ const LEGEND_DOT_STYLES: Record<string, string> = {
 interface CalendarEvent {
   task: Task;
   date: Date;
-  type: string; // 'miami' | 'client' | phase key
+  type: string;
   label: string;
+  field: keyof Task;
 }
+
+type CalendarViewMode = 'daily' | 'weekly' | 'monthly';
 
 interface CalendarViewProps {
   tasks: Task[];
   onTaskClick?: (taskId: string) => void;
+  onUpdateTask?: (taskId: string, updates: Partial<Task>) => void;
   boardName: string;
   isHQ: boolean;
 }
 
-// Determine which date sources to offer based on board context
+// Map date source key to Task field for updates
+const DATE_SOURCE_FIELD_MAP: Record<string, keyof Task> = {
+  miami: 'entregaMiamiEnd',
+  client: 'entregaCliente',
+  assets: 'assetsDueDate',
+  translation: 'translationDueDate',
+  adapting: 'adaptingDueDate',
+  voice_tests: 'voiceTestsDueDate',
+  recording: 'recordingDueDate',
+  premix: 'premixDueDate',
+  qc_premix: 'qcPremixDueDate',
+  retakes: 'retakesDueDate',
+  qc_retakes: 'qcRetakesDueDate',
+  mix: 'mixDueDate',
+  qc_mix: 'qcMixDueDate',
+  mix_retakes: 'mixRetakesDueDate',
+};
+
 function getDateSources(boardName: string, isHQ: boolean) {
   const sources: { key: string; label: string; field: keyof Task; defaultOn: boolean }[] = [
     { key: 'miami', label: 'Miami Due Date', field: 'entregaMiamiEnd', defaultOn: true },
@@ -127,12 +128,10 @@ function getDateSources(boardName: string, isHQ: boolean) {
   ];
 
   if (isHQ) {
-    // HQ: add all phase due dates as toggleable
     ALL_PHASE_DUE_DATE_FIELDS.forEach(p => {
       sources.push({ key: p.key, label: p.label, field: p.field, defaultOn: false });
     });
   } else {
-    // Individual board: find the phase due date for this board
     const boardLower = boardName.toLowerCase();
     for (const [phaseKey, config] of Object.entries(PHASE_DUE_DATE_MAP)) {
       if (boardLower.includes(phaseKey)) {
@@ -148,18 +147,24 @@ function getDateSources(boardName: string, isHQ: boolean) {
   return sources;
 }
 
-export function CalendarView({ tasks, onTaskClick, boardName, isHQ }: CalendarViewProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+export function CalendarView({ tasks, onTaskClick, onUpdateTask, boardName, isHQ }: CalendarViewProps) {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<CalendarViewMode>('monthly');
   const [searchQuery, setSearchQuery] = useState('');
   const [pmFilters, setPmFilters] = useState<string[]>([]);
   const [clientFilters, setClientFilters] = useState<string[]>([]);
   const [pmOpen, setPmOpen] = useState(false);
   const [clientOpen, setClientOpen] = useState(false);
   const [dateSourcesOpen, setDateSourcesOpen] = useState(false);
+  const [dragOverDate, setDragOverDate] = useState<string | null>(null);
+
+  // Add date popover state
+  const [addDateCell, setAddDateCell] = useState<Date | null>(null);
+  const [addDateTaskSearch, setAddDateTaskSearch] = useState('');
+  const [addDateType, setAddDateType] = useState<string>('');
 
   const dateSources = useMemo(() => getDateSources(boardName, isHQ), [boardName, isHQ]);
 
-  // Initialize enabled sources
   const [enabledSources, setEnabledSources] = useState<Set<string>>(() => {
     return new Set(dateSources.filter(s => s.defaultOn).map(s => s.key));
   });
@@ -167,7 +172,6 @@ export function CalendarView({ tasks, onTaskClick, boardName, isHQ }: CalendarVi
   // Filter tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
-      // Must have at least one enabled date
       const hasAnyDate = dateSources.some(s => enabledSources.has(s.key) && !!toDate(task[s.field] as any));
       if (!hasAnyDate) return false;
 
@@ -189,6 +193,17 @@ export function CalendarView({ tasks, onTaskClick, boardName, isHQ }: CalendarVi
     });
   }, [tasks, searchQuery, pmFilters, clientFilters, enabledSources, dateSources]);
 
+  // Also get tasks without dates for the "add date" feature
+  const tasksWithoutDates = useMemo(() => {
+    return tasks.filter(task => {
+      if (addDateTaskSearch) {
+        const q = addDateTaskSearch.toLowerCase();
+        return task.name.toLowerCase().includes(q) || task.workOrderNumber?.toLowerCase().includes(q);
+      }
+      return true;
+    });
+  }, [tasks, addDateTaskSearch]);
+
   // Build calendar events
   const events = useMemo(() => {
     const result: CalendarEvent[] = [];
@@ -196,13 +211,12 @@ export function CalendarView({ tasks, onTaskClick, boardName, isHQ }: CalendarVi
       dateSources.forEach(source => {
         if (!enabledSources.has(source.key)) return;
         const d = toDate(task[source.field] as any);
-        if (d) result.push({ task, date: d, type: source.key, label: source.label });
+        if (d) result.push({ task, date: d, type: source.key, label: source.label, field: source.field });
       });
     });
     return result;
   }, [filteredTasks, dateSources, enabledSources]);
 
-  // Events grouped by date string
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
     events.forEach(ev => {
@@ -238,22 +252,58 @@ export function CalendarView({ tasks, onTaskClick, boardName, isHQ }: CalendarVi
       .sort((a, b) => b.count - a.count);
   }, [tasks]);
 
-  // Calendar grid
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+  // Navigation
+  const goBack = () => {
+    if (viewMode === 'monthly') setCurrentDate(subMonths(currentDate, 1));
+    else if (viewMode === 'weekly') setCurrentDate(subWeeks(currentDate, 1));
+    else setCurrentDate(addDays(currentDate, -1));
+  };
+  const goForward = () => {
+    if (viewMode === 'monthly') setCurrentDate(addMonths(currentDate, 1));
+    else if (viewMode === 'weekly') setCurrentDate(addWeeks(currentDate, 1));
+    else setCurrentDate(addDays(currentDate, 1));
+  };
+  const goToday = () => setCurrentDate(new Date());
 
-  const weeks: Date[][] = [];
-  let day = calStart;
-  while (day <= calEnd) {
-    const week: Date[] = [];
-    for (let i = 0; i < 7; i++) {
-      week.push(day);
+  const headerLabel = useMemo(() => {
+    if (viewMode === 'monthly') return format(currentDate, 'MMMM yyyy');
+    if (viewMode === 'weekly') {
+      const ws = startOfWeek(currentDate, { weekStartsOn: 1 });
+      const we = endOfWeek(currentDate, { weekStartsOn: 1 });
+      return `${format(ws, 'MMM d')} – ${format(we, 'MMM d, yyyy')}`;
+    }
+    return format(currentDate, 'EEEE, MMMM d, yyyy');
+  }, [currentDate, viewMode]);
+
+  // Compute days to display
+  const displayDays = useMemo(() => {
+    if (viewMode === 'daily') return [startOfDay(currentDate)];
+    if (viewMode === 'weekly') {
+      const ws = startOfWeek(currentDate, { weekStartsOn: 1 });
+      return Array.from({ length: 7 }, (_, i) => addDays(ws, i));
+    }
+    // Monthly
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    const days: Date[] = [];
+    let day = calStart;
+    while (day <= calEnd) {
+      days.push(day);
       day = addDays(day, 1);
     }
-    weeks.push(week);
-  }
+    return days;
+  }, [currentDate, viewMode]);
+
+  const weeks = useMemo(() => {
+    if (viewMode !== 'monthly') return [];
+    const result: Date[][] = [];
+    for (let i = 0; i < displayDays.length; i += 7) {
+      result.push(displayDays.slice(i, i + 7));
+    }
+    return result;
+  }, [displayDays, viewMode]);
 
   const toggleSource = (key: string) => {
     setEnabledSources(prev => {
@@ -271,6 +321,174 @@ export function CalendarView({ tasks, onTaskClick, boardName, isHQ }: CalendarVi
     if (type === 'client') return 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-l-2 border-blue-500';
     const style = PHASE_EVENT_STYLES[type];
     return style ? `${style} border-l-2` : 'bg-gray-500/15 text-gray-700 dark:text-gray-300 border-l-2 border-gray-500';
+  };
+
+  // Drag & Drop handlers
+  const handleDragStart = useCallback((e: DragEvent<HTMLButtonElement>, ev: CalendarEvent) => {
+    e.dataTransfer.setData('application/json', JSON.stringify({
+      taskId: ev.task.id,
+      type: ev.type,
+      field: ev.field,
+    }));
+    e.dataTransfer.effectAllowed = 'move';
+  }, []);
+
+  const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>, dateKey: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverDate(dateKey);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverDate(null);
+  }, []);
+
+  const handleDrop = useCallback((e: DragEvent<HTMLDivElement>, targetDate: Date) => {
+    e.preventDefault();
+    setDragOverDate(null);
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      const { taskId, type } = data;
+      const field = DATE_SOURCE_FIELD_MAP[type];
+      if (!field || !onUpdateTask) return;
+      const dateStr = formatDateForDB(targetDate);
+      onUpdateTask(taskId, { [field]: dateStr } as Partial<Task>);
+      toast.success(`Date updated to ${format(targetDate, 'MMM d, yyyy')}`);
+    } catch {
+      // ignore
+    }
+  }, [onUpdateTask]);
+
+  // Add date handler
+  const handleAddDate = useCallback((taskId: string, dateType: string, targetDate: Date) => {
+    if (!onUpdateTask) return;
+    const field = DATE_SOURCE_FIELD_MAP[dateType];
+    if (!field) return;
+    const dateStr = formatDateForDB(targetDate);
+    onUpdateTask(taskId, { [field]: dateStr } as Partial<Task>);
+    toast.success(`${dateSources.find(s => s.key === dateType)?.label || 'Date'} set to ${format(targetDate, 'MMM d, yyyy')}`);
+    setAddDateCell(null);
+    setAddDateTaskSearch('');
+    setAddDateType('');
+  }, [onUpdateTask, dateSources]);
+
+  // Render a single day cell
+  const renderDayCell = (day: Date, isCompact: boolean) => {
+    const dateKey = format(day, 'yyyy-MM-dd');
+    const dayEvents = eventsByDate.get(dateKey) || [];
+    const inMonth = viewMode === 'monthly' ? isSameMonth(day, currentDate) : true;
+    const today = isToday(day);
+    const isDragOver = dragOverDate === dateKey;
+    const maxEvents = isCompact ? 4 : 20;
+
+    return (
+      <div
+        key={dateKey}
+        className={cn(
+          "border-b border-r border-border p-1 transition-colors relative group",
+          isCompact ? "min-h-[100px]" : "min-h-[200px]",
+          !inMonth && "bg-muted/30",
+          today && "bg-primary/5",
+          isDragOver && "bg-primary/15 ring-2 ring-primary/40 ring-inset"
+        )}
+        onDragOver={(e) => handleDragOver(e, dateKey)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, day)}
+      >
+        <div className="flex items-center justify-between px-1 mb-1">
+          <div className={cn(
+            "text-xs font-medium",
+            !inMonth && "text-muted-foreground/50",
+            today && "text-primary font-bold"
+          )}>
+            {viewMode === 'daily' ? format(day, 'EEEE, MMMM d') : format(day, 'd')}
+          </div>
+          {/* Add date button */}
+          {onUpdateTask && (
+            <Popover 
+              open={addDateCell !== null && isSameDay(addDateCell, day)} 
+              onOpenChange={(open) => {
+                if (open) {
+                  setAddDateCell(day);
+                  setAddDateTaskSearch('');
+                  setAddDateType(dateSources[0]?.key || 'miami');
+                } else {
+                  setAddDateCell(null);
+                }
+              }}
+            >
+              <PopoverTrigger asChild>
+                <button className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted">
+                  <Plus className="w-3 h-3 text-muted-foreground" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-72 p-3 z-[100]" side="right">
+                <div className="space-y-3">
+                  <h4 className="font-medium text-sm">Add due date – {format(day, 'MMM d')}</h4>
+                  <Select value={addDateType} onValueChange={setAddDateType}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Date type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {dateSources.filter(s => enabledSources.has(s.key)).map(s => (
+                        <SelectItem key={s.key} value={s.key} className="text-xs">{s.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    placeholder="Search task..."
+                    value={addDateTaskSearch}
+                    onChange={(e) => setAddDateTaskSearch(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                  <ScrollArea className="max-h-40">
+                    <div className="space-y-0.5">
+                      {tasksWithoutDates.slice(0, 20).map(task => (
+                        <button
+                          key={task.id}
+                          onClick={() => handleAddDate(task.id, addDateType, day)}
+                          className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors truncate"
+                        >
+                          <span className="font-medium">{task.name}</span>
+                          {task.workOrderNumber && (
+                            <span className="text-muted-foreground ml-1">({task.workOrderNumber})</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+        </div>
+
+        <div className="space-y-0.5 overflow-hidden">
+          {dayEvents.slice(0, maxEvents).map((ev, i) => (
+            <button
+              key={`${ev.task.id}-${ev.type}-${i}`}
+              draggable
+              onDragStart={(e) => handleDragStart(e, ev)}
+              onClick={() => onTaskClick?.(ev.task.id)}
+              className={cn(
+                "w-full text-left text-[10px] leading-tight px-1 py-0.5 rounded truncate block transition-colors hover:opacity-80 cursor-grab active:cursor-grabbing",
+                getEventClasses(ev.type),
+                !isCompact && "text-xs py-1"
+              )}
+              title={`${ev.task.name} (${ev.label}) – Drag to reschedule`}
+            >
+              {!isCompact && <span className={cn("inline-block w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0", LEGEND_DOT_STYLES[ev.type] || 'bg-gray-500')} />}
+              {ev.task.name}
+            </button>
+          ))}
+          {dayEvents.length > maxEvents && (
+            <span className="text-[10px] text-muted-foreground px-1">
+              +{dayEvents.length - maxEvents} more
+            </span>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -407,78 +625,91 @@ export function CalendarView({ tasks, onTaskClick, boardName, isHQ }: CalendarVi
         ))}
       </div>
 
-      {/* Month Navigation */}
+      {/* Navigation & View Mode */}
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
-        <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
-        <h2 className="text-lg font-semibold">{format(currentMonth, 'MMMM yyyy')}</h2>
-        <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-          <ChevronRight className="w-4 h-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={goBack}>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={goToday} className="text-xs">
+            Today
+          </Button>
+          <Button variant="ghost" size="sm" onClick={goForward}>
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+          <h2 className="text-lg font-semibold ml-2">{headerLabel}</h2>
+        </div>
+
+        {/* View mode selector */}
+        <div className="flex items-center border border-border rounded-md overflow-hidden">
+          {(['daily', 'weekly', 'monthly'] as CalendarViewMode[]).map(mode => (
+            <Button
+              key={mode}
+              variant={viewMode === mode ? 'default' : 'ghost'}
+              size="sm"
+              className="rounded-none h-8 px-3 text-xs capitalize"
+              onClick={() => setViewMode(mode)}
+            >
+              {mode}
+            </Button>
+          ))}
+        </div>
       </div>
 
       {/* Calendar Grid */}
       <div className="flex-1 overflow-auto">
-        <div className="grid grid-cols-7 border-b border-border">
-          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
-            <div key={d} className="py-2 text-center text-xs font-medium text-muted-foreground border-r border-border last:border-r-0">
-              {d}
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7 flex-1">
-          {weeks.map((week, wi) =>
-            week.map((day, di) => {
-              const dateKey = format(day, 'yyyy-MM-dd');
-              const dayEvents = eventsByDate.get(dateKey) || [];
-              const inMonth = isSameMonth(day, currentMonth);
-              const today = isToday(day);
-
-              return (
-                <div
-                  key={dateKey}
-                  className={cn(
-                    "min-h-[100px] border-b border-r border-border p-1 transition-colors",
-                    di === 6 && "border-r-0",
-                    !inMonth && "bg-muted/30",
-                    today && "bg-primary/5"
-                  )}
-                >
-                  <div className={cn(
-                    "text-xs font-medium mb-1 text-right px-1",
-                    !inMonth && "text-muted-foreground/50",
-                    today && "text-primary font-bold"
-                  )}>
-                    {format(day, 'd')}
-                  </div>
-
-                  <div className="space-y-0.5 overflow-hidden">
-                    {dayEvents.slice(0, 4).map((ev, i) => (
-                      <button
-                        key={`${ev.task.id}-${ev.type}-${i}`}
-                        onClick={() => onTaskClick?.(ev.task.id)}
-                        className={cn(
-                          "w-full text-left text-[10px] leading-tight px-1 py-0.5 rounded truncate block transition-colors hover:opacity-80",
-                          getEventClasses(ev.type)
-                        )}
-                        title={`${ev.task.name} (${ev.label})`}
-                      >
-                        {ev.task.name}
-                      </button>
-                    ))}
-                    {dayEvents.length > 4 && (
-                      <span className="text-[10px] text-muted-foreground px-1">
-                        +{dayEvents.length - 4} more
-                      </span>
-                    )}
-                  </div>
+        {viewMode === 'monthly' && (
+          <>
+            <div className="grid grid-cols-7 border-b border-border">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
+                <div key={d} className="py-2 text-center text-xs font-medium text-muted-foreground border-r border-border last:border-r-0">
+                  {d}
                 </div>
-              );
-            })
-          )}
-        </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7">
+              {weeks.map((week, wi) =>
+                week.map((day, di) => (
+                  <div key={format(day, 'yyyy-MM-dd')} className={cn(di === 6 && "border-r-0")}>
+                    {renderDayCell(day, true)}
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
+
+        {viewMode === 'weekly' && (
+          <>
+            <div className="grid grid-cols-7 border-b border-border">
+              {displayDays.map(day => (
+                <div key={format(day, 'yyyy-MM-dd')} className={cn(
+                  "py-2 text-center text-xs font-medium border-r border-border last:border-r-0",
+                  isToday(day) ? "text-primary font-bold" : "text-muted-foreground"
+                )}>
+                  {format(day, 'EEE d')}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7">
+              {displayDays.map(day => (
+                <div key={format(day, 'yyyy-MM-dd')}>
+                  {renderDayCell(day, false)}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {viewMode === 'daily' && (
+          <div className="max-w-3xl">
+            {displayDays.map(day => (
+              <div key={format(day, 'yyyy-MM-dd')}>
+                {renderDayCell(day, false)}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

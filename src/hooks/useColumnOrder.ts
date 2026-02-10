@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ColumnConfig, COLUMNS, COLUMNS_COLOMBIA } from '@/types/board';
+import { ColumnConfig, COLUMNS, COLUMNS_COLOMBIA, PHASE_DUE_DATE_MAP } from '@/types/board';
 import { usePermissions } from './usePermissions';
 import { useColumnVisibility, useColumnMemberVisibility } from './useColumnVisibility';
 import { useCurrentTeamMember } from './useCurrentTeamMember';
@@ -67,15 +67,43 @@ export async function syncColumnOrderToWorkspace(sourceBoardId: string, allBoard
   console.log(`Synced column order from ${sourceBoardId} to ${targetBoardIds.length} other board(s)`);
 }
 
-export function useColumnOrder(boardId: string, workspaceName: string) {
+export function useColumnOrder(boardId: string, workspaceName: string, boardName?: string) {
   const { isGod, isAdmin, isTeamMember } = usePermissions();
   const { data: columnVisibility } = useColumnVisibility();
   const { data: memberVisibility } = useColumnMemberVisibility();
   const { data: currentTeamMember } = useCurrentTeamMember();
   const queryClient = useQueryClient();
   
-  // Get default columns based on workspace
-  const defaultColumns = workspaceName === 'Colombia' ? COLUMNS_COLOMBIA : COLUMNS;
+  // Get default columns based on workspace, with dynamic phase due date label
+  const defaultColumns = useMemo(() => {
+    const base = workspaceName === 'Colombia' ? COLUMNS_COLOMBIA : COLUMNS;
+    if (!boardName) return base;
+    
+    // For Miami boards, replace phaseDueDate column with the phase-specific due date column
+    const boardLower = boardName.toLowerCase();
+    let matchedPhase: { field: string; label: string } | null = null;
+    for (const [phaseKey, config] of Object.entries(PHASE_DUE_DATE_MAP)) {
+      if (boardLower.includes(phaseKey)) {
+        matchedPhase = config;
+        break;
+      }
+    }
+    
+    if (matchedPhase) {
+      return base.map(col => {
+        if (col.id === 'phaseDueDate') {
+          return {
+            ...col,
+            label: matchedPhase!.label,
+            field: matchedPhase!.field as any,
+          };
+        }
+        return col;
+      });
+    }
+    
+    return base;
+  }, [workspaceName, boardName]);
   const defaultOrder = defaultColumns.map(col => col.id);
 
   // Fetch DB-persisted column order

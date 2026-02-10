@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy, X, HelpCircle, LayoutGrid } from 'lucide-react';
+import { PHASE_DUE_DATE_MAP, ALL_PHASE_DUE_DATE_FIELDS } from '@/types/board';
 import { BoardGuide, useBoardGuide } from './BoardGuide';
 import { addBusinessDays, getLocalDateString } from '@/lib/businessDays';
 import { Button } from '@/components/ui/button';
@@ -106,7 +107,7 @@ function BoardViewContent({
     reorderColumns,
     toggleLock,
     resetOrder
-  } = useColumnOrder(boardId, workspaceName);
+  } = useColumnOrder(boardId, workspaceName, board.name);
 
   // Fetch all workspaces to get board IDs for syncing
   const { data: workspaces } = useWorkspaces();
@@ -201,6 +202,18 @@ function BoardViewContent({
         dateDelivered: t.date_delivered || undefined,
         hq: t.hq,
         phaseDueDate: t.phase_due_date || undefined,
+        assetsDueDate: t.assets_due_date || undefined,
+        translationDueDate: t.translation_due_date || undefined,
+        adaptingDueDate: t.adapting_due_date || undefined,
+        voiceTestsDueDate: t.voice_tests_due_date || undefined,
+        recordingDueDate: t.recording_due_date || undefined,
+        premixDueDate: t.premix_due_date || undefined,
+        qcPremixDueDate: t.qc_premix_due_date || undefined,
+        retakesDueDate: t.retakes_due_date || undefined,
+        qcRetakesDueDate: t.qc_retakes_due_date || undefined,
+        mixDueDate: t.mix_due_date || undefined,
+        qcMixDueDate: t.qc_mix_due_date || undefined,
+        mixRetakesDueDate: t.mix_retakes_due_date || undefined,
         linkToColHQ: t.link_to_col_hq,
         rateInfo: t.rate_info,
         people: t.people || [],
@@ -268,6 +281,18 @@ function BoardViewContent({
     if (updates.workOrderNumber !== undefined) dbUpdates.work_order_number = updates.workOrderNumber;
     if (updates.fase !== undefined) dbUpdates.fase = updates.fase;
     if (updates.phaseDueDate !== undefined) dbUpdates.phase_due_date = updates.phaseDueDate;
+    if (updates.assetsDueDate !== undefined) dbUpdates.assets_due_date = updates.assetsDueDate;
+    if (updates.translationDueDate !== undefined) dbUpdates.translation_due_date = updates.translationDueDate;
+    if (updates.adaptingDueDate !== undefined) dbUpdates.adapting_due_date = updates.adaptingDueDate;
+    if (updates.voiceTestsDueDate !== undefined) dbUpdates.voice_tests_due_date = updates.voiceTestsDueDate;
+    if (updates.recordingDueDate !== undefined) dbUpdates.recording_due_date = updates.recordingDueDate;
+    if (updates.premixDueDate !== undefined) dbUpdates.premix_due_date = updates.premixDueDate;
+    if (updates.qcPremixDueDate !== undefined) dbUpdates.qc_premix_due_date = updates.qcPremixDueDate;
+    if (updates.retakesDueDate !== undefined) dbUpdates.retakes_due_date = updates.retakesDueDate;
+    if (updates.qcRetakesDueDate !== undefined) dbUpdates.qc_retakes_due_date = updates.qcRetakesDueDate;
+    if (updates.mixDueDate !== undefined) dbUpdates.mix_due_date = updates.mixDueDate;
+    if (updates.qcMixDueDate !== undefined) dbUpdates.qc_mix_due_date = updates.qcMixDueDate;
+    if (updates.mixRetakesDueDate !== undefined) dbUpdates.mix_retakes_due_date = updates.mixRetakesDueDate;
     if (updates.aorComplete !== undefined) dbUpdates.aor_complete = updates.aorComplete;
     if (updates.studio !== undefined) dbUpdates.studio = updates.studio;
     if (updates.hq !== undefined) dbUpdates.hq = updates.hq;
@@ -748,6 +773,8 @@ function BoardViewContent({
         <CalendarView
           tasks={allBoardTasks}
           onTaskClick={(taskId) => setSelectedTaskId(taskId)}
+          boardName={board.name}
+          isHQ={board.is_hq}
         />
       )}
 

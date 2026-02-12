@@ -289,7 +289,7 @@ export const MemoizedTaskRow = memo(function MemoizedTaskRow({
       case 'people':
         return <PeopleCell people={value as User[]} onChange={val => handleUpdate(column.field, val)} />;
       case 'status':
-        const isKickoffPhase = boardName?.toLowerCase().includes('kickoff') || false;
+        const isKickoffPhase = boardName?.toLowerCase().includes('kickoff') || task.currentPhase?.toLowerCase() === 'kickoff' || false;
         return (
           <StatusBadge 
             status={getTaskValue(task, 'status') as Status} 

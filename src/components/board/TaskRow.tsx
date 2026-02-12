@@ -345,7 +345,7 @@ export function TaskRow({
         return <PeopleCell people={value as User[]} onChange={val => handleUpdate(column.field, val)} />;
       case 'status':
         // Check if we're in Kickoff phase
-        const isKickoffPhase = boardName?.toLowerCase().includes('kickoff') || false;
+        const isKickoffPhase = boardName?.toLowerCase().includes('kickoff') || task.currentPhase?.toLowerCase() === 'kickoff' || false;
         return <StatusBadge status={getTaskValue(task, 'status') as Status} onStatusChange={val => handleUpdate('status', val)} isKickoffPhase={isKickoffPhase} onSendToPhase={onSendToPhase} />;
       case 'phase':
         return <PhaseCell phase={value as Phase} onPhaseChange={val => handleUpdate(column.field, val)} />;

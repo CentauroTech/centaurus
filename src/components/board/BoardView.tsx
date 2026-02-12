@@ -314,14 +314,26 @@ function BoardViewContent({
 
     // Check if a guest is being assigned to a role field on a private task
     const roleFields = ['traductor', 'adaptador', 'mixerMiami', 'qc1', 'qcMix'] as const;
+    const roleDbColumns = ['traductor_id', 'adaptador_id', 'mixer_miami_id', 'qc_1_id', 'qc_mix_id'] as const;
     const isTaskPrivate = rawTask?.is_private;
+    const isBeingMadePrivate = updates.isPrivate === true && !isTaskPrivate;
 
-    if (isTaskPrivate) {
+    if (isTaskPrivate || isBeingMadePrivate) {
+      // Check newly assigned role fields in this update
       for (const roleField of roleFields) {
         const newPerson = updates[roleField as keyof typeof updates] as User | null | undefined;
         if (newPerson && newPerson.id) {
-          // Check if this person is a guest (non-Centauro email)
           await addGuestViewerIfNeeded(taskId, newPerson.id);
+        }
+      }
+
+      // When making a task private, also check existing role assignments on the task
+      if (isBeingMadePrivate && rawTask) {
+        for (const dbCol of roleDbColumns) {
+          const existingMemberId = rawTask[dbCol];
+          if (existingMemberId) {
+            await addGuestViewerIfNeeded(taskId, existingMemberId);
+          }
         }
       }
     }

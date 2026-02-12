@@ -189,8 +189,18 @@ export function PrivacyCell({
       setSelectedViewers(prev => prev.filter(id => id !== viewer.id));
       setRoleAssignments(prev => prev.filter(a => a.memberId !== viewer.id));
     } else {
-      // Adding viewer - only add as viewer, no automatic role assignment
+      // Adding viewer
       setSelectedViewers(prev => [...prev, viewer.id]);
+      
+      // If we're in a specific category (not 'all'), also add a role assignment
+      const field = CATEGORY_TO_FIELD[activeFilter];
+      if (field) {
+        // Remove any existing assignment for this field (only one person per role)
+        setRoleAssignments(prev => {
+          const filtered = prev.filter(a => a.field !== field);
+          return [...filtered, { field, memberId: viewer.id, memberName: viewer.name }];
+        });
+      }
     }
   };
 

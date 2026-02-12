@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ColumnConfig, COLUMNS, COLUMNS_COLOMBIA, PHASE_DUE_DATE_MAP } from '@/types/board';
+import { ColumnConfig, COLUMNS, PHASE_DUE_DATE_MAP } from '@/types/board';
 import { usePermissions } from './usePermissions';
 import { useColumnVisibility, useColumnMemberVisibility } from './useColumnVisibility';
 import { useCurrentTeamMember } from './useCurrentTeamMember';
@@ -76,7 +76,7 @@ export function useColumnOrder(boardId: string, workspaceName: string, boardName
   
   // Get default columns based on workspace, with dynamic phase due date label
   const defaultColumns = useMemo(() => {
-    const base = workspaceName === 'Colombia' ? COLUMNS_COLOMBIA : COLUMNS;
+    const base = COLUMNS;
     if (!boardName) return base;
     
     // For Miami boards, replace phaseDueDate column with the phase-specific due date column

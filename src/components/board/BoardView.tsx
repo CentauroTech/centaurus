@@ -313,24 +313,42 @@ function BoardViewContent({
     if ('adaptador' in updates) dbUpdates.adaptador_id = updates.adaptador?.id || null;
 
     // Check if a guest is being assigned to a role field on a private task
-    const roleFields = ['traductor', 'adaptador', 'mixerMiami', 'qc1', 'qcMix'] as const;
-    const roleDbColumns = ['traductor_id', 'adaptador_id', 'mixer_miami_id', 'qc_1_id', 'qc_mix_id'] as const;
+    // Only add guests as viewers if their role matches the current board phase
     const isTaskPrivate = rawTask?.is_private;
     const isBeingMadePrivate = updates.isPrivate === true && !isTaskPrivate;
 
+    // Get the current board phase to determine which role column is relevant
+    const currentBoardPhase = board.name.includes('-') 
+      ? board.name.substring(board.name.indexOf('-') + 1) 
+      : board.name;
+    const normalizedPhase = currentBoardPhase.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    // Map board phases to their corresponding role field and db column
+    const phaseToRole: Record<string, { field: string; dbCol: string }> = {
+      'translation': { field: 'traductor', dbCol: 'traductor_id' },
+      'adapting': { field: 'adaptador', dbCol: 'adaptador_id' },
+      'adaptacion': { field: 'adaptador', dbCol: 'adaptador_id' },
+      'premix': { field: 'mixerMiami', dbCol: 'mixer_miami_id' },
+      'mix': { field: 'mixerMiami', dbCol: 'mixer_miami_id' },
+      'qcpremix': { field: 'qc1', dbCol: 'qc_1_id' },
+      'qc1': { field: 'qc1', dbCol: 'qc_1_id' },
+      'qcmix': { field: 'qcMix', dbCol: 'qc_mix_id' },
+      'qcretakes': { field: 'qcRetakes', dbCol: 'qc_retakes_id' },
+    };
+
+    const currentPhaseRole = phaseToRole[normalizedPhase];
+
     if (isTaskPrivate || isBeingMadePrivate) {
-      // Check newly assigned role fields in this update
-      for (const roleField of roleFields) {
-        const newPerson = updates[roleField as keyof typeof updates] as User | null | undefined;
+      if (currentPhaseRole) {
+        // Check if the role field for the current phase is being updated
+        const newPerson = updates[currentPhaseRole.field as keyof typeof updates] as User | null | undefined;
         if (newPerson && newPerson.id) {
           await addGuestViewerIfNeeded(taskId, newPerson.id);
         }
-      }
 
-      // When making a task private, also check existing role assignments on the task
-      if (isBeingMadePrivate && rawTask) {
-        for (const dbCol of roleDbColumns) {
-          const existingMemberId = rawTask[dbCol];
+        // When making a task private, check the existing role assignment for this phase
+        if (isBeingMadePrivate && rawTask) {
+          const existingMemberId = rawTask[currentPhaseRole.dbCol];
           if (existingMemberId) {
             await addGuestViewerIfNeeded(taskId, existingMemberId);
           }

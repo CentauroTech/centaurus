@@ -1,0 +1,35 @@
+name: Deploy Supabase Edge Functions
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "supabase/functions/**"
+      - ".github/workflows/deploy-supabase-functions.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Supabase CLI
+        run: npm i -g supabase
+
+      - name: Supabase Login (token)
+        run: supabase login --token "${{ secrets.SUPABASE_ACCESS_TOKEN }}"
+
+      - name: Link project
+        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+
+      - name: Deploy send-notification-email
+        run: supabase functions deploy send-notification-email --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+
+      - name: Deploy send-invoice-email
+        run: supabase functions deploy send-invoice-email --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"

@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { format, addDays } from 'date-fns';
-import { ArrowLeft, Plus, Trash2, Calendar, Lock, Info } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Calendar, Lock, Info, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useGuestCompletedHistory, GuestCompletedTask } from '@/hooks/useGuestCompletedHistory';
+import { supabase } from '@/integrations/supabase/client';
 import { useCreateInvoice, CreateInvoiceData, createItemsFromCompletedTasks } from '@/hooks/useInvoices';
 import { useInvoicedTaskIds } from '@/hooks/useInvoicedTaskIds';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
@@ -190,6 +191,48 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
     }
     setLineItems(prev => prev.filter(i => i.id !== id));
   };
+
+  const [requestedUnblockIds, setRequestedUnblockIds] = useState<Set<string>>(new Set());
+
+  const handleRequestUnblock = useCallback(async (task: GuestCompletedTask) => {
+    if (requestedUnblockIds.has(task.id)) {
+      toast.info('Unblock request already sent for this task');
+      return;
+    }
+
+    try {
+      // Find all PMs and admins
+      const { data: managers } = await supabase
+        .from('team_members')
+        .select('id')
+        .in('role', ['project_manager', 'admin', 'god']);
+
+      if (!managers?.length) {
+        toast.error('No administrators found');
+        return;
+      }
+
+      const memberName = currentMember?.name || 'A team member';
+
+      // Send notification to each PM/admin
+      for (const pm of managers) {
+        await supabase.rpc('create_notification', {
+          p_user_id: pm.id,
+          p_type: 'invoice_unblock_request',
+          p_title: 'Invoice Task Unblock Request',
+          p_message: `${memberName} is requesting to unblock "${task.taskName}" (WO# ${task.workOrderNumber || 'N/A'}) for re-invoicing.`,
+          p_task_id: null,
+          p_triggered_by_id: currentMember?.id || '',
+        });
+      }
+
+      setRequestedUnblockIds(prev => new Set(prev).add(task.id));
+      toast.success('Unblock request sent to administrators');
+    } catch (error: any) {
+      toast.error('Failed to send request');
+      console.error('Unblock request error:', error);
+    }
+  }, [currentMember, requestedUnblockIds]);
 
   const handleSubmit = async (asDraft: boolean) => {
     if (!billingName.trim()) {
@@ -509,14 +552,38 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                             </div>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Completed: {format(new Date(task.completedAt), 'MMM d, yyyy')}
+                        <div className="flex items-center justify-between mt-2">
+                          <p className="text-xs text-muted-foreground">
+                            Completed: {format(new Date(task.completedAt), 'MMM d, yyyy')}
+                            {isAlreadyInvoiced && (
+                              <span className="ml-2 text-amber-600 font-medium">
+                                <Lock className="inline h-3 w-3 mr-0.5" />Already invoiced
+                              </span>
+                            )}
+                          </p>
                           {isAlreadyInvoiced && (
-                            <span className="ml-2 text-amber-600 font-medium">
-                              <Lock className="inline h-3 w-3 mr-0.5" />Already invoiced
-                            </span>
+                            requestedUnblockIds.has(task.id) ? (
+                              <span className="text-[10px] text-muted-foreground italic shrink-0">
+                                ✓ Request sent
+                              </span>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-6 text-[10px] px-2 shrink-0"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleRequestUnblock(task);
+                                }}
+                              >
+                                <Send className="h-3 w-3 mr-1" />
+                                Request Unblock
+                              </Button>
+                            )
                           )}
-                        </p>
+                        </div>
                       </div>
                     </label>
                     );

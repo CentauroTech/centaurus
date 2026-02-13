@@ -12,6 +12,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useGuestCompletedHistory, GuestCompletedTask } from '@/hooks/useGuestCompletedHistory';
 import { useCreateInvoice, CreateInvoiceData, createItemsFromCompletedTasks } from '@/hooks/useInvoices';
+import { useInvoicedTaskIds } from '@/hooks/useInvoicedTaskIds';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useBillingProfile } from '@/hooks/useBillingProfile';
 import { useAuth } from '@/hooks/useAuth';
@@ -42,6 +43,7 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
   const { data: billingProfile, isLoading: profileLoading } = useBillingProfile();
   const { user } = useAuth();
   const createInvoice = useCreateInvoice();
+  const { data: invoicedTaskIds } = useInvoicedTaskIds();
 
   // Billing info - pre-filled from billing profile
   const [billingName, setBillingName] = useState('');
@@ -457,19 +459,25 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
               </CardHeader>
               <CardContent>
                 <div className="max-h-[300px] overflow-y-auto space-y-2">
-                  {completedTasks.map((task) => (
+                  {completedTasks.map((task) => {
+                    const isAlreadyInvoiced = invoicedTaskIds?.has(task.id) ?? false;
+                    return (
                     <label
                       key={task.id}
                       className={cn(
-                        "flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
-                        selectedTaskIds.has(task.id) 
+                        "flex items-start gap-3 p-3 rounded-lg border transition-colors",
+                        isAlreadyInvoiced
+                          ? "border-border bg-muted/30 opacity-60 cursor-not-allowed"
+                          : "cursor-pointer",
+                        !isAlreadyInvoiced && selectedTaskIds.has(task.id) 
                           ? "border-primary bg-primary/5" 
-                          : "border-border hover:bg-muted/50"
+                          : !isAlreadyInvoiced ? "border-border hover:bg-muted/50" : ""
                       )}
                     >
                       <Checkbox
                         checked={selectedTaskIds.has(task.id)}
-                        onCheckedChange={() => toggleTask(task)}
+                        onCheckedChange={() => !isAlreadyInvoiced && toggleTask(task)}
+                        disabled={isAlreadyInvoiced}
                       />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm">{task.taskName}</p>
@@ -503,10 +511,16 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">
                           Completed: {format(new Date(task.completedAt), 'MMM d, yyyy')}
+                          {isAlreadyInvoiced && (
+                            <span className="ml-2 text-amber-600 font-medium">
+                              <Lock className="inline h-3 w-3 mr-0.5" />Already invoiced
+                            </span>
+                          )}
                         </p>
                       </div>
                     </label>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

@@ -631,7 +631,7 @@ export function CalendarView({ tasks, onTaskClick, onUpdateTask, boardName, isHQ
             </Button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-64 p-0 bg-popover border border-border shadow-lg z-[100]">
-            <ScrollArea className="max-h-80">
+            <ScrollArea className="max-h-[480px]">
               <div className="p-1">
                 {dateSources.map(source => (
                   <button

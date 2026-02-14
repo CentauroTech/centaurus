@@ -633,6 +633,19 @@ export function CalendarView({ tasks, onTaskClick, onUpdateTask, boardName, isHQ
           <PopoverContent align="start" className="w-64 p-0 bg-popover border border-border shadow-lg z-[100]">
             <ScrollArea className="max-h-[480px]">
               <div className="p-1">
+                {dateSources.length > 2 && (
+                  <button
+                    onClick={() => {
+                      const allKeys = dateSources.map(s => s.key);
+                      const allEnabled = allKeys.every(k => enabledSources.has(k));
+                      setEnabledSources(new Set(allEnabled ? [] : allKeys));
+                    }}
+                    className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-muted transition-colors text-left font-medium", dateSources.every(s => enabledSources.has(s.key)) && "bg-primary/10")}
+                  >
+                    <Checkbox checked={dateSources.every(s => enabledSources.has(s.key))} className="pointer-events-none h-3.5 w-3.5" />
+                    <span className="flex-1 truncate">Select All</span>
+                  </button>
+                )}
                 {dateSources.map(source => (
                   <button
                     key={source.key}

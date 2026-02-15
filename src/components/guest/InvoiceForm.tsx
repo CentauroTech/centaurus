@@ -264,6 +264,7 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
         dueDate: dueDate?.toISOString().split('T')[0],
         paymentInstructions,
         taxRate,
+        asDraft,
         items: lineItems.map(item => ({
           completedTaskId: item.completedTaskId,
           description: item.description,
@@ -277,7 +278,7 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
         })),
       });
 
-      toast.success('Invoice created successfully');
+      toast.success(asDraft ? 'Invoice saved as draft' : 'Invoice submitted successfully');
       onSuccess();
     } catch (error: any) {
       toast.error(error.message || 'Failed to create invoice');

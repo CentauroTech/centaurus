@@ -118,15 +118,30 @@ serve(async (req) => {
       if (triggeredBy?.name) triggeredByName = triggeredBy.name;
     }
 
-    // Get task name
+    // Get task name and board name
     let taskName = "a task";
+    let boardName = "";
     if (payload.task_id) {
-      const { data: task } = await supabase.from("tasks").select("name").eq("id", payload.task_id).single();
+      const { data: task } = await supabase
+        .from("tasks")
+        .select("name, group:task_groups!inner(board:boards!inner(name))")
+        .eq("id", payload.task_id)
+        .single();
 
       if (task?.name) taskName = task.name;
+      if ((task as any)?.group?.board?.name) boardName = (task as any).group.board.name;
     }
 
-    // Build email subject and content
+    // Build CTA URL
+    const appUrl = "https://centaurus.lovable.app";
+    let ctaUrl = appUrl;
+    if (payload.type.startsWith("invoice_")) {
+      ctaUrl = `${appUrl}/billing`;
+    } else if (payload.task_id) {
+      ctaUrl = `${appUrl}/?task=${payload.task_id}`;
+    }
+
+    // Build email subject
     const subject =
       payload.type === "mention"
         ? `${triggeredByName} mentioned you in Centaurus`
@@ -136,32 +151,61 @@ serve(async (req) => {
             ? `Your Invoice Has Been Approved - Centaurus`
             : `You were assigned to "${taskName}" in Centaurus`;
 
-    const htmlContent = `<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  </head>
-  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 30px; border-radius: 12px 12px 0 0;">
-      <h1 style="color: white; margin: 0; font-size: 24px;">Centaurus</h1>
-    </div>
-    <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0; border-top: none;">
-      <h2 style="color: #1e293b; margin-top: 0;">${payload.title}</h2>
-      ${payload.message ? `<p style="color: #64748b; margin-bottom: 24px;">${payload.message}</p>` : ""}
-      ${
-        payload.type !== "invoice_submitted"
-          ? `<div style="background: white; border-radius: 8px; padding: 16px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
-              <p style="margin: 0; font-weight: 500;">Task: ${taskName}</p>
-            </div>`
-          : ""
-      }
-      <p style="color: #64748b; font-size: 14px; margin-top: 30px;">
-        This is an automated notification from Centaurus. You can manage your notification preferences in the app settings.
-      </p>
-    </div>
-  </body>
-</html>`;
+    // Format timestamp
+    const now = new Date();
+    const timestamp = now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    const year = now.getFullYear();
+
+    // Clean message: strip invoice_id metadata tags
+    const cleanMessage = (payload.message ?? "").replace(/\s*invoice_id::[a-f0-9-]+/g, "").trim();
+
+    // Build meta box rows
+    const metaRows: string[] = [];
+    if (payload.type !== "invoice_submitted") {
+      metaRows.push(`<span style="font-weight:700;color:#111827;">Task:</span> ${taskName}`);
+    }
+    if (boardName) {
+      metaRows.push(`<span style="font-weight:700;color:#111827;">Board/Phase:</span> ${boardName}`);
+    }
+    metaRows.push(`<span style="font-weight:700;color:#111827;">Triggered by:</span> ${triggeredByName}`);
+
+    const metaBox = metaRows.length > 0
+      ? `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #eef0f3;border-radius:10px;">
+          <tr><td style="padding:12px 12px;font-family:Arial,Helvetica,sans-serif;">
+            <div style="font-size:12px;color:#6b7280;line-height:1.6;">${metaRows.join("<br/>")}</div>
+          </td></tr>
+        </table>`
+      : "";
+
+    const htmlContent = `<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="x-apple-disable-message-reformatting"/><title>${subject}</title></head>
+<body style="margin:0;padding:0;background:#f6f7f9;">
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f6f7f9;">
+<tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" cellpadding="0" cellspacing="0" width="600" style="width:600px;max-width:600px;background:#ffffff;border:1px solid #e6e8eb;border-radius:12px;overflow:hidden;">
+<tr><td style="padding:18px 20px;border-bottom:1px solid #eef0f3;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+<td align="left" style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111827;font-weight:700;">Centaurus</td>
+<td align="right" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7280;">${timestamp}</td>
+</tr></table></td></tr>
+<tr><td style="padding:22px 20px 8px 20px;font-family:Arial,Helvetica,sans-serif;">
+<div style="font-size:16px;line-height:1.4;color:#111827;font-weight:700;margin:0 0 6px 0;">${payload.title}</div>
+${cleanMessage ? `<div style="font-size:13px;line-height:1.6;color:#374151;margin:0 0 14px 0;">${cleanMessage}</div>` : ""}
+${metaBox}
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:16px;"><tr>
+<td bgcolor="#111827" style="border-radius:10px;">
+<a href="${ctaUrl}" style="display:inline-block;padding:10px 14px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;">Open in Centaurus</a>
+</td></tr></table>
+<div style="font-size:12px;line-height:1.6;color:#6b7280;margin:14px 0 0 0;">If the button doesn't work, copy and paste this link:<br/><span style="color:#111827;">${ctaUrl}</span></div>
+</td></tr>
+<tr><td style="padding:16px 20px;border-top:1px solid #eef0f3;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#6b7280;">
+You're receiving this email because notifications are enabled for your account. Manage preferences in <span style="color:#111827;">Settings → Notifications</span>.
+</td></tr>
+</table>
+<div style="max-width:600px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;color:#9ca3af;padding:12px 6px 0 6px;">© ${year} Centaurus</div>
+</td></tr></table>
+</body></html>`;
 
     console.log("Sending SES email to:", recipient.email);
 
@@ -172,15 +216,12 @@ serve(async (req) => {
         Subject: { Data: subject, Charset: "UTF-8" },
         Body: {
           Html: { Data: htmlContent, Charset: "UTF-8" },
-          // Optional: include a text fallback to improve deliverability
           Text: {
-            Data: `${payload.title}\n\n${payload.message ?? ""}\n\nTask: ${taskName}`,
+            Data: `${payload.title}\n\n${cleanMessage}\n\nTask: ${taskName}\nBoard: ${boardName}\nTriggered by: ${triggeredByName}\n\nOpen: ${ctaUrl}`,
             Charset: "UTF-8",
           },
         },
       },
-      // Optional: direct replies somewhere else
-      // ReplyToAddresses: ["rafaelnieto@centauro.com"],
     });
 
     const result = await ses.send(sendCmd);

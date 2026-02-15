@@ -561,29 +561,49 @@ serve(async (req: Request): Promise<Response> => {
     });
 
     const subject = `Invoice ${invoice.invoice_number} Submitted - ${invoice.billing_name}`;
+    const now = new Date();
+    const timestamp = now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    const year = now.getFullYear();
+    const totalFormatted = formatCurrency(invoice.total_amount, invoice.currency || "USD");
+    const ctaUrl = "https://centaurus.lovable.app/billing";
 
-    const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">New Invoice Submitted</h2>
-        <p>A new invoice has been submitted for approval.</p>
-        
-        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0;">
-          <p style="margin: 5px 0;"><strong>Invoice Number:</strong> ${invoice.invoice_number}</p>
-          <p style="margin: 5px 0;"><strong>Vendor:</strong> ${invoice.billing_name}</p>
-          <p style="margin: 5px 0;"><strong>Total Amount:</strong> ${formatCurrency(
-            invoice.total_amount,
-            invoice.currency || "USD",
-          )}</p>
-          <p style="margin: 5px 0;"><strong>Items:</strong> ${items?.length || 0}</p>
-        </div>
-        
-        <p>Please find the complete invoice details in the attached PDF.</p>
-        
-        <p style="color: #666; font-size: 12px; margin-top: 30px;">
-          This is an automated notification from Centaurus.
-        </p>
-      </div>
-    `;
+    const html = `<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>${subject}</title></head>
+<body style="margin:0;padding:0;background:#f6f7f9;">
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f6f7f9;">
+<tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" cellpadding="0" cellspacing="0" width="600" style="width:600px;max-width:600px;background:#ffffff;border:1px solid #e6e8eb;border-radius:12px;overflow:hidden;">
+<tr><td style="padding:18px 20px;border-bottom:1px solid #eef0f3;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+<td align="left" style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111827;font-weight:700;">Centaurus</td>
+<td align="right" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7280;">${timestamp}</td>
+</tr></table></td></tr>
+<tr><td style="padding:22px 20px 8px 20px;font-family:Arial,Helvetica,sans-serif;">
+<div style="font-size:16px;line-height:1.4;color:#111827;font-weight:700;margin:0 0 6px 0;">Invoice submitted</div>
+<div style="font-size:13px;line-height:1.6;color:#374151;margin:0 0 14px 0;">An invoice has been submitted. The PDF is attached.</div>
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #eef0f3;border-radius:10px;">
+<tr><td style="padding:12px 12px;font-family:Arial,Helvetica,sans-serif;">
+<div style="font-size:12px;color:#6b7280;line-height:1.7;">
+<span style="font-weight:700;color:#111827;">Invoice:</span> ${invoice.invoice_number}<br/>
+<span style="font-weight:700;color:#111827;">Vendor:</span> ${invoice.billing_name}<br/>
+<span style="font-weight:700;color:#111827;">Total:</span> ${totalFormatted}<br/>
+<span style="font-weight:700;color:#111827;">Items:</span> ${items?.length || 0}
+</div></td></tr></table>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:16px;">
+<tr><td bgcolor="#111827" style="border-radius:10px;">
+<a href="${ctaUrl}" style="display:inline-block;padding:10px 14px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;">Review invoice</a>
+</td></tr></table>
+<div style="font-size:12px;line-height:1.6;color:#6b7280;margin:14px 0 0 0;">
+If the button doesn't work, copy and paste this link:<br/>
+<span style="color:#111827;">${ctaUrl}</span></div>
+</td></tr>
+<tr><td style="padding:16px 20px;border-top:1px solid #eef0f3;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#6b7280;">
+This is an automated message from Centaurus.</td></tr>
+</table>
+<div style="max-width:600px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;color:#9ca3af;padding:12px 6px 0 6px;">
+&copy; ${year} Centaurus</div>
+</td></tr></table></body></html>`;
 
     // Wrap base64 at 76 chars/line for MIME compatibility
     const wrappedPdfBase64 = pdfBase64.match(/.{1,76}/g)?.join("\n") || pdfBase64;

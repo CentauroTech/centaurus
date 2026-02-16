@@ -1198,6 +1198,7 @@ export type Database = {
       }
       tasks: {
         Row: {
+          abbreviation: string | null
           adaptador_id: string | null
           adapting_due_date: string | null
           aor_complete: boolean | null
@@ -1272,6 +1273,7 @@ export type Database = {
           work_order_number: string | null
         }
         Insert: {
+          abbreviation?: string | null
           adaptador_id?: string | null
           adapting_due_date?: string | null
           aor_complete?: boolean | null
@@ -1346,6 +1348,7 @@ export type Database = {
           work_order_number?: string | null
         }
         Update: {
+          abbreviation?: string | null
           adaptador_id?: string | null
           adapting_due_date?: string | null
           aor_complete?: boolean | null

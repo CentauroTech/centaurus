@@ -123,6 +123,7 @@ export function useAddMultipleTasks(boardId: string) {
           entrega_final_script_items: template.entrega_final_script_items || null,
           entrega_final_dub_audio_items: template.entrega_final_dub_audio_items || null,
           kickoff_brief: template.kickoff_brief || null,
+          abbreviation: template.abbreviation || null,
           // Delivery dates
           entrega_cliente: template.entrega_cliente || null,
           entrega_miami_start: template.entrega_miami_start || null,

@@ -76,6 +76,7 @@ const FIELD_TO_DB_COLUMN: Record<string, string> = {
   showGuide: 'show_guide',
   tituloAprobadoEspanol: 'titulo_aprobado_espanol',
   workOrderNumber: 'work_order_number',
+  abbreviation: 'abbreviation',
   fase: 'fase',
   phaseDueDate: 'phase_due_date',
   aorComplete: 'aor_complete',

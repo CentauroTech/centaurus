@@ -453,7 +453,8 @@ export function MultipleWODialog({
     if (!baseName) return [];
     if (useSpecialNumbering) {
       const numbers = specialNumbers.split(',').map(s => s.trim()).filter(Boolean);
-      return numbers.map(n => `${baseName} ${n}`);
+      const prefix = startingSuffix ? `${startingSuffix}` : '';
+      return numbers.map(n => `${baseName} ${prefix}${n}`);
     }
     return episodes > 0 ? generateSequentialNames(baseName, startingSuffix || '1', episodes) : [];
   })();

@@ -26,6 +26,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export interface MentionUser {
@@ -74,6 +75,7 @@ export function RichTextEditor({
   const [mentionQuery, setMentionQuery] = useState('');
   const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [toolbarExpanded, setToolbarExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Build mention list with optional @everyone at the top
@@ -262,152 +264,17 @@ export function RichTextEditor({
     <div ref={containerRef} className={cn("border border-border rounded-lg bg-background overflow-hidden relative", className)} onKeyDown={handleKeyDown}>
       {/* Toolbar */}
       {editable && !hideToolbar && (
-        <div className="flex items-center gap-0.5 p-1.5 border-b border-border bg-muted/30 flex-wrap">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn("h-7 w-7", editor.isActive('bold') && "bg-accent")}
-            onClick={() => editor.chain().focus().toggleBold().run()}
-          >
-            <Bold className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn("h-7 w-7", editor.isActive('italic') && "bg-accent")}
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-          >
-            <Italic className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn("h-7 w-7", editor.isActive('underline') && "bg-accent")}
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-          >
-            <UnderlineIcon className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn("h-7 w-7", editor.isActive('highlight') && "bg-accent")}
-            onClick={() => editor.chain().focus().toggleHighlight().run()}
-          >
-            <Highlighter className="w-3.5 h-3.5" />
-          </Button>
-          
-          <div className="w-px h-5 bg-border mx-1" />
-          
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn("h-7 w-7", editor.isActive('paragraph') && !editor.isActive('heading') && "bg-accent")}
-            onClick={() => editor.chain().focus().setParagraph().run()}
-            title="Body text"
-          >
-            <Type className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn("h-7 w-7", editor.isActive('heading', { level: 1 }) && "bg-accent")}
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-            title="Heading 1"
-          >
-            <Heading1 className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn("h-7 w-7", editor.isActive('heading', { level: 2 }) && "bg-accent")}
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            title="Heading 2"
-          >
-            <Heading2 className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn("h-7 w-7", editor.isActive('heading', { level: 3 }) && "bg-accent")}
-            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-            title="Heading 3"
-          >
-            <Heading3 className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn("h-7 w-7", editor.isActive('bulletList') && "bg-accent")}
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-          >
-            <List className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn("h-7 w-7", editor.isActive('orderedList') && "bg-accent")}
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          >
-            <ListOrdered className="w-3.5 h-3.5" />
-          </Button>
-          
-          <div className="w-px h-5 bg-border mx-1" />
-          
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn("h-7 w-7", editor.isActive({ textAlign: 'left' }) && "bg-accent")}
-            onClick={() => editor.chain().focus().setTextAlign('left').run()}
-          >
-            <AlignLeft className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn("h-7 w-7", editor.isActive({ textAlign: 'center' }) && "bg-accent")}
-            onClick={() => editor.chain().focus().setTextAlign('center').run()}
-          >
-            <AlignCenter className="w-3.5 h-3.5" />
-          </Button>
-          
-          <div className="w-px h-5 bg-border mx-1" />
-          
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => editor.chain().focus().undo().run()}
-            disabled={!editor.can().undo()}
-          >
-            <Undo className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => editor.chain().focus().redo().run()}
-            disabled={!editor.can().redo()}
-          >
-            <Redo className="w-3.5 h-3.5" />
-          </Button>
-
-          {onSend && (
-            <>
-              <div className="flex-1" />
+        <div className="border-b border-border bg-muted/30">
+          <div className="flex items-center justify-between px-1.5 py-1">
+            <button
+              type="button"
+              onClick={() => setToolbarExpanded(!toolbarExpanded)}
+              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors px-1"
+            >
+              {toolbarExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              <span>Format</span>
+            </button>
+            {onSend && (
               <Button
                 type="button"
                 size="sm"
@@ -418,7 +285,28 @@ export function RichTextEditor({
                 <Send className="w-3.5 h-3.5 mr-1" />
                 Send
               </Button>
-            </>
+            )}
+          </div>
+          {toolbarExpanded && (
+            <div className="flex items-center gap-0.5 px-1.5 pb-1.5 flex-wrap">
+              <Button type="button" variant="ghost" size="icon" className={cn("h-7 w-7", editor.isActive('bold') && "bg-accent")} onClick={() => editor.chain().focus().toggleBold().run()}><Bold className="w-3.5 h-3.5" /></Button>
+              <Button type="button" variant="ghost" size="icon" className={cn("h-7 w-7", editor.isActive('italic') && "bg-accent")} onClick={() => editor.chain().focus().toggleItalic().run()}><Italic className="w-3.5 h-3.5" /></Button>
+              <Button type="button" variant="ghost" size="icon" className={cn("h-7 w-7", editor.isActive('underline') && "bg-accent")} onClick={() => editor.chain().focus().toggleUnderline().run()}><UnderlineIcon className="w-3.5 h-3.5" /></Button>
+              <Button type="button" variant="ghost" size="icon" className={cn("h-7 w-7", editor.isActive('highlight') && "bg-accent")} onClick={() => editor.chain().focus().toggleHighlight().run()}><Highlighter className="w-3.5 h-3.5" /></Button>
+              <div className="w-px h-5 bg-border mx-1" />
+              <Button type="button" variant="ghost" size="icon" className={cn("h-7 w-7", editor.isActive('paragraph') && !editor.isActive('heading') && "bg-accent")} onClick={() => editor.chain().focus().setParagraph().run()} title="Body text"><Type className="w-3.5 h-3.5" /></Button>
+              <Button type="button" variant="ghost" size="icon" className={cn("h-7 w-7", editor.isActive('heading', { level: 1 }) && "bg-accent")} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} title="Heading 1"><Heading1 className="w-3.5 h-3.5" /></Button>
+              <Button type="button" variant="ghost" size="icon" className={cn("h-7 w-7", editor.isActive('heading', { level: 2 }) && "bg-accent")} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} title="Heading 2"><Heading2 className="w-3.5 h-3.5" /></Button>
+              <Button type="button" variant="ghost" size="icon" className={cn("h-7 w-7", editor.isActive('heading', { level: 3 }) && "bg-accent")} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} title="Heading 3"><Heading3 className="w-3.5 h-3.5" /></Button>
+              <Button type="button" variant="ghost" size="icon" className={cn("h-7 w-7", editor.isActive('bulletList') && "bg-accent")} onClick={() => editor.chain().focus().toggleBulletList().run()}><List className="w-3.5 h-3.5" /></Button>
+              <Button type="button" variant="ghost" size="icon" className={cn("h-7 w-7", editor.isActive('orderedList') && "bg-accent")} onClick={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered className="w-3.5 h-3.5" /></Button>
+              <div className="w-px h-5 bg-border mx-1" />
+              <Button type="button" variant="ghost" size="icon" className={cn("h-7 w-7", editor.isActive({ textAlign: 'left' }) && "bg-accent")} onClick={() => editor.chain().focus().setTextAlign('left').run()}><AlignLeft className="w-3.5 h-3.5" /></Button>
+              <Button type="button" variant="ghost" size="icon" className={cn("h-7 w-7", editor.isActive({ textAlign: 'center' }) && "bg-accent")} onClick={() => editor.chain().focus().setTextAlign('center').run()}><AlignCenter className="w-3.5 h-3.5" /></Button>
+              <div className="w-px h-5 bg-border mx-1" />
+              <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}><Undo className="w-3.5 h-3.5" /></Button>
+              <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}><Redo className="w-3.5 h-3.5" /></Button>
+            </div>
           )}
         </div>
       )}

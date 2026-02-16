@@ -10,12 +10,12 @@ const PHASE_ORDER = [
   'assets',
   'translation',
   'adapting',
-  'voicetests',
+  'breakdown',
+  'casting',
+  'scheduling',
   'recording',
-  'premix',
-  'qcpremix',
+  'qc1',
   'retakes',
-  'qcretakes',
   'mix',
   'qcmix',
   'mixretakes',
@@ -127,14 +127,17 @@ export const normalizePhase = (phaseName: string): string => {
     'traduccinad': 'translation',
     'adapting': 'adapting',
     'adaptacion': 'adapting',
-    'voicetests': 'voicetests',
+    'breakdown': 'breakdown',
+    'casting': 'casting',
+    'voicetests': 'casting',
+    'scheduling': 'scheduling',
     'recording': 'recording',
     'grabacion': 'recording',
-    'premix': 'premix',
-    'qcpremix': 'qcpremix',
-    'qc1': 'qcpremix',
+    'premix': 'qc1',
+    'qcpremix': 'retakes',
+    'qc1': 'qc1',
     'retakes': 'retakes',
-    'qcretakes': 'qcretakes',
+    'qcretakes': 'retakes',
     'mix': 'mix',
     'mixbogota': 'mix',
     'qcmix': 'qcmix',
@@ -155,8 +158,8 @@ const getNextPhase = (currentPhase: string, pruebaDeVoz: string | null): string 
     return null; // Already at last phase or unknown phase
   }
   
-  // Special case: after adapting, skip voicetests if prueba_de_voz is not 'Yes'
-  if (normalized === 'adapting' && pruebaDeVoz !== 'Yes') {
+  // After breakdown, skip casting/scheduling if prueba_de_voz is not 'Yes'
+  if (normalized === 'breakdown' && pruebaDeVoz !== 'Yes') {
     return 'recording';
   }
   

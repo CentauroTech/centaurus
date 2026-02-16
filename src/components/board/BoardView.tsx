@@ -641,7 +641,9 @@ function BoardViewContent({
     personFilters,
     setPersonFilters,
     clientFilters,
-    setClientFilters
+    setClientFilters,
+    phaseFilters,
+    setPhaseFilters
   } = useColumnFilters();
 
   return <BulkEditProvider onBulkUpdate={handleBulkUpdate}>
@@ -659,6 +661,9 @@ function BoardViewContent({
             onPersonFiltersChange={setPersonFilters}
             clientFilters={clientFilters}
             onClientFiltersChange={setClientFilters}
+            phaseFilters={phaseFilters}
+            onPhaseFiltersChange={setPhaseFilters}
+            isHQ={board.is_hq}
           />
         </div>
       )}

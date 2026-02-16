@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Filter, X, ChevronDown, User, Calendar, Check } from 'lucide-react';
+import { Search, Filter, X, ChevronDown, User, Calendar, Check, Layers } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,9 @@ interface BoardFilterBarProps {
   onPersonFiltersChange: (personIds: string[]) => void;
   clientFilters: string[];
   onClientFiltersChange: (clients: string[]) => void;
+  phaseFilters?: string[];
+  onPhaseFiltersChange?: (phases: string[]) => void;
+  isHQ?: boolean;
 }
 export function BoardFilterBar({
   allTasks,
@@ -29,11 +32,15 @@ export function BoardFilterBar({
   personFilters,
   onPersonFiltersChange,
   clientFilters,
-  onClientFiltersChange
+  onClientFiltersChange,
+  phaseFilters = [],
+  onPhaseFiltersChange,
+  isHQ = false
 }: BoardFilterBarProps) {
   const [statusOpen, setStatusOpen] = useState(false);
   const [personOpen, setPersonOpen] = useState(false);
   const [clientOpen, setClientOpen] = useState(false);
+  const [phaseOpen, setPhaseOpen] = useState(false);
 
   // Get unique people from tasks
   const uniquePeople = useMemo(() => {
@@ -88,6 +95,21 @@ export function BoardFilterBar({
     })).sort((a, b) => b.count - a.count);
   }, [allTasks]);
 
+  // Get unique phases (for HQ)
+  const uniquePhases = useMemo(() => {
+    if (!isHQ) return [];
+    const phaseMap = new Map<string, number>();
+    allTasks.forEach(task => {
+      const phase = task.currentPhase || task.fase || '';
+      if (phase) {
+        phaseMap.set(phase, (phaseMap.get(phase) || 0) + 1);
+      }
+    });
+    return Array.from(phaseMap.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [allTasks, isHQ]);
+
   // Get status counts
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -96,12 +118,13 @@ export function BoardFilterBar({
     });
     return counts;
   }, [allTasks]);
-  const activeFilterCount = (searchQuery ? 1 : 0) + statusFilters.length + personFilters.length + clientFilters.length;
+  const activeFilterCount = (searchQuery ? 1 : 0) + statusFilters.length + personFilters.length + clientFilters.length + phaseFilters.length;
   const clearAllFilters = () => {
     onSearchChange('');
     onStatusFiltersChange([]);
     onPersonFiltersChange([]);
     onClientFiltersChange([]);
+    onPhaseFiltersChange?.([]);
   };
   const toggleStatus = (status: string) => {
     if (statusFilters.includes(status)) {
@@ -122,6 +145,14 @@ export function BoardFilterBar({
       onClientFiltersChange(clientFilters.filter(c => c !== client));
     } else {
       onClientFiltersChange([...clientFilters, client]);
+    }
+  };
+  const togglePhase = (phase: string) => {
+    if (!onPhaseFiltersChange) return;
+    if (phaseFilters.includes(phase)) {
+      onPhaseFiltersChange(phaseFilters.filter(p => p !== phase));
+    } else {
+      onPhaseFiltersChange([...phaseFilters, phase]);
     }
   };
   return <div className="flex items-center gap-3 mb-4">
@@ -239,6 +270,42 @@ export function BoardFilterBar({
             </div>}
         </PopoverContent>
       </Popover>
+
+      {/* Phase Filter (HQ only) */}
+      {isHQ && onPhaseFiltersChange && (
+        <Popover open={phaseOpen} onOpenChange={setPhaseOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className={cn("gap-2", phaseFilters.length > 0 && "border-primary text-primary")}>
+              <Layers className="w-4 h-4" />
+              Phase
+              {phaseFilters.length > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+                  {phaseFilters.length}
+                </Badge>}
+              <ChevronDown className="w-3 h-3 ml-1" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-56 p-0 bg-popover border border-border shadow-lg z-[100]">
+            <ScrollArea className="max-h-64">
+              <div className="p-1">
+                {uniquePhases.length === 0 ? <div className="text-center py-4 text-sm text-muted-foreground">
+                    No phases found
+                  </div> : uniquePhases.map(phase => <button key={phase.name} onClick={() => togglePhase(phase.name)} className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-muted transition-colors text-left", phaseFilters.includes(phase.name) && "bg-primary/10")}>
+                      <Checkbox checked={phaseFilters.includes(phase.name)} className="pointer-events-none h-3.5 w-3.5" />
+                      <span className="flex-1 truncate">{phase.name}</span>
+                      <Badge variant="secondary" className="h-5 text-xs">
+                        {phase.count}
+                      </Badge>
+                    </button>)}
+              </div>
+            </ScrollArea>
+            {phaseFilters.length > 0 && <div className="p-2 border-t border-border">
+                <Button variant="ghost" size="sm" className="w-full h-7 text-xs" onClick={() => onPhaseFiltersChange([])}>
+                  Clear phase filters
+                </Button>
+              </div>}
+          </PopoverContent>
+        </Popover>
+      )}
 
       {/* Clear All */}
       {activeFilterCount > 0 && <Button variant="ghost" size="sm" onClick={clearAllFilters} className="gap-2 text-muted-foreground">

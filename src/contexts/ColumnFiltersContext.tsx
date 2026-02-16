@@ -35,6 +35,8 @@ interface ColumnFiltersContextType {
   setPersonFilters: (personIds: string[]) => void;
   clientFilters: string[];
   setClientFilters: (clients: string[]) => void;
+  phaseFilters: string[];
+  setPhaseFilters: (phases: string[]) => void;
 }
 
 const ColumnFiltersContext = createContext<ColumnFiltersContextType | null>(null);
@@ -45,6 +47,7 @@ export function ColumnFiltersProvider({ children }: { children: ReactNode }) {
   const [statusFilters, setStatusFilters] = useState<string[]>([]);
   const [personFilters, setPersonFilters] = useState<string[]>([]);
   const [clientFilters, setClientFilters] = useState<string[]>([]);
+  const [phaseFilters, setPhaseFilters] = useState<string[]>([]);
 
   const setFilter = useCallback((columnId: string, field: keyof Task, value: FilterValue, type: ColumnFilter['type'] = 'equals') => {
     setFilters(prev => {
@@ -72,6 +75,7 @@ export function ColumnFiltersProvider({ children }: { children: ReactNode }) {
     setStatusFilters([]);
     setPersonFilters([]);
     setClientFilters([]);
+    setPhaseFilters([]);
   }, []);
 
   const activeFilterCount = useMemo(() => {
@@ -79,8 +83,9 @@ export function ColumnFiltersProvider({ children }: { children: ReactNode }) {
       (searchQuery ? 1 : 0) + 
       statusFilters.length + 
       personFilters.length + 
-      clientFilters.length;
-  }, [filters, searchQuery, statusFilters, personFilters, clientFilters]);
+      clientFilters.length +
+      phaseFilters.length;
+  }, [filters, searchQuery, statusFilters, personFilters, clientFilters, phaseFilters]);
 
   const hasActiveFilters = activeFilterCount > 0;
 
@@ -110,6 +115,12 @@ export function ColumnFiltersProvider({ children }: { children: ReactNode }) {
       // Status filters
       if (statusFilters.length > 0) {
         if (!statusFilters.includes(task.status)) return false;
+      }
+
+      // Phase filters
+      if (phaseFilters.length > 0) {
+        const taskPhase = task.currentPhase || task.fase || '';
+        if (!phaseFilters.includes(taskPhase)) return false;
       }
 
       // Person filters
@@ -186,7 +197,7 @@ export function ColumnFiltersProvider({ children }: { children: ReactNode }) {
 
       return columnFiltersPass;
     });
-  }, [filters, hasActiveFilters, searchQuery, statusFilters, personFilters, clientFilters]);
+  }, [filters, hasActiveFilters, searchQuery, statusFilters, personFilters, clientFilters, phaseFilters]);
 
   return (
     <ColumnFiltersContext.Provider value={{
@@ -205,6 +216,8 @@ export function ColumnFiltersProvider({ children }: { children: ReactNode }) {
       setPersonFilters,
       clientFilters,
       setClientFilters,
+      phaseFilters,
+      setPhaseFilters,
     }}>
       {children}
     </ColumnFiltersContext.Provider>

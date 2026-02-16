@@ -102,8 +102,6 @@ export function useAddMultipleTasks(boardId: string) {
           branch: branch,
           project_manager_id: template.project_manager_id,
           studio_assigned: template.studio_assigned || null,
-          // Store all branches in the task for display purposes
-          // (Since branch column is text, we store the display string)
           // Optional fields from template
           client_name: template.client_name || null,
           servicios: template.servicios || null,
@@ -113,7 +111,8 @@ export function useAddMultipleTasks(boardId: string) {
           lenguaje_original: template.lenguaje_original || null,
           target_language: Array.isArray(template.target_language) ? template.target_language.join(', ') : (template.target_language || null),
           prueba_de_voz: template.prueba_de_voz || null,
-          locked_runtime: template.locked_runtime || null,
+          // Use individual runtime if set, otherwise fall back to shared runtime
+          locked_runtime: (template.individualRuntimes?.[index]?.trim()) || template.locked_runtime || null,
           final_runtime: template.final_runtime || null,
           show_guide: template.show_guide || null,
           titulo_aprobado_espanol: template.titulo_aprobado_espanol || null,

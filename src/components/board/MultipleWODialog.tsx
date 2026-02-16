@@ -84,6 +84,8 @@ export interface TaskTemplate {
   abbreviation?: string;
   // Per-episode individual runtimes (index -> runtime string)
   individualRuntimes?: Record<number, string>;
+  // Per-episode individual phase due dates (index -> { phase_field -> date })
+  individualPhaseDueDates?: Record<number, Record<string, string>>;
   // Pending files to upload after task creation
   pendingFiles?: PendingFile[];
   // Delivery dates
@@ -207,6 +209,7 @@ const COLUMN_CATEGORIES = {
   },
   phaseDueDates: {
     label: 'Phase Due Dates',
+    hasIndividualPhaseDueDates: true,
     columns: [
       { id: 'assetsDueDate', label: 'Assets Due Date', type: 'date' as const, width: 'w-28', field: 'assetsDueDate' as any },
       { id: 'translationDueDate', label: 'Translation Due Date', type: 'date' as const, width: 'w-28', field: 'translationDueDate' as any },
@@ -404,6 +407,8 @@ export function MultipleWODialog({
   const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
   const [template, setTemplate] = useState<TaskTemplate>({ name: '' });
   const [individualRuntimes, setIndividualRuntimes] = useState<Record<number, string>>({});
+  const [individualPhaseDueDates, setIndividualPhaseDueDates] = useState<Record<number, Record<string, string>>>({});
+  const [selectedEpisodeForDates, setSelectedEpisodeForDates] = useState<number | null>(null);
   const [existingData, setExistingData] = useState<Record<string, string[]>>({});
   const [projectManagers, setProjectManagers] = useState<TeamMember[]>([]);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
@@ -490,6 +495,8 @@ export function MultipleWODialog({
     setSelectedBranches([]);
     setTemplate({ name: '' });
     setIndividualRuntimes({});
+    setIndividualPhaseDueDates({});
+    setSelectedEpisodeForDates(null);
     setPendingFiles([]);
   };
 
@@ -501,12 +508,16 @@ export function MultipleWODialog({
   const handleCreate = () => {
     if (selectedGroupId && generatedNames.length > 0 && selectedBranches.length > 0) {
       const hasIndividualRuntimes = Object.values(individualRuntimes).some(v => v?.trim());
+      const hasIndividualPhaseDates = Object.values(individualPhaseDueDates).some(
+        epDates => Object.values(epDates).some(v => v?.trim())
+      );
       const templateWithEpisodes = { 
         ...template, 
         cantidad_episodios: generatedNames.length,
         branches: selectedBranches,
         pendingFiles: pendingFiles.length > 0 ? pendingFiles : undefined,
         individualRuntimes: hasIndividualRuntimes ? individualRuntimes : undefined,
+        individualPhaseDueDates: hasIndividualPhaseDates ? individualPhaseDueDates : undefined,
       };
       onCreateTasks(selectedGroupId, templateWithEpisodes, generatedNames, selectedBranches);
       handleClose();
@@ -962,6 +973,84 @@ export function MultipleWODialog({
                             <p className="text-xs text-muted-foreground">
                               Leave blank to use the shared Locked Runtime above
                             </p>
+                          </div>
+                        )}
+                        {/* Individual phase due dates per episode */}
+                        {'hasIndividualPhaseDueDates' in category && (category as any).hasIndividualPhaseDueDates && generatedNames.length > 0 && (
+                          <div className="mt-4 space-y-3 border-t pt-3">
+                            <Label className="text-xs font-medium text-muted-foreground">Individual Episode Phase Due Dates</Label>
+                            <div className="flex flex-wrap gap-1.5">
+                              {generatedNames.map((name, idx) => {
+                                const parts = name.split(' ');
+                                const episodeLabel = parts.length > 1 ? parts[parts.length - 1] : `${idx + 1}`;
+                                const hasOverrides = individualPhaseDueDates[idx] && Object.values(individualPhaseDueDates[idx]).some(v => v?.trim());
+                                return (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => setSelectedEpisodeForDates(selectedEpisodeForDates === idx ? null : idx)}
+                                    className={cn(
+                                      "px-2.5 py-1 text-xs rounded-md border transition-colors",
+                                      selectedEpisodeForDates === idx
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : hasOverrides
+                                          ? "bg-accent text-accent-foreground border-accent"
+                                          : "bg-background border-border text-muted-foreground hover:bg-muted"
+                                    )}
+                                  >
+                                    {episodeLabel}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {selectedEpisodeForDates !== null && (
+                              <div className="bg-muted/30 rounded-md p-3 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-xs font-medium">
+                                    Dates for Episode {(() => {
+                                      const parts = generatedNames[selectedEpisodeForDates]?.split(' ') || [];
+                                      return parts.length > 1 ? parts[parts.length - 1] : selectedEpisodeForDates + 1;
+                                    })()}
+                                  </Label>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedEpisodeForDates(null)}
+                                    className="p-0.5 hover:bg-muted rounded"
+                                  >
+                                    <X className="w-3.5 h-3.5 text-muted-foreground" />
+                                  </button>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {category.columns.map((col) => {
+                                    const fieldKey = FIELD_TO_TEMPLATE_KEY[col.id] || col.id;
+                                    const epDates = individualPhaseDueDates[selectedEpisodeForDates] || {};
+                                    return (
+                                      <div key={col.id} className="space-y-0.5">
+                                        <Label className="text-[10px] text-muted-foreground">{col.label}</Label>
+                                        <Input
+                                          type="date"
+                                          value={epDates[fieldKey as string] || ''}
+                                          onChange={(e) => {
+                                            const val = e.target.value;
+                                            setIndividualPhaseDueDates(prev => ({
+                                              ...prev,
+                                              [selectedEpisodeForDates!]: {
+                                                ...(prev[selectedEpisodeForDates!] || {}),
+                                                [fieldKey as string]: val,
+                                              }
+                                            }));
+                                          }}
+                                          className="h-7 text-xs"
+                                        />
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  Leave blank to use the shared dates above
+                                </p>
+                              </div>
+                            )}
                           </div>
                         )}
                       </CollapsibleContent>

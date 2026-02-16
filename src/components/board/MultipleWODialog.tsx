@@ -82,6 +82,8 @@ export interface TaskTemplate {
   studio_assigned?: string;
   kickoff_brief?: string;
   abbreviation?: string;
+  // Per-episode individual runtimes (index -> runtime string)
+  individualRuntimes?: Record<number, string>;
   // Pending files to upload after task creation
   pendingFiles?: PendingFile[];
   // Delivery dates
@@ -197,6 +199,7 @@ const COLUMN_CATEGORIES = {
   content: {
     label: 'Content Info',
     columns: TEMPLATE_COLUMNS.filter(c => ['lockedRuntime', 'finalRuntime', 'showGuide'].includes(c.id)),
+    hasIndividualRuntimes: true,
   },
   deliveryDates: {
     label: 'Delivery Dates',
@@ -400,6 +403,7 @@ export function MultipleWODialog({
   const [specialNumbers, setSpecialNumbers] = useState('');
   const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
   const [template, setTemplate] = useState<TaskTemplate>({ name: '' });
+  const [individualRuntimes, setIndividualRuntimes] = useState<Record<number, string>>({});
   const [existingData, setExistingData] = useState<Record<string, string[]>>({});
   const [projectManagers, setProjectManagers] = useState<TeamMember[]>([]);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
@@ -485,6 +489,7 @@ export function MultipleWODialog({
     setSpecialNumbers('');
     setSelectedBranches([]);
     setTemplate({ name: '' });
+    setIndividualRuntimes({});
     setPendingFiles([]);
   };
 
@@ -495,11 +500,13 @@ export function MultipleWODialog({
 
   const handleCreate = () => {
     if (selectedGroupId && generatedNames.length > 0 && selectedBranches.length > 0) {
+      const hasIndividualRuntimes = Object.values(individualRuntimes).some(v => v?.trim());
       const templateWithEpisodes = { 
         ...template, 
         cantidad_episodios: generatedNames.length,
         branches: selectedBranches,
         pendingFiles: pendingFiles.length > 0 ? pendingFiles : undefined,
+        individualRuntimes: hasIndividualRuntimes ? individualRuntimes : undefined,
       };
       onCreateTasks(selectedGroupId, templateWithEpisodes, generatedNames, selectedBranches);
       handleClose();
@@ -928,6 +935,35 @@ export function MultipleWODialog({
                             </div>
                           ))}
                         </div>
+                        {/* Individual runtimes per episode - only in Content Info */}
+                        {'hasIndividualRuntimes' in category && (category as any).hasIndividualRuntimes && generatedNames.length > 0 && (
+                          <div className="mt-4 space-y-2">
+                            <Label className="text-xs font-medium text-muted-foreground">Individual Runtimes per Episode</Label>
+                            <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto pr-1">
+                              {generatedNames.map((name, idx) => {
+                                // Extract episode identifier from name
+                                const parts = name.split(' ');
+                                const episodeLabel = parts.length > 1 ? parts[parts.length - 1] : `${idx + 1}`;
+                                return (
+                                  <div key={idx} className="flex items-center gap-1.5">
+                                    <span className="text-xs text-muted-foreground w-12 flex-shrink-0 truncate" title={episodeLabel}>
+                                      {episodeLabel}
+                                    </span>
+                                    <Input
+                                      value={individualRuntimes[idx] || ''}
+                                      onChange={(e) => setIndividualRuntimes(prev => ({ ...prev, [idx]: e.target.value }))}
+                                      placeholder="e.g. 22:30"
+                                      className="h-7 text-xs flex-1"
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Leave blank to use the shared Locked Runtime above
+                            </p>
+                          </div>
+                        )}
                       </CollapsibleContent>
                     </Collapsible>
                   )

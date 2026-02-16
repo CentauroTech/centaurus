@@ -81,6 +81,7 @@ export interface Task {
   showGuide?: string;
   tituloAprobadoEspanol?: string;
   workOrderNumber?: string;
+  abbreviation?: string;
   fase?: Phase;
   currentPhase?: string; // Dynamic phase derived from current board (for HQ view)
   lastUpdated?: Date;
@@ -340,6 +341,7 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'isPrivate', label: '', type: 'privacy', width: 'w-8', field: 'isPrivate' },
   { id: 'name', label: 'Project Name', type: 'text', width: 'w-96', field: 'name' },
   { id: 'workOrderNumber', label: 'WO#', type: 'text', width: 'w-32', field: 'workOrderNumber' },
+  { id: 'abbreviation', label: 'Abbreviation', type: 'text', width: 'w-32', field: 'abbreviation' },
   { id: 'studioAssigned', label: 'Studio Assigned', type: 'date', width: 'w-28', field: 'studioAssigned' },
   { id: 'dateAssigned', label: 'Date Assigned', type: 'date', width: 'w-28', field: 'dateAssigned' },
   { id: 'projectManager', label: 'Project Manager', type: 'person', width: 'w-32', field: 'projectManager' },

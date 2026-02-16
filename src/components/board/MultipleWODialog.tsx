@@ -74,6 +74,7 @@ export interface TaskTemplate {
   entrega_final_dub_audio_items?: string[];
   studio_assigned?: string;
   kickoff_brief?: string;
+  abbreviation?: string;
   // Delivery dates
   entrega_cliente?: string;
   entrega_miami_start?: string;
@@ -736,6 +737,18 @@ export function MultipleWODialog({
                     Branch and Project Manager are required to generate Work Order numbers.
                   </p>
                 )}
+              </div>
+
+              {/* Abbreviation / Nickname */}
+              <div className="space-y-2 border-t pt-4">
+                <Label htmlFor="abbreviation">Abbreviation / Nickname</Label>
+                <Input
+                  id="abbreviation"
+                  placeholder="e.g., TLK for The Lion King"
+                  value={template.abbreviation || ''}
+                  onChange={(e) => setTemplate(prev => ({ ...prev, abbreviation: e.target.value || undefined }))}
+                  className="h-9"
+                />
               </div>
 
               {/* Additional Instructions */}

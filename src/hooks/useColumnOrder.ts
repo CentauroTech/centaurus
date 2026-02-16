@@ -181,8 +181,8 @@ export function useColumnOrder(boardId: string, workspaceName: string, boardName
       .filter((col): col is ColumnConfig => {
         if (col === undefined) return false;
         
-        // Privacy column: only god can see it
-        if (col.id === 'isPrivate' && !isGod) return false;
+        // Privacy column: god, admin, and team members can see it (not guests)
+        if (col.id === 'isPrivate' && !isGod && !isAdmin && !isTeamMember) return false;
         
         // Filter out admin-only columns for non-admins (legacy check)
         if (col.adminOnly && !isGod && !isAdmin) return false;

@@ -641,7 +641,7 @@ export function MultipleWODialog({
                     !useSpecialNumbering ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border text-muted-foreground hover:bg-muted"
                   )}
                 >
-                  Sequential
+                  Sequence Numbering
                 </button>
                 <button
                   type="button"
@@ -679,17 +679,28 @@ export function MultipleWODialog({
                   </div>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <Label htmlFor="specialNumbers">Episode Numbers (comma-separated)</Label>
-                  <Input
-                    id="specialNumbers"
-                    placeholder="e.g., 1, 3, 5, 12, 15"
-                    value={specialNumbers}
-                    onChange={(e) => setSpecialNumbers(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Enter non-sequential episode numbers separated by commas
-                  </p>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="suffix">Starting Suffix</Label>
+                    <Input
+                      id="suffix"
+                      placeholder="e.g., 100, B1, EP01"
+                      value={startingSuffix}
+                      onChange={(e) => setStartingSuffix(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="specialNumbers">Episode Numbers (comma-separated)</Label>
+                    <Input
+                      id="specialNumbers"
+                      placeholder="e.g., 1, 3, 5, 12, 15"
+                      value={specialNumbers}
+                      onChange={(e) => setSpecialNumbers(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Enter non-sequential episode numbers separated by commas
+                    </p>
+                  </div>
                 </div>
               )}
 

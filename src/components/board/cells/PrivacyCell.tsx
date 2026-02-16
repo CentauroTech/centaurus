@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTeamMemberRolesMap, RoleType, ROLE_LABELS } from '@/hooks/useTeamMemberRoles';
@@ -38,6 +39,7 @@ interface PrivacyCellProps {
   onMakePublic?: () => void;
   onGuestDueDateChange?: (date: string) => void;
   onDateAssignedChange?: (date: string) => void;
+  onInstructionsComment?: (comment: string, viewerIds: string[]) => void;
   currentViewerIds?: string[];
 }
 
@@ -79,6 +81,7 @@ export function PrivacyCell({
   onMakePublic,
   onGuestDueDateChange,
   onDateAssignedChange,
+  onInstructionsComment,
   currentViewerIds = []
 }: PrivacyCellProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -86,6 +89,7 @@ export function PrivacyCell({
   const [selectedViewers, setSelectedViewers] = useState<string[]>(currentViewerIds);
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
   const [roleAssignments, setRoleAssignments] = useState<RoleAssignment[]>([]);
+  const [instructions, setInstructions] = useState('');
 
   // Get the roles map from settings
   const rolesMap = useTeamMemberRolesMap();
@@ -126,6 +130,7 @@ export function PrivacyCell({
       setSelectedViewers(currentViewerIds);
       setActiveFilter('all');
       setRoleAssignments([]);
+      setInstructions('');
       setDialogOpen(true);
     } else {
       // Already private - show confirmation to make public
@@ -154,6 +159,11 @@ export function PrivacyCell({
       onRoleAssignments(roleAssignments);
     }
     
+    // Send instructions comment if provided
+    if (onInstructionsComment && instructions.trim() && selectedViewers.length > 0) {
+      onInstructionsComment(instructions.trim(), selectedViewers);
+    }
+    
     // Set date_assigned to today when guest is assigned
     if (onDateAssignedChange && selectedViewers.length > 0) {
       const today = getLocalDateString();
@@ -179,6 +189,7 @@ export function PrivacyCell({
     setDialogOpen(false);
     setSelectedViewers(currentViewerIds);
     setRoleAssignments([]);
+    setInstructions('');
   };
 
   const toggleViewer = (viewer: TeamMember) => {
@@ -302,6 +313,21 @@ export function PrivacyCell({
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+            {/* Instructions field */}
+            {selectedViewers.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Instructions for guest (optional)</label>
+                <Textarea
+                  placeholder="Add instructions or notes for the assigned guest..."
+                  value={instructions}
+                  onChange={(e) => setInstructions(e.target.value)}
+                  className="min-h-[60px] text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  This will be visible to the guest in their communication tab.
+                </p>
               </div>
             )}
           </div>

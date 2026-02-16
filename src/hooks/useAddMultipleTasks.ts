@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-import { TaskTemplate } from '@/components/board/MultipleWODialog';
+import { TaskTemplate, PendingFile } from '@/components/board/MultipleWODialog';
 
 interface CreateMultipleTasksParams {
   groupId: string;
@@ -178,12 +179,58 @@ export function useAddMultipleTasks(boardId: string) {
         if (data) allCreatedTasks.push(...data);
       }
 
+      // Upload pending files to all created tasks
+      if (template.pendingFiles && template.pendingFiles.length > 0 && allCreatedTasks.length > 0) {
+        const currentMemberId = (await supabase.rpc('current_team_member_id')).data;
+        
+        for (const pendingFile of template.pendingFiles) {
+          for (const task of allCreatedTasks) {
+            try {
+              const fileExt = pendingFile.file.name.split('.').pop();
+              const fileName = `${task.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+              const { error: uploadError } = await supabase.storage
+                .from('production-files')
+                .upload(fileName, pendingFile.file);
+
+              if (uploadError) {
+                console.error('File upload error:', uploadError);
+                continue;
+              }
+
+              const { data: urlData } = supabase.storage
+                .from('production-files')
+                .getPublicUrl(fileName);
+
+              await supabase
+                .from('task_files')
+                .insert({
+                  task_id: task.id,
+                  name: pendingFile.file.name,
+                  url: urlData.publicUrl,
+                  type: pendingFile.file.type.startsWith('image/') ? 'image' :
+                        pendingFile.file.type.startsWith('audio/') ? 'audio' :
+                        pendingFile.file.type.startsWith('video/') ? 'video' :
+                        pendingFile.file.type.includes('pdf') || pendingFile.file.type.includes('document') ? 'document' : 'other',
+                  size: pendingFile.file.size,
+                  file_category: pendingFile.category,
+                  uploaded_by_id: currentMemberId,
+                });
+            } catch (err) {
+              console.error('Failed to upload file to task:', task.id, err);
+            }
+          }
+        }
+
+        toast.success(`${template.pendingFiles.length} file(s) uploaded to ${allCreatedTasks.length} task(s)`);
+      }
+
       return allCreatedTasks;
     },
     onSuccess: () => {
-      // Invalidate all board queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['board'] });
       queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+      queryClient.invalidateQueries({ queryKey: ['task-files'] });
     },
   });
 }

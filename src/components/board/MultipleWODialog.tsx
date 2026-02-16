@@ -7,10 +7,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ArrowLeft, Check, ListPlus, ChevronDown, ChevronRight, X } from 'lucide-react';
+import { ArrowLeft, Check, ListPlus, ChevronDown, ChevronRight, X, Upload, FileText, Trash2 } from 'lucide-react';
 import { generateSequentialNames } from '@/hooks/useAddMultipleTasks';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { FILE_CATEGORIES, FileCategory } from '@/hooks/useTaskFiles';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   COLUMNS,
   BRANCH_OPTIONS,
@@ -75,6 +82,8 @@ export interface TaskTemplate {
   studio_assigned?: string;
   kickoff_brief?: string;
   abbreviation?: string;
+  // Pending files to upload after task creation
+  pendingFiles?: PendingFile[];
   // Delivery dates
   entrega_cliente?: string;
   entrega_miami_start?: string;
@@ -96,6 +105,11 @@ export interface TaskTemplate {
   mix_due_date?: string;
   qc_mix_due_date?: string;
   mix_retakes_due_date?: string;
+}
+
+export interface PendingFile {
+  file: File;
+  category: FileCategory;
 }
 
 // Map database field names to template keys
@@ -388,6 +402,9 @@ export function MultipleWODialog({
   const [template, setTemplate] = useState<TaskTemplate>({ name: '' });
   const [existingData, setExistingData] = useState<Record<string, string[]>>({});
   const [projectManagers, setProjectManagers] = useState<TeamMember[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFileCategory, setSelectedFileCategory] = useState<FileCategory>('general');
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
     basic: true,
     language: true,
@@ -468,6 +485,7 @@ export function MultipleWODialog({
     setSpecialNumbers('');
     setSelectedBranches([]);
     setTemplate({ name: '' });
+    setPendingFiles([]);
   };
 
   const handleClose = () => {
@@ -477,15 +495,32 @@ export function MultipleWODialog({
 
   const handleCreate = () => {
     if (selectedGroupId && generatedNames.length > 0 && selectedBranches.length > 0) {
-      // Include episodes and branches in template
       const templateWithEpisodes = { 
         ...template, 
         cantidad_episodios: generatedNames.length,
-        branches: selectedBranches 
+        branches: selectedBranches,
+        pendingFiles: pendingFiles.length > 0 ? pendingFiles : undefined,
       };
       onCreateTasks(selectedGroupId, templateWithEpisodes, generatedNames, selectedBranches);
       handleClose();
     }
+  };
+
+  const handleFileCategorySelect = (category: FileCategory) => {
+    setSelectedFileCategory(category);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPendingFiles(prev => [...prev, { file, category: selectedFileCategory }]);
+      e.target.value = '';
+    }
+  };
+
+  const removePendingFile = (index: number) => {
+    setPendingFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const updateTemplate = (fieldId: string, value: string | string[] | number | boolean | undefined) => {
@@ -800,6 +835,66 @@ export function MultipleWODialog({
                   onChange={(e) => setTemplate(prev => ({ ...prev, kickoff_brief: e.target.value || undefined }))}
                   className="min-h-[80px] text-sm"
                 />
+              </div>
+
+              {/* Production Files Upload */}
+              <div className="space-y-3 border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Production Files</Label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={handleFileInputChange}
+                    accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.mp3,.wav,.mp4,.mov,.zip,.xlsx,.xls,.csv"
+                  />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" type="button">
+                        <Upload className="w-3.5 h-3.5 mr-1.5" />
+                        Add File
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {FILE_CATEGORIES.map((cat) => (
+                        <DropdownMenuItem
+                          key={cat.value}
+                          onClick={() => handleFileCategorySelect(cat.value)}
+                        >
+                          <div>
+                            <div className="text-sm">{cat.label}</div>
+                            <div className="text-xs text-muted-foreground">{cat.description}</div>
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {pendingFiles.length > 0 && (
+                  <div className="space-y-1.5 bg-muted/30 rounded-md p-2">
+                    {pendingFiles.map((pf, idx) => {
+                      const catLabel = FILE_CATEGORIES.find(c => c.value === pf.category)?.label || pf.category;
+                      return (
+                        <div key={idx} className="flex items-center gap-2 text-sm py-1 px-2 bg-background rounded">
+                          <FileText className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                          <span className="truncate flex-1">{pf.file.name}</span>
+                          <span className="text-xs text-muted-foreground flex-shrink-0">{catLabel}</span>
+                          <button
+                            type="button"
+                            onClick={() => removePendingFile(idx)}
+                            className="p-0.5 hover:bg-destructive/10 rounded transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                    <p className="text-xs text-muted-foreground px-2">
+                      {pendingFiles.length} file{pendingFiles.length !== 1 ? 's' : ''} will be uploaded to all created tasks
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Template Fields - Collapsible Categories */}

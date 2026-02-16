@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
-import { ArrowRight, CheckCircle2, Play, UserPlus, UserMinus, Calendar, Users, Edit, Plus, Clock, Tag, FileText, AlertCircle, User as UserIcon, Film, Clapperboard } from "lucide-react";
+import { ArrowRight, CheckCircle2, Play, UserPlus, UserMinus, Calendar, Users, Edit, Plus, Clock, Tag, FileText, AlertCircle, User as UserIcon, Film, Clapperboard, ChevronDown, ChevronUp } from "lucide-react";
 import { useTaskFiles, useUploadTaskFile, useToggleFileAccessibility, useDeleteTaskFile, FileCategory, FILE_CATEGORIES } from "@/hooks/useTaskFiles";
 import { useActivityLog } from "@/hooks/useActivityLog";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -65,6 +66,7 @@ export default function TaskDetailsPanel({
   workspaceName,
   viewerIds = [],
 }: TaskDetailsPanelProps) {
+  const [infoExpanded, setInfoExpanded] = useState(true);
   const { data: files = [] } = useTaskFiles(task.id);
   const { data: activityLogs = [] } = useActivityLog(task.id);
   const { role } = usePermissions();
@@ -167,89 +169,100 @@ export default function TaskDetailsPanel({
           </div>
         </SheetHeader>
 
-        {/* Project Info Section */}
-        <div className="p-4 border-b border-border bg-muted/30 space-y-3 shrink-0 overflow-y-auto max-h-[200px]">
-          <div className="grid grid-cols-2 gap-2.5 text-sm">
-            {pm && (
-              <div className="flex items-center gap-2">
-                <Avatar className="h-5 w-5">
-                  <AvatarFallback className="text-[10px]" style={{ backgroundColor: pm.color }}>
-                    {pm.initials}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-muted-foreground">PM:</span>
-                <span className="font-medium truncate">{pm.name}</span>
+        {/* Collapsible Project Info Section */}
+        <div className="border-b border-border bg-muted/30 shrink-0">
+          <button
+            onClick={() => setInfoExpanded(!infoExpanded)}
+            className="flex items-center justify-between w-full px-4 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
+          >
+            <span>Project Info</span>
+            {infoExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+          {infoExpanded && (
+            <div className="px-4 pb-3 space-y-3">
+              <div className="grid grid-cols-2 gap-2.5 text-sm">
+                {pm && (
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-5 w-5">
+                      <AvatarFallback className="text-[10px]" style={{ backgroundColor: pm.color }}>
+                        {pm.initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-muted-foreground">PM:</span>
+                    <span className="font-medium truncate">{pm.name}</span>
+                  </div>
+                )}
+                {clientName && (
+                  <div className="flex items-center gap-2">
+                    <UserIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground">Client:</span>
+                    <span className="font-medium truncate">{clientName}</span>
+                  </div>
+                )}
+                {miamiDueDate && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground">Miami Due:</span>
+                    <span className="font-medium">{formatDate(miamiDueDate)}</span>
+                  </div>
+                )}
+                {clientDueDate && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground">Client Due:</span>
+                    <span className="font-medium">{formatDate(clientDueDate)}</span>
+                  </div>
+                )}
+                {runtime && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground">Runtime:</span>
+                    <span className="font-medium">{runtime}</span>
+                  </div>
+                )}
+                {episodes && (
+                  <div className="flex items-center gap-2">
+                    <Film className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground">Episodes:</span>
+                    <span className="font-medium">{episodes}</span>
+                  </div>
+                )}
+                {services && services.length > 0 && (
+                  <div className="flex items-start gap-2 col-span-2">
+                    <Clapperboard className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground shrink-0">Services:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {services.map((s: string) => (
+                        <Badge key={s} variant="secondary" className="text-xs px-1.5 py-0">{s}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {scriptItems && scriptItems.length > 0 && (
+                  <div className="flex items-start gap-2 col-span-2">
+                    <FileText className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground shrink-0">Script:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {scriptItems.map((s: string) => (
+                        <Badge key={s} variant="outline" className="text-xs px-1.5 py-0">{s}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {dubAudioItems && dubAudioItems.length > 0 && (
+                  <div className="flex items-start gap-2 col-span-2">
+                    <FileText className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground shrink-0">Dub Audio:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {dubAudioItems.map((s: string) => (
+                        <Badge key={s} variant="outline" className="text-xs px-1.5 py-0">{s}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-            {clientName && (
-              <div className="flex items-center gap-2">
-                <UserIcon className="w-4 h-4 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground">Client:</span>
-                <span className="font-medium truncate">{clientName}</span>
-              </div>
-            )}
-            {miamiDueDate && (
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground">Miami Due:</span>
-                <span className="font-medium">{formatDate(miamiDueDate)}</span>
-              </div>
-            )}
-            {clientDueDate && (
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground">Client Due:</span>
-                <span className="font-medium">{formatDate(clientDueDate)}</span>
-              </div>
-            )}
-            {runtime && (
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground">Runtime:</span>
-                <span className="font-medium">{runtime}</span>
-              </div>
-            )}
-            {episodes && (
-              <div className="flex items-center gap-2">
-                <Film className="w-4 h-4 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground">Episodes:</span>
-                <span className="font-medium">{episodes}</span>
-              </div>
-            )}
-            {services && services.length > 0 && (
-              <div className="flex items-start gap-2 col-span-2">
-                <Clapperboard className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                <span className="text-muted-foreground shrink-0">Services:</span>
-                <div className="flex flex-wrap gap-1">
-                  {services.map((s: string) => (
-                    <Badge key={s} variant="secondary" className="text-xs px-1.5 py-0">{s}</Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            {scriptItems && scriptItems.length > 0 && (
-              <div className="flex items-start gap-2 col-span-2">
-                <FileText className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                <span className="text-muted-foreground shrink-0">Script:</span>
-                <div className="flex flex-wrap gap-1">
-                  {scriptItems.map((s: string) => (
-                    <Badge key={s} variant="outline" className="text-xs px-1.5 py-0">{s}</Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            {dubAudioItems && dubAudioItems.length > 0 && (
-              <div className="flex items-start gap-2 col-span-2">
-                <FileText className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                <span className="text-muted-foreground shrink-0">Dub Audio:</span>
-                <div className="flex flex-wrap gap-1">
-                  {dubAudioItems.map((s: string) => (
-                    <Badge key={s} variant="outline" className="text-xs px-1.5 py-0">{s}</Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         <Tabs defaultValue="updates" className="flex-1 flex flex-col min-h-0 overflow-hidden">

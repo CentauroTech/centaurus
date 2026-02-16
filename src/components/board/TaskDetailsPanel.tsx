@@ -148,7 +148,7 @@ export default function TaskDetailsPanel({
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-[480px] sm:max-w-[480px] p-0 flex flex-col">
+      <SheetContent className="w-[480px] sm:max-w-[480px] p-0 flex flex-col overflow-hidden">
         <SheetHeader className="p-4 border-b border-border shrink-0">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
@@ -168,7 +168,7 @@ export default function TaskDetailsPanel({
         </SheetHeader>
 
         {/* Project Info Section */}
-        <div className="p-4 border-b border-border bg-muted/30 space-y-3 shrink-0">
+        <div className="p-4 border-b border-border bg-muted/30 space-y-3 shrink-0 overflow-y-auto max-h-[200px]">
           <div className="grid grid-cols-2 gap-2.5 text-sm">
             {pm && (
               <div className="flex items-center gap-2">
@@ -252,7 +252,7 @@ export default function TaskDetailsPanel({
           </div>
         </div>
 
-        <Tabs defaultValue="updates" className="flex-1 flex flex-col min-h-0">
+        <Tabs defaultValue="updates" className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <TabsList className="h-12 px-4 border-b border-border shrink-0 w-full justify-start gap-1 rounded-none bg-transparent">
             <TabsTrigger value="updates" className="data-[state=active]:bg-muted">
               Updates

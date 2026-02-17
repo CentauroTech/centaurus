@@ -51,12 +51,14 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId }: Ling
   return (
     <div className="space-y-1">
       {/* Header */}
-      <div className="grid grid-cols-[1fr_100px_100px_110px_90px_100px_100px_100px_40px] gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
+      <div className="grid grid-cols-[1fr_100px_100px_110px_90px_90px_90px_100px_100px_100px_40px] gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
         <span>Project</span>
         <span>Client</span>
         <span>Phase</span>
         <span>Status</span>
         <span>Due Date</span>
+        <span>Translator</span>
+        <span>Adapter</span>
         <span>Files</span>
         <span>Guest</span>
         <span>Updated</span>
@@ -73,7 +75,7 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId }: Ling
             key={task.id}
             onClick={() => onSelectTask(task.id)}
             className={cn(
-              "w-full grid grid-cols-[1fr_100px_100px_110px_90px_100px_100px_100px_40px] gap-2 px-4 py-3 text-left rounded-lg transition-all hover:bg-muted/60",
+              "w-full grid grid-cols-[1fr_100px_100px_110px_90px_90px_90px_100px_100px_100px_40px] gap-2 px-4 py-3 text-left rounded-lg transition-all hover:bg-muted/60",
               selectedTaskId === task.id && "bg-muted ring-1 ring-primary/20"
             )}
           >
@@ -115,7 +117,37 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId }: Ling
               )}
             </div>
 
-            {/* File readiness */}
+            {/* Translator */}
+            <div className="self-center">
+              {task.traductor ? (
+                <span
+                  className="inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-bold text-white"
+                  style={{ backgroundColor: task.traductor.color }}
+                  title={task.traductor.name}
+                >
+                  {task.traductor.initials}
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">—</span>
+              )}
+            </div>
+
+            {/* Adapter */}
+            <div className="self-center">
+              {task.adaptador ? (
+                <span
+                  className="inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-bold text-white"
+                  style={{ backgroundColor: task.adaptador.color }}
+                  title={task.adaptador.name}
+                >
+                  {task.adaptador.initials}
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">—</span>
+              )}
+            </div>
+
+
             <div className="flex gap-1.5 self-center">
               <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
                 task.hasTranslatedFile ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"

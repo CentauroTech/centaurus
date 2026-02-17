@@ -22,6 +22,7 @@ import { MultiSelectCell } from './cells/MultiSelectCell';
 import { ProjectManagerCell } from './cells/ProjectManagerCell';
 import { RoleBasedOwnerCell } from './cells/RoleBasedOwnerCell';
 import { TimeTrackedCell } from './cells/TimeTrackedCell';
+import { AsignacionCell } from './cells/AsignacionCell';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 import { useBulkEdit } from '@/contexts/BulkEditContext';
@@ -102,7 +103,8 @@ const FIELD_TO_DB_COLUMN: Record<string, string> = {
   startedAt: 'started_at',
   completedAt: 'completed_at',
   guestDueDate: 'guest_due_date',
-  deliveryComment: 'delivery_comment'
+  deliveryComment: 'delivery_comment',
+  asignacion: 'asignacion',
 };
 
 // Helper function to get task value using the mapping
@@ -400,6 +402,8 @@ export function TaskRow({
         return <MultiSelectCell value={value as string[]} onChange={val => handleUpdate(column.field, val)} options={column.options || []} placeholder="Select..." isPrivate={isPrivate} />;
       case 'time-tracked':
         return <TimeTrackedCell startedAt={getTaskValue(task, 'startedAt') as string} completedAt={getTaskValue(task, 'completedAt') as string} isPrivate={isPrivate} />;
+      case 'asignacion':
+        return <AsignacionCell value={value as string} onChange={val => handleUpdate(column.field, val)} disabled={disabled} />;
       default:
         return <span className="text-sm text-muted-foreground">-</span>;
     }

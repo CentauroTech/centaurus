@@ -50,6 +50,7 @@ export interface Task {
   id: string;
   groupId?: string; // Original group_id from database (needed for HQ phase progression)
   name: string;
+  asignacion?: string;
   status: Status;
   isPrivate?: boolean;
   commentCount?: number;
@@ -187,7 +188,7 @@ export const PHASE_CONFIG: Record<Phase, { label: string; className: string }> =
 export interface ColumnConfig {
   id: string;
   label: string;
-  type: 'text' | 'date' | 'person' | 'status' | 'phase' | 'current-phase' | 'number' | 'boolean' | 'link' | 'people' | 'combobox' | 'dropdown' | 'file' | 'auto' | 'last-updated' | 'privacy' | 'multi-select' | 'time-tracked';
+  type: 'text' | 'date' | 'person' | 'status' | 'phase' | 'current-phase' | 'number' | 'boolean' | 'link' | 'people' | 'combobox' | 'dropdown' | 'file' | 'auto' | 'last-updated' | 'privacy' | 'multi-select' | 'time-tracked' | 'asignacion';
   width: string;
   field: keyof Task;
   options?: string[];
@@ -367,6 +368,7 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'aorNeeded', label: 'Aor', type: 'boolean', width: 'w-16', field: 'aorNeeded' },
   { id: 'pruebaDeVoz', label: 'Voice Test', type: 'dropdown', width: 'w-24', field: 'pruebaDeVoz', options: VOICE_TEST_OPTIONS },
   { id: 'traductor', label: 'Translator', type: 'person', width: 'w-28', field: 'traductor', roleFilter: 'translator' },
+  { id: 'asignacion', label: 'Asignación', type: 'asignacion', width: 'w-32', field: 'asignacion' },
   { id: 'adaptador', label: 'Adapter', type: 'person', width: 'w-28', field: 'adaptador', roleFilter: 'adapter' },
   { id: 'premix', label: 'Premix', type: 'person', width: 'w-28', field: 'mixerBogota', roleFilter: 'premix' },
   { id: 'qcPremix', label: 'QC Premix', type: 'person', width: 'w-28', field: 'qc1', roleFilter: 'qc_premix' },

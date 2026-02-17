@@ -66,7 +66,7 @@ export default function TaskDetailsPanel({
   workspaceName,
   viewerIds = [],
 }: TaskDetailsPanelProps) {
-  const [infoExpanded, setInfoExpanded] = useState(true);
+  const [infoExpanded, setInfoExpanded] = useState(false);
   const { data: files = [] } = useTaskFiles(task.id);
   const { data: activityLogs = [] } = useActivityLog(task.id);
   const { role } = usePermissions();
@@ -170,13 +170,18 @@ export default function TaskDetailsPanel({
         </SheetHeader>
 
         {/* Collapsible Project Info Section */}
-        <div className="border-b border-border bg-muted/30 shrink-0">
+        <div className="border-b border-border bg-primary/10 shrink-0">
           <button
             onClick={() => setInfoExpanded(!infoExpanded)}
-            className="flex items-center justify-between w-full px-4 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
+            className="flex items-center justify-between w-full px-4 py-2.5 text-xs font-semibold text-primary hover:bg-primary/15 transition-colors"
           >
-            <span>Project Info</span>
-            {infoExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            <span className="flex items-center gap-1.5">
+              Project Info
+            </span>
+            <span className="flex items-center gap-1 text-[10px] font-medium text-primary/70">
+              {infoExpanded ? 'Collapse' : 'Show'}
+              {infoExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </span>
           </button>
           {infoExpanded && (
             <div className="px-4 pb-3 space-y-3">

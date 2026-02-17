@@ -1,9 +1,10 @@
 import { useCallback } from 'react';
-import { ExternalLink, FileCheck, FileX, MessageCircle, MessageSquare, User as UserIcon } from 'lucide-react';
+import { ExternalLink, FileCheck, FileX, HelpCircle, MessageCircle, MessageSquare, User as UserIcon } from 'lucide-react';
 import { LinguisticTask } from '@/hooks/useLinguisticTasks';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { RoleBasedOwnerCell } from '@/components/board/cells/RoleBasedOwnerCell';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { User } from '@/types/board';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -156,7 +157,7 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
   return (
     <div className="space-y-1">
       {/* Header */}
-      <div className="grid grid-cols-[1fr_100px_100px_110px_90px_50px_110px_110px_100px_100px_120px_100px_40px] gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
+      <div className="grid grid-cols-[1fr_100px_100px_110px_90px_50px_140px_140px_100px_100px_120px_100px_40px] gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
         <span>Project</span>
         <span>Client</span>
         <span>Phase</span>
@@ -166,7 +167,16 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
         <span>Translator</span>
         <span>Adapter</span>
         <span>Files</span>
-        <span>Guest</span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1 cursor-help">Guest <HelpCircle className="w-3 h-3" /></span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[220px] text-xs normal-case tracking-normal font-normal">
+              Shows the latest guest-visible comment activity: <strong>No Activity</strong> = no comments, <strong>Waiting</strong> = internal reply sent, <strong>Replied</strong> = guest has responded.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <span>Latest Comment</span>
         <span>Updated</span>
         <span></span>
@@ -181,7 +191,7 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
           <div
             key={task.id}
             className={cn(
-              "w-full grid grid-cols-[1fr_100px_100px_110px_90px_50px_110px_110px_100px_100px_120px_100px_40px] gap-2 px-4 py-3 text-left rounded-lg transition-all hover:bg-muted/60",
+              "w-full grid grid-cols-[1fr_100px_100px_110px_90px_50px_140px_140px_100px_100px_120px_100px_40px] gap-2 px-4 py-3 text-left rounded-lg transition-all hover:bg-muted/60",
               selectedTaskId === task.id && "bg-muted ring-1 ring-primary/20"
             )}
           >
@@ -240,6 +250,7 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
                 roleFilter="translator"
                 onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
                 taskId={task.id}
+                compact
               />
             </div>
 
@@ -251,6 +262,7 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
                 roleFilter="adapter"
                 onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
                 taskId={task.id}
+                compact
               />
             </div>
 

@@ -8,6 +8,10 @@ import { User } from '@/types/board';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
+import { useTeamMembers } from '@/hooks/useWorkspaces';
+import { useSendGuestAssignmentNotification } from '@/hooks/useGuestNotifications';
+import { getLocalDateString } from '@/lib/businessDays';
+import { toast } from 'sonner';
 import DOMPurify from 'dompurify';
 
 const PHASE_BADGE: Record<string, string> = {
@@ -47,21 +51,83 @@ interface LinguisticTaskListProps {
   onSelectTask: (taskId: string) => void;
   selectedTaskId: string | null;
   workspaceId: string | null;
+  workspaceName: string;
 }
 
-export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, workspaceId }: LinguisticTaskListProps) {
+export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, workspaceId, workspaceName }: LinguisticTaskListProps) {
   const queryClient = useQueryClient();
   const { data: currentTeamMember } = useCurrentTeamMember();
+  const { data: allTeamMembers = [] } = useTeamMembers();
+  const sendGuestNotification = useSendGuestAssignmentNotification();
 
-  const handleOwnerChange = useCallback(async (taskId: string, field: 'traductor_id' | 'adaptador_id', user: User | undefined) => {
-    const { error } = await supabase
-      .from('tasks')
-      .update({ [field]: user?.id || null, last_updated: new Date().toISOString() })
-      .eq('id', taskId);
-    if (!error) {
-      queryClient.invalidateQueries({ queryKey: ['linguistic-tasks', workspaceId] });
+  const isGuestMember = useCallback((memberId: string): boolean => {
+    const member = allTeamMembers.find(m => m.id === memberId);
+    if (!member) return false;
+    return !member.email || !member.email.toLowerCase().includes('@centauro.com');
+  }, [allTeamMembers]);
+
+  const isColombiaWorkspace = workspaceName.toLowerCase().includes('colombia') || workspaceName.toLowerCase().includes('col');
+
+  const handleOwnerChange = useCallback(async (task: LinguisticTask, field: 'traductor_id' | 'adaptador_id', user: User | undefined) => {
+    const updateData: Record<string, unknown> = {
+      [field]: user?.id || null,
+      last_updated: new Date().toISOString(),
+    };
+
+    // If assigning a guest, apply the full privacy workflow
+    if (user && isGuestMember(user.id)) {
+      // Calculate next business day for guest_due_date
+      const guestDue = new Date();
+      guestDue.setDate(guestDue.getDate() + 1);
+      while (guestDue.getDay() === 0 || guestDue.getDay() === 6) {
+        guestDue.setDate(guestDue.getDate() + 1);
+      }
+      const guestDueStr = guestDue.toISOString().split('T')[0];
+      const today = getLocalDateString();
+
+      updateData.is_private = true;
+      updateData.guest_due_date = guestDueStr;
+      updateData.date_assigned = today;
+
+      // For Colombia adapting phase, also set asignacion to Asignado
+      if (isColombiaWorkspace && task.phase === 'adapting' && field === 'adaptador_id') {
+        updateData.asignacion = 'Asignado';
+      }
+
+      const { error } = await supabase.from('tasks').update(updateData).eq('id', task.id);
+      if (error) { toast.error('Failed to update task'); return; }
+
+      // Clear existing viewers and add the new guest as viewer
+      await supabase.from('task_viewers').delete().eq('task_id', task.id);
+      await supabase.from('task_viewers').insert({ task_id: task.id, team_member_id: user.id });
+
+      // Make all task files guest-accessible
+      await supabase.from('task_files').update({ is_guest_accessible: true }).eq('task_id', task.id);
+
+      // Send guest notification
+      sendGuestNotification.mutate({
+        taskId: task.id,
+        taskName: task.name || 'Untitled Task',
+        guestIds: [user.id],
+      });
+
+      // Log privacy change
+      await supabase.from('activity_log').insert({
+        task_id: task.id,
+        type: 'field_change',
+        field: 'is_private',
+        old_value: 'false',
+        new_value: 'true',
+        user_id: currentTeamMember?.id || null,
+      });
+    } else {
+      // Non-guest or removing assignment - just update the field
+      const { error } = await supabase.from('tasks').update(updateData).eq('id', task.id);
+      if (error) { toast.error('Failed to update task'); return; }
     }
-  }, [queryClient, workspaceId]);
+
+    queryClient.invalidateQueries({ queryKey: ['linguistic-tasks', workspaceId] });
+  }, [queryClient, workspaceId, isGuestMember, isColombiaWorkspace, currentTeamMember?.id, sendGuestNotification]);
 
   const handleInstructionsComment = useCallback(async (taskId: string, comment: string, viewerIds: string[]) => {
     if (!currentTeamMember?.id) return;
@@ -170,7 +236,7 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
             <div className="self-center" onClick={e => e.stopPropagation()}>
               <RoleBasedOwnerCell
                 owner={task.traductor}
-                onOwnerChange={(user) => handleOwnerChange(task.id, 'traductor_id', user)}
+                onOwnerChange={(user) => handleOwnerChange(task, 'traductor_id', user)}
                 roleFilter="translator"
                 onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
                 taskId={task.id}
@@ -181,7 +247,7 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
             <div className="self-center" onClick={e => e.stopPropagation()}>
               <RoleBasedOwnerCell
                 owner={task.adaptador}
-                onOwnerChange={(user) => handleOwnerChange(task.id, 'adaptador_id', user)}
+                onOwnerChange={(user) => handleOwnerChange(task, 'adaptador_id', user)}
                 roleFilter="adapter"
                 onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
                 taskId={task.id}

@@ -15,9 +15,10 @@ interface AsignacionCellProps {
   value?: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  phase?: string;
 }
 
-export const AsignacionCell = memo(function AsignacionCell({ value, onChange, disabled = false }: AsignacionCellProps) {
+export const AsignacionCell = memo(function AsignacionCell({ value, onChange, disabled = false, phase }: AsignacionCellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -53,6 +54,12 @@ export const AsignacionCell = memo(function AsignacionCell({ value, onChange, di
     }
   }, [isOpen]);
 
+  const normalizedPhase = phase?.toLowerCase().replace(/[^a-z0-9]/g, '') || '';
+  const isAdapting = normalizedPhase === 'adapting' || normalizedPhase === 'adaptacion';
+  const filteredOptions = isAdapting
+    ? ASIGNACION_OPTIONS.filter(o => o.value !== 'Audio Description')
+    : ASIGNACION_OPTIONS;
+
   const currentOption = ASIGNACION_OPTIONS.find(o => o.value === value);
   const badgeClass = currentOption?.className || 'bg-muted text-muted-foreground';
 
@@ -73,7 +80,7 @@ export const AsignacionCell = memo(function AsignacionCell({ value, onChange, di
       className="fixed bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-border py-1 max-h-60 overflow-y-auto"
       style={{ top: position.top, left: position.left, width: position.width, zIndex: 99999 }}
     >
-      {ASIGNACION_OPTIONS.map((option) => (
+      {filteredOptions.map((option) => (
         <button
           key={option.value}
           onClick={() => { onChange(option.value); setIsOpen(false); }}

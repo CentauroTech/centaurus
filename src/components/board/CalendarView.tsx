@@ -538,7 +538,7 @@ export function CalendarView({ tasks, onTaskClick, onUpdateTask, boardName, isHQ
                       key={`${ev.task.id}-${ev.type}-${i}`}
                       draggable
                       onDragStart={(e) => handleDragStart(e, ev)}
-                      onClick={() => onTaskClick?.(ev.task.id)}
+                      onClick={(e) => { e.stopPropagation(); onTaskClick?.(ev.task.id); }}
                       className={cn(
                         "w-full text-left text-xs leading-tight px-2 py-1.5 rounded truncate block transition-colors hover:opacity-80 cursor-grab active:cursor-grabbing",
                         getEventClasses(ev.type)

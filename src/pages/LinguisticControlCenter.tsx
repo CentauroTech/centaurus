@@ -229,6 +229,7 @@ export default function LinguisticControlCenter() {
                   tasks={filteredTasks}
                   onSelectTask={handleSelectTask}
                   selectedTaskId={selectedTaskId}
+                  workspaceId={effectiveWorkspaceId}
                 />
               )}
             </div>

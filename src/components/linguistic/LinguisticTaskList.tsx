@@ -1,8 +1,14 @@
+import { useCallback } from 'react';
 import { ExternalLink, FileCheck, FileX, MessageCircle, MessageSquare, User as UserIcon } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { LinguisticTask } from '@/hooks/useLinguisticTasks';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
+import { RoleBasedOwnerCell } from '@/components/board/cells/RoleBasedOwnerCell';
+import { User } from '@/types/board';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
+import DOMPurify from 'dompurify';
 
 const PHASE_BADGE: Record<string, string> = {
   translation: 'bg-blue-200 text-blue-800',
@@ -31,13 +37,46 @@ const GUEST_SIGNAL_CONFIG: Record<string, { label: string; className: string; ic
   replied: { label: 'Replied', className: 'text-green-700 bg-green-100', icon: MessageCircle },
 };
 
+function stripHtml(html: string): string {
+  const clean = DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
+  return clean.replace(/&nbsp;/g, ' ').trim();
+}
+
 interface LinguisticTaskListProps {
   tasks: LinguisticTask[];
   onSelectTask: (taskId: string) => void;
   selectedTaskId: string | null;
+  workspaceId: string | null;
 }
 
-export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId }: LinguisticTaskListProps) {
+export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, workspaceId }: LinguisticTaskListProps) {
+  const queryClient = useQueryClient();
+  const { data: currentTeamMember } = useCurrentTeamMember();
+
+  const handleOwnerChange = useCallback(async (taskId: string, field: 'traductor_id' | 'adaptador_id', user: User | undefined) => {
+    const { error } = await supabase
+      .from('tasks')
+      .update({ [field]: user?.id || null, last_updated: new Date().toISOString() })
+      .eq('id', taskId);
+    if (!error) {
+      queryClient.invalidateQueries({ queryKey: ['linguistic-tasks', workspaceId] });
+    }
+  }, [queryClient, workspaceId]);
+
+  const handleInstructionsComment = useCallback(async (taskId: string, comment: string, viewerIds: string[]) => {
+    if (!currentTeamMember?.id) return;
+    for (const viewerId of viewerIds) {
+      await supabase.from('comments').insert({
+        task_id: taskId,
+        user_id: currentTeamMember.id,
+        content: comment,
+        is_guest_visible: true,
+        viewer_id: viewerId,
+        phase: null,
+      });
+    }
+  }, [currentTeamMember?.id]);
+
   if (tasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -51,16 +90,18 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId }: Ling
   return (
     <div className="space-y-1">
       {/* Header */}
-      <div className="grid grid-cols-[1fr_100px_100px_110px_90px_90px_90px_100px_100px_100px_40px] gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
+      <div className="grid grid-cols-[1fr_100px_100px_110px_90px_50px_110px_110px_100px_100px_120px_100px_40px] gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
         <span>Project</span>
         <span>Client</span>
         <span>Phase</span>
         <span>Status</span>
         <span>Due Date</span>
+        <span>Ep.</span>
         <span>Translator</span>
         <span>Adapter</span>
         <span>Files</span>
         <span>Guest</span>
+        <span>Latest Comment</span>
         <span>Updated</span>
         <span></span>
       </div>
@@ -71,21 +112,20 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId }: Ling
         const isOverdue = task.phaseDueDate && new Date(task.phaseDueDate) < new Date();
 
         return (
-          <button
+          <div
             key={task.id}
-            onClick={() => onSelectTask(task.id)}
             className={cn(
-              "w-full grid grid-cols-[1fr_100px_100px_110px_90px_90px_90px_100px_100px_100px_40px] gap-2 px-4 py-3 text-left rounded-lg transition-all hover:bg-muted/60",
+              "w-full grid grid-cols-[1fr_100px_100px_110px_90px_50px_110px_110px_100px_100px_120px_100px_40px] gap-2 px-4 py-3 text-left rounded-lg transition-all hover:bg-muted/60",
               selectedTaskId === task.id && "bg-muted ring-1 ring-primary/20"
             )}
           >
             {/* Project + WO */}
-            <div className="min-w-0">
+            <button className="min-w-0 text-left" onClick={() => onSelectTask(task.id)}>
               <p className="text-sm font-medium truncate">{task.name}</p>
               {task.workOrderNumber && (
                 <p className="text-xs text-muted-foreground">WO# {task.workOrderNumber}</p>
               )}
-            </div>
+            </button>
 
             {/* Client */}
             <div className="text-sm text-muted-foreground truncate self-center">
@@ -117,37 +157,38 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId }: Ling
               )}
             </div>
 
-            {/* Translator */}
-            <div className="self-center">
-              {task.traductor ? (
-                <span
-                  className="inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-bold text-white"
-                  style={{ backgroundColor: task.traductor.color }}
-                  title={task.traductor.name}
-                >
-                  {task.traductor.initials}
-                </span>
+            {/* Episodes */}
+            <div className="self-center text-center">
+              {task.cantidadEpisodios ? (
+                <span className="text-xs font-medium">{task.cantidadEpisodios}</span>
               ) : (
                 <span className="text-xs text-muted-foreground">—</span>
               )}
             </div>
 
-            {/* Adapter */}
-            <div className="self-center">
-              {task.adaptador ? (
-                <span
-                  className="inline-flex items-center justify-center w-7 h-7 rounded-full text-[10px] font-bold text-white"
-                  style={{ backgroundColor: task.adaptador.color }}
-                  title={task.adaptador.name}
-                >
-                  {task.adaptador.initials}
-                </span>
-              ) : (
-                <span className="text-xs text-muted-foreground">—</span>
-              )}
+            {/* Translator - assignable */}
+            <div className="self-center" onClick={e => e.stopPropagation()}>
+              <RoleBasedOwnerCell
+                owner={task.traductor}
+                onOwnerChange={(user) => handleOwnerChange(task.id, 'traductor_id', user)}
+                roleFilter="translator"
+                onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
+                taskId={task.id}
+              />
             </div>
 
+            {/* Adapter - assignable */}
+            <div className="self-center" onClick={e => e.stopPropagation()}>
+              <RoleBasedOwnerCell
+                owner={task.adaptador}
+                onOwnerChange={(user) => handleOwnerChange(task.id, 'adaptador_id', user)}
+                roleFilter="adapter"
+                onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
+                taskId={task.id}
+              />
+            </div>
 
+            {/* File readiness */}
             <div className="flex gap-1.5 self-center">
               <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
                 task.hasTranslatedFile ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
@@ -171,16 +212,28 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId }: Ling
               </span>
             </div>
 
+            {/* Latest comment */}
+            <div className="self-center min-w-0">
+              {task.latestComment ? (
+                <div className="text-xs text-muted-foreground truncate" title={`${task.latestComment.authorName}: ${stripHtml(task.latestComment.content)}`}>
+                  <span className="font-medium text-foreground">{task.latestComment.authorName.split(' ')[0]}: </span>
+                  {stripHtml(task.latestComment.content).slice(0, 40)}{stripHtml(task.latestComment.content).length > 40 ? '…' : ''}
+                </div>
+              ) : (
+                <span className="text-xs text-muted-foreground">—</span>
+              )}
+            </div>
+
             {/* Last updated */}
             <div className="text-xs text-muted-foreground self-center">
               {task.lastUpdated ? formatDistanceToNow(task.lastUpdated, { addSuffix: true }) : '—'}
             </div>
 
             {/* Open icon */}
-            <div className="self-center flex justify-center">
+            <button className="self-center flex justify-center" onClick={() => onSelectTask(task.id)}>
               <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/50" />
-            </div>
-          </button>
+            </button>
+          </div>
         );
       })}
     </div>

@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.provision-auth-user]
 verify_jwt = false
+
+[functions.linguistic-ai-analysis]
+verify_jwt = false

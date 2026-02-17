@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Users, Columns, X, Plus, Minus, Zap, DollarSign, BookOpen, LogOut } from 'lucide-react';
+import { ArrowLeft, Search, Users, Columns, X, Plus, Minus, Zap, DollarSign, BookOpen, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,7 +49,7 @@ import { EditableEmailCell } from '@/components/settings/EditableEmailCell';
 import { BillingTab } from '@/components/settings/BillingTab';
 import { GuideEditorTab } from '@/components/settings/GuideEditorTab';
 import { ColumnVisibilityTab } from '@/components/settings/ColumnVisibilityTab';
-
+import { FeatureSettingsTab } from '@/components/settings/FeatureSettingsTab';
 
 const BRANCH_COLORS: Record<Branch, string> = {
   Colombia: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
@@ -463,6 +463,10 @@ export default function Settings() {
                   <BookOpen className="h-4 w-4" />
                   Guide Editor
                 </TabsTrigger>
+                <TabsTrigger value="features" className="gap-2">
+                  <Shield className="h-4 w-4" />
+                  Features
+                </TabsTrigger>
               </>
             )}
             {hasBillingRole && (
@@ -756,7 +760,13 @@ export default function Settings() {
             </TabsContent>
           )}
 
-          {/* Billing Tab - Only for users with billing role */}
+          {/* Feature Settings Tab */}
+          {(isGod || isAdmin) && (
+            <TabsContent value="features" className="space-y-6">
+              <FeatureSettingsTab />
+            </TabsContent>
+          )}
+
           {hasBillingRole && (
             <TabsContent value="billing" className="space-y-6">
               <BillingTab />

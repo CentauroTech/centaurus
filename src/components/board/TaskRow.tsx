@@ -2,6 +2,10 @@ import { useState, useCallback, useEffect } from 'react';
 import { GripVertical, Trash2, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Task, User, Phase, Status, ColumnConfig, STUDIO_OPTIONS_MIAMI, STUDIO_OPTIONS_COLOMBIA } from '@/types/board';
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction
+} from '@/components/ui/alert-dialog';
 import { StatusBadge } from './StatusBadge';
 import { OwnerCell } from './OwnerCell';
 import { DateCell } from './DateCell';
@@ -127,6 +131,7 @@ export function TaskRow({
 }: TaskRowProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
+  const [schedulingWarning, setSchedulingWarning] = useState<{ missing: string[] } | null>(null);
   
   // Auto-open panel when navigating from notifications
   useEffect(() => {
@@ -371,7 +376,21 @@ export function TaskRow({
       case 'status':
         // Check if we're in Kickoff phase
         const isKickoffPhase = boardName?.toLowerCase().includes('kickoff') || task.currentPhase?.toLowerCase() === 'kickoff' || false;
-        return <StatusBadge status={getTaskValue(task, 'status') as Status} onStatusChange={val => handleUpdate('status', val)} isKickoffPhase={isKickoffPhase} onSendToPhase={onSendToPhase} />;
+        const isColScheduling = boardName?.toLowerCase().includes('scheduling') && workspaceName?.toLowerCase().includes('col');
+        const handleStatusWithValidation = (val: Status) => {
+          if (val === 'done' && isColScheduling) {
+            const missing: string[] = [];
+            if (!task.studio) missing.push('Studio');
+            if (!task.director) missing.push('Director');
+            if (!task.tecnico) missing.push('Técnico');
+            if (missing.length > 0) {
+              setSchedulingWarning({ missing });
+              return;
+            }
+          }
+          handleUpdate('status', val);
+        };
+        return <StatusBadge status={getTaskValue(task, 'status') as Status} onStatusChange={handleStatusWithValidation} isKickoffPhase={isKickoffPhase} onSendToPhase={onSendToPhase} />;
       case 'phase':
         return <PhaseCell phase={value as Phase} onPhaseChange={val => handleUpdate(column.field, val)} />;
       case 'current-phase':
@@ -508,5 +527,22 @@ export function TaskRow({
       </tr>
 
       <TaskDetailsPanel task={task} isOpen={isDetailsPanelOpen} onClose={handlePanelClose} users={[]} boardId={boardId} workspaceName={workspaceName} viewerIds={viewerIds} />
+
+      <AlertDialog open={!!schedulingWarning} onOpenChange={(open) => !open && setSchedulingWarning(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Warning</AlertDialogTitle>
+            <AlertDialogDescription>
+              This project doesn't have {schedulingWarning?.missing.join(', ')} attached. Are you sure you want to move this task to recording?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { handleUpdate('status', 'done'); setSchedulingWarning(null); }}>
+              Yes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>;
 }

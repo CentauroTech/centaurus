@@ -1,4 +1,4 @@
-export type Status = 'done' | 'launch' | 'working' | 'delayed' | 'default';
+export type Status = 'done' | 'launch' | 'working' | 'delayed' | 'default' | 'pending_approval';
 export type Priority = 'high' | 'medium' | 'low';
 export type Phase = 'on_hold' | 'kickoff' | 'assets' | 'translation' | 'adapting' | 'casting' | 'recording' | 'premix' | 'qc_premix' | 'retakes' | 'qc_retakes' | 'client_retakes' | 'mix' | 'qc_mix' | 'mix_retakes' | 'final_delivery';
 
@@ -163,6 +163,7 @@ export const STATUS_CONFIG: Record<Status, { label: string; className: string }>
   launch: { label: 'Launch', className: 'bg-status-done text-white' },
   working: { label: 'Working on it', className: 'bg-status-working text-foreground' },
   delayed: { label: 'Delayed', className: 'bg-status-stuck text-white' },
+  pending_approval: { label: 'Pending Approval', className: 'bg-amber-500 text-white' },
   default: { label: 'Not started', className: 'bg-status-default text-white' },
 };
 

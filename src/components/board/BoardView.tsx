@@ -361,16 +361,18 @@ function BoardViewContent({
       }
     }
 
-    // Auto-privacy: In Translation boards, when asignacion changes to "Asignado" or "Audio Description"
-    if (updates.asignacion !== undefined && normalizedPhase === 'translation') {
+    // Auto-privacy: In Translation/Adapting boards, when asignacion changes to "Asignado" or "Audio Description"
+    if (updates.asignacion !== undefined && (normalizedPhase === 'translation' || normalizedPhase === 'adapting' || normalizedPhase === 'adaptacion')) {
       const triggerValues = ['Asignado', 'Audio Description'];
       if (triggerValues.includes(updates.asignacion as string)) {
         if (!rawTask?.is_private) {
           dbUpdates.is_private = true;
-          // Add translator as viewer if assigned
-          const traductorId = rawTask?.traductor_id;
-          if (traductorId) {
-            await addGuestViewerIfNeeded(taskId, traductorId);
+          // Add the relevant role as viewer if assigned
+          const roleId = (normalizedPhase === 'adapting' || normalizedPhase === 'adaptacion')
+            ? rawTask?.adaptador_id
+            : rawTask?.traductor_id;
+          if (roleId) {
+            await addGuestViewerIfNeeded(taskId, roleId);
           }
           // Set assignment dates
           const today = getLocalDateString();

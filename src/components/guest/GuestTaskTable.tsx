@@ -135,7 +135,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange, episodeInde
             </TableHeader>
             <TableBody>
               {tasks.map((task, index) => {
-                const isDone = task.status === 'done';
+                const isDone = task.status === 'done' || task.status === 'pending_approval';
                 const isDelayed = task.guestDueDate && 
                   !isDone && 
                   new Date(task.guestDueDate) < new Date();

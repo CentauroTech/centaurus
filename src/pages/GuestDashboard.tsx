@@ -111,8 +111,8 @@ export default function GuestDashboard() {
     }
   }, [tasks]);
 
-  const activeTasks = tasks?.filter(t => t.status !== 'done') || [];
-  const completedTasks = tasks?.filter(t => t.status === 'done') || [];
+  const activeTasks = tasks?.filter(t => t.status !== 'done' && t.status !== 'pending_approval') || [];
+  const completedTasks = tasks?.filter(t => t.status === 'done' || t.status === 'pending_approval') || [];
   const delayedTasks = activeTasks.filter(t => 
     t.guestDueDate && new Date(t.guestDueDate) < new Date()
   );

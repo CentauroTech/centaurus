@@ -36,6 +36,8 @@ export function StatusBadge({ status, onStatusChange, isKickoffPhase = false, on
     if (isKickoffPhase && statusKey === 'launch') return false;
     // In non-Kickoff phases, hide 'launch' status
     if (!isKickoffPhase && statusKey === 'launch') return false;
+    // Hide pending_approval from manual selection - it's set automatically by guest completion
+    if (statusKey === 'pending_approval') return false;
     return true;
   });
 

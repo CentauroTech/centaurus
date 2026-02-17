@@ -365,12 +365,15 @@ export function useCompleteGuestTask() {
         // Don't throw - completion record is secondary to actual task completion
       }
 
-      // Update task to done - keep private status and viewer assignment
-      // so task remains visible to guest in "Completed" tab until phase progression
+      // Determine if this is an adapting phase - guest completion should set "pending_approval" instead of "done"
+      const isAdaptingPhase = taskPhase.toLowerCase().includes('adapt');
+      const completionStatus = isAdaptingPhase ? 'pending_approval' : 'done';
+
+      // Update task status
       const { data, error: updateError } = await supabase
         .from('tasks')
         .update({
-          status: 'done',
+          status: completionStatus,
           completed_at: now,
           date_delivered: currentDate,
           delivery_comment: deliveryComment || null,
@@ -387,22 +390,24 @@ export function useCompleteGuestTask() {
         type: 'field_change',
         field: 'status',
         old_value: null,
-        new_value: 'done',
+        new_value: completionStatus,
         user_id: currentMember.id,
       });
 
-      // Trigger phase progression using database function
-      // This bypasses RLS restrictions that prevent guests from reading boards
-      const { data: progressionResult, error: progressionError } = await supabase
-        .rpc('move_task_to_next_phase', {
-          p_task_id: taskId,
-          p_user_id: currentMember.id,
-        });
+      // Only trigger phase progression if NOT adapting phase
+      // Adapting tasks require team member approval (status → done) before moving to Breakdown
+      if (!isAdaptingPhase) {
+        const { data: progressionResult, error: progressionError } = await supabase
+          .rpc('move_task_to_next_phase', {
+            p_task_id: taskId,
+            p_user_id: currentMember.id,
+          });
 
-      if (progressionError) {
-        console.error('Phase progression error:', progressionError);
-      } else {
-        console.log('Phase progression result:', progressionResult);
+        if (progressionError) {
+          console.error('Phase progression error:', progressionError);
+        } else {
+          console.log('Phase progression result:', progressionResult);
+        }
       }
 
       return data?.[0] || null;

@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Languages, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, Search, Languages, Sparkles, X, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +10,7 @@ import { useCanAccessFeature } from '@/hooks/useFeatureSettings';
 import { useLinguisticTasks, LinguisticTask } from '@/hooks/useLinguisticTasks';
 import { LinguisticTaskList } from '@/components/linguistic/LinguisticTaskList';
 import { LinguisticAITab } from '@/components/linguistic/LinguisticAITab';
+import { LinguisticCalendarView } from '@/components/linguistic/LinguisticCalendarView';
 import { TodaysFocusStrip, isOverdue, isDueNext48h, isMissingFile } from '@/components/linguistic/TodaysFocusStrip';
 import TaskDetailsPanel from '@/components/board/TaskDetailsPanel';
 import { Task, User } from '@/types/board';
@@ -199,6 +200,10 @@ export default function LinguisticControlCenter() {
               <Languages className="w-4 h-4" />
               Tasks ({filteredTasks.length})
             </TabsTrigger>
+            <TabsTrigger value="calendar" className="gap-2">
+              <CalendarDays className="w-4 h-4" />
+              Calendar
+            </TabsTrigger>
             <TabsTrigger value="ai" className="gap-2">
               <Sparkles className="w-4 h-4" />
               AI
@@ -224,6 +229,23 @@ export default function LinguisticControlCenter() {
                   tasks={filteredTasks}
                   onSelectTask={handleSelectTask}
                   selectedTaskId={selectedTaskId}
+                />
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="calendar" className="mt-4">
+            <div className="bg-card rounded-lg border p-4 min-h-[600px]">
+              {tasksLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <LinguisticCalendarView
+                  tasks={filteredTasks}
+                  teamMemberMap={teamMemberMap}
+                  onTaskClick={handleSelectTask}
+                  workspaceId={effectiveWorkspaceId}
                 />
               )}
             </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, memo } from 'react';
 import { Plus, X } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { User } from '@/types/board';
@@ -25,7 +25,7 @@ interface RoleBasedOwnerCellProps {
   taskId?: string;
 }
 
-export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled = false, onInstructionsComment, taskId }: RoleBasedOwnerCellProps) {
+export const RoleBasedOwnerCell = memo(function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled = false, onInstructionsComment, taskId }: RoleBasedOwnerCellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [instructionsDialogOpen, setInstructionsDialogOpen] = useState(false);
   const [pendingUser, setPendingUser] = useState<User | null>(null);
@@ -34,8 +34,8 @@ export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled 
   const { data: teamMembers = [] } = useTeamMembers();
   const rolesMap = useTeamMemberRolesMap();
 
-  // Map team members to User format, filtering by role if specified
-  const users: User[] = teamMembers
+  // Memoize filtered users list
+  const users: User[] = useMemo(() => teamMembers
     .filter(m => {
       if (!roleFilter) return true;
       const memberRoles = rolesMap.get(m.id) || [];
@@ -46,7 +46,7 @@ export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled 
       name: m.name,
       initials: m.initials,
       color: m.color,
-    }));
+    })), [teamMembers, roleFilter, rolesMap]);
 
   // Check if a team member is a guest (non-@centauro.com email)
   const isGuestMember = (userId: string): boolean => {
@@ -57,23 +57,17 @@ export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled 
 
   // Handle click outside to close dropdown
   useEffect(() => {
+    if (!isOpen) return;
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
   const handleSelectUser = (user: User) => {
-    // If the selected user is a guest and we have the instructions callback, show dialog
     if (isGuestMember(user.id) && onInstructionsComment) {
       setPendingUser(user);
       setInstructions('');
@@ -227,34 +221,36 @@ export function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled 
         )}
       </div>
 
-      {/* Instructions Dialog for Guest Assignment */}
-      <Dialog open={instructionsDialogOpen} onOpenChange={setInstructionsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Instructions for {pendingUser?.name}</DialogTitle>
-            <DialogDescription>
-              Add optional instructions or notes for this guest. They will be visible in their communication tab.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Textarea
-              placeholder="Add instructions or notes for the assigned guest..."
-              value={instructions}
-              onChange={(e) => setInstructions(e.target.value)}
-              className="min-h-[80px] text-sm"
-              autoFocus
-            />
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={handleSkipInstructions}>
-              Skip
-            </Button>
-            <Button onClick={handleConfirmWithInstructions}>
-              {instructions.trim() ? 'Assign with Instructions' : 'Assign'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Only mount Dialog when actually needed */}
+      {instructionsDialogOpen && (
+        <Dialog open={instructionsDialogOpen} onOpenChange={setInstructionsDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Instructions for {pendingUser?.name}</DialogTitle>
+              <DialogDescription>
+                Add optional instructions or notes for this guest. They will be visible in their communication tab.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Textarea
+                placeholder="Add instructions or notes for the assigned guest..."
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                className="min-h-[80px] text-sm"
+                autoFocus
+              />
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={handleSkipInstructions}>
+                Skip
+              </Button>
+              <Button onClick={handleConfirmWithInstructions}>
+                {instructions.trim() ? 'Assign with Instructions' : 'Assign'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
-}
+});

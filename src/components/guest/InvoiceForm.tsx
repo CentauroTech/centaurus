@@ -65,6 +65,7 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
   // Task selection
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
+  const [rawPrices, setRawPrices] = useState<Record<string, string>>({});
 
   // Check if billing fields should be locked (profile is locked)
   const isBillingLocked = billingProfile?.isLocked ?? false;
@@ -674,10 +675,18 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
                           <Input
                             type="text"
                             inputMode="decimal"
-                            value={item.unitPrice ? item.unitPrice : ''}
+                            value={rawPrices[item.id] ?? (item.unitPrice ? String(item.unitPrice) : '')}
                             onChange={(e) => {
-                              const value = e.target.value.replace(/[^0-9.]/g, '');
-                              updateItem(item.id, { unitPrice: parseFloat(value) || 0 });
+                              const raw = e.target.value.replace(/[^0-9.]/g, '');
+                              setRawPrices(prev => ({ ...prev, [item.id]: raw }));
+                              updateItem(item.id, { unitPrice: parseFloat(raw) || 0 });
+                            }}
+                            onBlur={() => {
+                              setRawPrices(prev => {
+                                const next = { ...prev };
+                                delete next[item.id];
+                                return next;
+                              });
                             }}
                             placeholder="0.00"
                           />

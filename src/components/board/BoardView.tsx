@@ -303,6 +303,7 @@ function BoardViewContent({
     if (updates.rateInfo !== undefined) dbUpdates.rate_info = updates.rateInfo;
     if (updates.guestDueDate !== undefined) dbUpdates.guest_due_date = updates.guestDueDate;
     if (updates.deliveryComment !== undefined) dbUpdates.delivery_comment = updates.deliveryComment;
+    if ((updates as any).asignacion !== undefined) dbUpdates.asignacion = (updates as any).asignacion;
     // Person fields - use 'in' operator to detect when field is explicitly set (including to undefined/null)
     if ('projectManager' in updates) dbUpdates.project_manager_id = updates.projectManager?.id || null;
     if ('director' in updates) dbUpdates.director_id = updates.director?.id || null;

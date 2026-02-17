@@ -361,6 +361,7 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'lastUpdated', label: 'Updated', type: 'last-updated', width: 'w-28', field: 'lastUpdated' },
   { id: 'studio', label: 'Studio', type: 'dropdown', width: 'w-28', field: 'studio', options: STUDIO_OPTIONS },
   { id: 'director', label: 'Director', type: 'person', width: 'w-28', field: 'director', roleFilter: 'director' },
+  { id: 'tecnico', label: 'Técnico', type: 'person', width: 'w-28', field: 'tecnico', roleFilter: 'tecnico' },
   { id: 'lenguajeOriginal', label: 'Original Language', type: 'dropdown', width: 'w-32', field: 'lenguajeOriginal', options: LENGUAJE_OPTIONS },
   { id: 'targetLanguage', label: 'Target Language', type: 'multi-select', width: 'w-48', field: 'targetLanguage', options: TARGET_LANGUAGE_OPTIONS },
   { id: 'tituloAprobadoEspanol', label: 'Approved Title', type: 'text', width: 'w-40', field: 'tituloAprobadoEspanol' },

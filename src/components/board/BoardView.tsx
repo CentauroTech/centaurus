@@ -1058,8 +1058,8 @@ function BoardViewContent({
             ];
             const COL_PHASES = [
               'Kickoff', 'Assets', 'Translation', 'Adapting', 'Breakdown',
-              'Casting', 'Scheduling', 'Recording', 'Premix', 'QC Premix',
-              'Retakes', 'QC Retakes', 'Mix', 'QC Mix', 'MixRetakes', 'Deliveries',
+              'Casting', 'Scheduling', 'Recording', 'QC Premix',
+              'Retakes', 'Mix', 'QC Mix', 'MixRetakes', 'Deliveries',
             ];
             const HQ_PHASES = isMiami ? MIAMI_PHASES : isCol ? COL_PHASES : COL_PHASES;
             const phaseColors: Record<string, string> = {

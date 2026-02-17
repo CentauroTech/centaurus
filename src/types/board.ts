@@ -280,6 +280,7 @@ export const VOICE_TEST_OPTIONS = ['Yes', 'No', 'Voice Bank'];
 
 export const STUDIO_OPTIONS = ['Studio A', 'Studio B', 'Studio C', 'External'];
 export const STUDIO_OPTIONS_MIAMI = ['Studio 2', 'Studio 3', 'Studio 4'];
+export const STUDIO_OPTIONS_COLOMBIA = ['Studio 1', 'Studio 2', 'Studio 3', 'Studio 4', 'Studio 5', 'Studio 6', 'Studio 7', 'Studio 8'];
 
 // Mapping from Miami board phase suffix to task field for phase-specific due dates
 export const PHASE_DUE_DATE_MAP: Record<string, { field: keyof Task; label: string }> = {

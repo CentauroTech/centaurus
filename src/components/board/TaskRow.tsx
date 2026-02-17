@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { GripVertical, Trash2, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Task, User, Phase, Status, ColumnConfig, STUDIO_OPTIONS_MIAMI } from '@/types/board';
+import { Task, User, Phase, Status, ColumnConfig, STUDIO_OPTIONS_MIAMI, STUDIO_OPTIONS_COLOMBIA } from '@/types/board';
 import { StatusBadge } from './StatusBadge';
 import { OwnerCell } from './OwnerCell';
 import { DateCell } from './DateCell';
@@ -384,9 +384,13 @@ export function TaskRow({
       case 'combobox':
         return <ComboboxCell value={value as string} onChange={val => handleUpdate(column.field, val)} options={column.options || []} placeholder="Select..." isPrivate={isPrivate} disabled={disabled} />;
       case 'dropdown':
-        // Use Miami studio options if this is the studio column and workspace is Miami
-        const dropdownOptions = column.field === 'studio' && workspaceName?.toLowerCase().includes('miami') 
-          ? STUDIO_OPTIONS_MIAMI 
+        // Use workspace-specific studio options
+        const dropdownOptions = column.field === 'studio' 
+          ? (workspaceName?.toLowerCase().includes('miami') 
+              ? STUDIO_OPTIONS_MIAMI 
+              : workspaceName?.toLowerCase().includes('col') 
+                ? STUDIO_OPTIONS_COLOMBIA 
+                : (column.options || []))
           : (column.options || []);
         return <DropdownCell value={value as string} onChange={val => handleUpdate(column.field, val)} options={dropdownOptions} placeholder="Select..." isPrivate={isPrivate} disabled={disabled} />;
       case 'file':

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Home, Search, Plus, Settings, HelpCircle, Inbox } from 'lucide-react';
+import { ChevronDown, ChevronRight, Home, Search, Plus, Settings, HelpCircle, Inbox, Languages } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkspaceWithBoards } from '@/hooks/useWorkspaces';
 import { useUnreadNotificationCount } from '@/hooks/useNotifications';
+import { useCanAccessFeature } from '@/hooks/useFeatureSettings';
 import centaurusLogo from '@/assets/centaurus-logo.jpeg';
 
 interface AppSidebarProps {
@@ -15,6 +16,7 @@ interface AppSidebarProps {
 export function AppSidebar({ workspaces, selectedBoardId, onSelectBoard }: AppSidebarProps) {
   const navigate = useNavigate();
   const unreadCount = useUnreadNotificationCount();
+  const { canAccess: canAccessLinguistic } = useCanAccessFeature('linguistic_control_center');
   const [expandedWorkspaces, setExpandedWorkspaces] = useState<string[]>(() => 
     workspaces.length > 0 ? [workspaces[0].id] : []
   );
@@ -63,6 +65,13 @@ export function AppSidebar({ workspaces, selectedBoardId, onSelectBoard }: AppSi
             onClick={() => navigate('/notifications')}
           />
           <SidebarItem icon={<Plus className="w-4 h-4" />} label="New Board" />
+          {canAccessLinguistic && (
+            <SidebarItem 
+              icon={<Languages className="w-4 h-4" />} 
+              label="Linguistic Center" 
+              onClick={() => navigate('/phase/linguistic')}
+            />
+          )}
         </div>
 
         <div className="border-t border-white/10 pt-4">

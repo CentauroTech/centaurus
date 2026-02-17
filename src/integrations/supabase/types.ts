@@ -600,6 +600,44 @@ export type Database = {
           },
         ]
       }
+      feature_settings: {
+        Row: {
+          allowed_roles: string[]
+          created_at: string
+          enabled: boolean
+          feature_key: string
+          id: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          allowed_roles?: string[]
+          created_at?: string
+          enabled?: boolean
+          feature_key: string
+          id?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          allowed_roles?: string[]
+          created_at?: string
+          enabled?: boolean
+          feature_key?: string
+          id?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guest_completed_tasks: {
         Row: {
           branch: string | null

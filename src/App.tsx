@@ -12,6 +12,7 @@ import GuestDashboard from "./pages/GuestDashboard";
 import GuestOnboarding from "./pages/GuestOnboarding";
 import Settings from "./pages/Settings";
 import Billing from "./pages/Billing";
+import LinguisticControlCenter from "./pages/LinguisticControlCenter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,11 @@ const App = () => (
             <Route path="/billing" element={
               <ProtectedRoute>
                 <Billing />
+              </ProtectedRoute>
+            } />
+            <Route path="/phase/linguistic" element={
+              <ProtectedRoute>
+                <LinguisticControlCenter />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

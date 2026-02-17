@@ -115,8 +115,8 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
   };
 
   const getRetakesBadgeClass = (val?: string) => {
-    if (!val || val === 'On Hold') return "bg-gray-400 text-gray-800";
-    if (val === 'Working On It') return "bg-status-working text-foreground";
+    if (!val || val === 'On Hold') return "bg-gray-400 text-white";
+    if (val === 'Working On It') return "bg-status-working text-white";
     if (val === 'Retakes Programados') return "bg-blue-500 text-white";
     return "bg-muted text-muted-foreground";
   };

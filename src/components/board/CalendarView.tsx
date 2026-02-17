@@ -530,24 +530,32 @@ export function CalendarView({ tasks, onTaskClick, onUpdateTask, boardName, isHQ
                   +{dayEvents.length - maxEvents} more
                 </button>
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-72 p-2 z-[100]" side="right">
+              <PopoverContent align="start" className="w-72 p-2 z-[100]" side="right" onOpenAutoFocus={(e) => e.preventDefault()}>
                 <div className="space-y-1 max-h-64 overflow-y-auto">
                   <h4 className="text-xs font-medium text-muted-foreground mb-1.5">{format(day, 'MMM d')} – {dayEvents.length} events</h4>
                   {dayEvents.map((ev, i) => (
-                    <button
+                    <div
                       key={`${ev.task.id}-${ev.type}-${i}`}
                       draggable
-                      onDragStart={(e) => handleDragStart(e, ev)}
-                      onClick={(e) => { e.stopPropagation(); onTaskClick?.(ev.task.id); }}
+                      onDragStart={(e) => handleDragStart(e as any, ev)}
+                      onPointerUp={(e) => {
+                        // Only navigate on simple click (not drag)
+                        if (e.button === 0) {
+                          e.stopPropagation();
+                          onTaskClick?.(ev.task.id);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
                       className={cn(
-                        "w-full text-left text-xs leading-tight px-2 py-1.5 rounded truncate block transition-colors hover:opacity-80 cursor-grab active:cursor-grabbing",
+                        "w-full text-left text-xs leading-tight px-2 py-1.5 rounded truncate block transition-colors hover:opacity-80 cursor-pointer",
                         getEventClasses(ev.type)
                       )}
-                      title={`${ev.task.name} (${ev.label}) – Drag to reschedule`}
+                      title={`${ev.task.name} (${ev.label}) – Click to open, drag to reschedule`}
                     >
                       <span className={cn("inline-block w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0", LEGEND_DOT_STYLES[ev.type] || 'bg-gray-500')} />
                       {ev.task.name}
-                    </button>
+                    </div>
                   ))}
                 </div>
               </PopoverContent>

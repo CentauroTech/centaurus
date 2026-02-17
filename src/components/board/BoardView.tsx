@@ -1024,7 +1024,7 @@ function BoardViewContent({
       {viewMode === 'table' && (
         <div className="flex-1 overflow-auto custom-scrollbar">
           {/* Studio Filter Tabs for Recording boards */}
-          {isRecordingBoard && (() => {
+          {(isRecordingBoard || isColRetakesBoard) && (() => {
             const studioColors: Record<string, string> = {
               'Studio 1': 'bg-red-800 text-white border-red-800',
               'Studio 2': 'bg-blue-500 text-white border-blue-500',

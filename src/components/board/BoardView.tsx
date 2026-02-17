@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy, X, HelpCircle, LayoutGrid } from 'lucide-react';
 import { PHASE_DUE_DATE_MAP, ALL_PHASE_DUE_DATE_FIELDS } from '@/types/board';
@@ -11,6 +11,7 @@ import { BoardFilterBar } from './BoardFilterBar';
 import { Task, User, TaskGroup as TaskGroupType } from '@/types/board';
 import { BulkActionsToolbar } from './BulkActionsToolbar';
 import { MultipleWODialog } from './MultipleWODialog';
+import { InternalCompletionDialog } from './InternalCompletionDialog';
 import { TaskSelectionProvider } from '@/contexts/TaskSelectionContext';
 import { CalendarView } from './CalendarView';
 import TaskDetailsPanel from './TaskDetailsPanel';
@@ -64,6 +65,17 @@ function BoardViewContent({
   const queryClient = useQueryClient();
   const [isMultipleWODialogOpen, setIsMultipleWODialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
+
+  // Internal completion dialog state (for Jennyfer/Diana in Translation/Adapting)
+  const INTERNAL_COMPLETION_MEMBERS: Record<string, string> = {
+    '38d73520-d8b4-401b-b32c-dcfc60ce2828': 'Jennyfer Homez',
+    '34688e4e-9477-4b3a-99ae-de8a97e61fe3': 'Diana Perilla',
+  };
+  const [completionDialogTask, setCompletionDialogTask] = useState<{
+    taskId: string;
+    taskName: string;
+    groupId: string;
+  } | null>(null);
   
   // URL-based task selection for notification deep links
   const urlTaskId = searchParams.get('task');
@@ -383,6 +395,23 @@ function BoardViewContent({
       }
     }
 
+    // Auto-move task to named group when Jennyfer/Diana is assigned as translator/adapter
+    if ((normalizedPhase === 'translation' || normalizedPhase === 'adapting' || normalizedPhase === 'adaptacion')) {
+      const roleField = (normalizedPhase === 'translation') ? 'traductor' : 'adaptador';
+      if (roleField in updates) {
+        const assignedPerson = updates[roleField as keyof typeof updates] as User | null | undefined;
+        if (assignedPerson && INTERNAL_COMPLETION_MEMBERS[assignedPerson.id]) {
+          // Find the group named after this person in the current board
+          const targetGroup = board.groups.find(g => 
+            g.name.toLowerCase() === INTERNAL_COMPLETION_MEMBERS[assignedPerson.id].toLowerCase()
+          );
+          if (targetGroup && rawTask?.group_id !== targetGroup.id) {
+            dbUpdates.group_id = targetGroup.id;
+          }
+        }
+      }
+    }
+
     // Handle people updates separately
     if (updates.people !== undefined) {
       const oldPeople = rawTask?.people || [];
@@ -390,6 +419,26 @@ function BoardViewContent({
     }
     if (Object.keys(dbUpdates).length > 0) {
       const realGroupId = rawTask?.group_id;
+      
+      // Intercept status→done for internal completion members in their named groups
+      if (dbUpdates.status === 'done' && (normalizedPhase === 'translation' || normalizedPhase === 'adapting' || normalizedPhase === 'adaptacion')) {
+        // Check if this task is in a named group for Jennyfer/Diana
+        const currentGroup = board.groups.find(g => g.id === realGroupId);
+        const isInNamedGroup = currentGroup && Object.values(INTERNAL_COMPLETION_MEMBERS).some(
+          name => name.toLowerCase() === currentGroup.name.toLowerCase()
+        );
+        
+        if (isInNamedGroup) {
+          // Show completion dialog instead of immediately setting done
+          setCompletionDialogTask({
+            taskId,
+            taskName: rawTask?.name || '',
+            groupId: realGroupId!,
+          });
+          return; // Don't proceed with the update yet
+        }
+      }
+      
       updateTask(taskId, dbUpdates, realGroupId, rawTask?.prueba_de_voz, rawTask?.status);
     }
   };
@@ -840,7 +889,37 @@ function BoardViewContent({
         currentWorkspaceName={workspaceName}
       />
 
-      {/* Board Guide Dialog */}
+      {/* Internal Completion Dialog (Jennyfer/Diana in Translation/Adapting) */}
+      {completionDialogTask && (
+        <InternalCompletionDialog
+          taskId={completionDialogTask.taskId}
+          taskName={completionDialogTask.taskName}
+          phase={boardPhase}
+          isOpen={!!completionDialogTask}
+          onClose={() => setCompletionDialogTask(null)}
+          onComplete={() => {
+            // Now proceed with the actual status change + phase progression
+            const taskId = completionDialogTask.taskId;
+            const groupId = completionDialogTask.groupId;
+            
+            // Find raw task for context
+            let rawTask: any = null;
+            for (const group of board.groups) {
+              rawTask = group.tasks.find((t: any) => t.id === taskId);
+              if (rawTask) break;
+            }
+            
+            updateTask(taskId, {
+              status: 'done',
+              completed_at: new Date().toISOString(),
+              date_delivered: getLocalDateString(),
+            }, groupId, rawTask?.prueba_de_voz, rawTask?.status);
+            
+            setCompletionDialogTask(null);
+          }}
+        />
+      )}
+
       <BoardGuide 
         boardName={board.name} 
         isOpen={isGuideOpen} 

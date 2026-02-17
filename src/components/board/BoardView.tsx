@@ -1048,8 +1048,13 @@ function BoardViewContent({
 
           {/* Phase Filter Tabs for HQ boards */}
           {board.is_hq && (() => {
+            // Fixed phase list in board order — always shown
+            const HQ_PHASES = [
+              'Kickoff', 'Assets', 'Translation', 'Adapting', 'Breakdown',
+              'Casting', 'Scheduling', 'Recording', 'Premix', 'QC Premix',
+              'Retakes', 'QC Retakes', 'Mix', 'QC Mix', 'MixRetakes', 'Deliveries',
+            ];
             const phaseColors: Record<string, string> = {
-              'On Hold': 'bg-gray-400 text-white border-gray-400',
               'Kickoff': 'bg-gray-900 text-white border-gray-900',
               'Assets': 'bg-cyan-200 text-cyan-900 border-cyan-200',
               'Translation': 'bg-blue-300 text-blue-900 border-blue-300',
@@ -1059,24 +1064,18 @@ function BoardViewContent({
               'Scheduling': 'bg-yellow-600 text-white border-yellow-600',
               'Recording': 'bg-red-800 text-white border-red-800',
               'Premix': 'bg-pink-200 text-pink-900 border-pink-200',
-              'QC 1': 'bg-purple-200 text-purple-900 border-purple-200',
+              'QC Premix': 'bg-purple-200 text-purple-900 border-purple-200',
               'Retakes': 'bg-purple-500 text-white border-purple-500',
               'QC Retakes': 'bg-amber-200 text-amber-900 border-amber-200',
               'Mix': 'bg-blue-200 text-blue-900 border-blue-200',
               'QC Mix': 'bg-purple-300 text-purple-900 border-purple-300',
-              'Mix Retakes': 'bg-pink-500 text-white border-pink-500',
-              'Client Retakes': 'bg-amber-700 text-white border-amber-700',
-              'Final Delivery': 'bg-green-500 text-white border-green-500',
+              'MixRetakes': 'bg-pink-500 text-white border-pink-500',
               'Deliveries': 'bg-green-500 text-white border-green-500',
             };
-            // Collect unique phases from tasks, preserving workflow order
-            const orderedPhases = Object.keys(phaseColors);
-            const taskPhases = new Set(allBoardTasks.map(t => t.fase || t.currentPhase || '').filter(Boolean));
-            const phases = orderedPhases.filter(p => taskPhases.has(p));
-            // Also add any phases not in our predefined order
-            taskPhases.forEach(p => { if (!phases.includes(p)) phases.push(p); });
-
-            if (phases.length === 0) return null;
+            const phaseLabels: Record<string, string> = {
+              'QC Premix': 'QC 1',
+              'MixRetakes': 'Mix Retakes',
+            };
             return (
               <div className="flex items-center gap-1.5 mb-3 px-[10px] flex-wrap">
                 <button
@@ -1090,7 +1089,7 @@ function BoardViewContent({
                 >
                   All
                 </button>
-                {phases.map(phase => {
+                {HQ_PHASES.map(phase => {
                   const count = allBoardTasks.filter(t => (t.fase || t.currentPhase) === phase).length;
                   const isActive = phaseFilter === phase;
                   return (
@@ -1103,7 +1102,7 @@ function BoardViewContent({
                         isActive && "ring-2 ring-offset-1 ring-foreground/50"
                       )}
                     >
-                      {phase}{count > 0 ? ` (${count})` : ''}
+                      {phaseLabels[phase] || phase}{count > 0 ? ` (${count})` : ''}
                     </button>
                   );
                 })}

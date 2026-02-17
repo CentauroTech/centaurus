@@ -103,12 +103,22 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
   // Check if this is a Miami Studio dropdown
   const isStudioDropdown = options.some(opt => opt.startsWith('Studio '));
 
+  // Check if this is a retakes workflow dropdown
+  const isRetakesDropdown = options.includes('On Hold') && (options.includes('Working On It') || options.includes('Retakes Programados'));
+
   const getBadgeClass = (val?: string) => {
     if (!val) return "bg-muted text-muted-foreground";
     if (val === 'Yes') return "bg-status-done text-white";
     if (val === 'No') return "bg-muted text-muted-foreground";
     // Voice Bank or other values
     return "bg-amber-500 text-white";
+  };
+
+  const getRetakesBadgeClass = (val?: string) => {
+    if (!val || val === 'On Hold') return "bg-gray-400 text-gray-800";
+    if (val === 'Working On It') return "bg-status-working text-foreground";
+    if (val === 'Retakes Programados') return "bg-blue-500 text-white";
+    return "bg-muted text-muted-foreground";
   };
 
   const getStudioBadgeClass = (val?: string) => {
@@ -124,7 +134,7 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
     return "bg-muted text-muted-foreground";
   };
 
-  const shouldUseBadge = isBadgeStyle || isStudioDropdown;
+  const shouldUseBadge = isBadgeStyle || isStudioDropdown || isRetakesDropdown;
 
   if (disabled) {
     return (
@@ -138,6 +148,13 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
             getBadgeClass(value)
           )}>
             {value || 'No'}
+          </span>
+        ) : isRetakesDropdown ? (
+          <span className={cn(
+            "px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap",
+            getRetakesBadgeClass(value)
+          )}>
+            {value || 'On Hold'}
           </span>
         ) : isStudioDropdown ? (
           <span className={cn(
@@ -172,6 +189,13 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
             getBadgeClass(value)
           )}>
             {value || 'No'}
+          </span>
+        ) : isRetakesDropdown ? (
+          <span className={cn(
+            "px-3 py-1 rounded-md text-xs font-medium transition-smooth whitespace-nowrap",
+            getRetakesBadgeClass(value)
+          )}>
+            {value || 'On Hold'}
           </span>
         ) : isStudioDropdown ? (
           <span className={cn(

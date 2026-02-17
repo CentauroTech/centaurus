@@ -129,6 +129,9 @@ export interface Task {
   // Kickoff brief
   kickoffBrief?: string;
   kickoff_brief?: string;
+  // Retakes workflow columns (Colombia)
+  estudioRevisado?: string;
+  retakesProgramados?: string;
   // Computed: 1-based position within its group (for episode display)
   episodeIndex?: number;
   createdAt: Date;
@@ -385,6 +388,8 @@ export const COLUMNS: ColumnConfig[] = [
   { id: 'entregaFinalScriptItems', label: 'Entrega Script/Dubcard', type: 'multi-select', width: 'w-96', field: 'entregaFinalScriptItems', options: ENTREGA_FINAL_SCRIPT_OPTIONS },
   { id: 'entregaFinalDubAudioItems', label: 'Entrega Dub Audio', type: 'multi-select', width: 'w-96', field: 'entregaFinalDubAudioItems', options: ENTREGA_FINAL_DUB_AUDIO_OPTIONS },
   { id: 'timeTracked', label: 'Time', type: 'time-tracked', width: 'w-24', field: 'startedAt', adminOnly: true },
+  { id: 'estudioRevisado', label: 'Estudio Revisado', type: 'dropdown', width: 'w-32', field: 'estudioRevisado', options: ['On Hold', 'Working On It'] },
+  { id: 'retakesProgramados', label: 'Retakes Programados', type: 'dropdown', width: 'w-36', field: 'retakesProgramados', options: ['On Hold', 'Retakes Programados'] },
 ];
 
 // Colombia now uses the same columns as Miami

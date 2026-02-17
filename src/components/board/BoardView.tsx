@@ -1024,9 +1024,8 @@ function BoardViewContent({
                       onClick={() => setStudioFilter(isActive ? null : studio)}
                       className={cn(
                         "px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors",
-                        isActive
-                          ? studioColors[studio]
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        studioColors[studio],
+                        isActive && "ring-2 ring-offset-1 ring-foreground/50"
                       )}
                     >
                       {label}{count > 0 ? ` (${count})` : ''}

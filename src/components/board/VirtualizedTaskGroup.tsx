@@ -129,20 +129,24 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
   return (
     <div className="mb-6">
       {/* Group Header */}
-      <div className="flex items-center gap-2 mb-2 px-2">
+      <div 
+        className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg cursor-pointer select-none transition-smooth hover:brightness-95"
+        style={{ backgroundColor: group.color + '22' }}
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-0.5 rounded hover:bg-muted transition-smooth"
+          className="p-0.5 rounded transition-smooth"
+          style={{ color: group.color }}
         >
           {isCollapsed ? (
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            <ChevronRight className="w-5 h-5" />
           ) : (
-            <ChevronDown className="w-5 h-5 text-muted-foreground" />
+            <ChevronDown className="w-5 h-5" />
           )}
         </button>
         
         <div
-          className="w-1 h-5 rounded-full"
+          className="w-1.5 h-6 rounded-full"
           style={{ backgroundColor: group.color }}
         />
         
@@ -151,10 +155,11 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
           value={groupName}
           onChange={(e) => setGroupName(e.target.value)}
           onBlur={handleNameBlur}
+          onClick={(e) => e.stopPropagation()}
           className="bg-transparent border-0 outline-none font-display font-semibold text-foreground focus:ring-0"
         />
         
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm font-medium" style={{ color: group.color }}>
           {filteredTasks.length !== group.tasks.length 
             ? `${filteredTasks.length} of ${group.tasks.length} tasks`
             : `${group.tasks.length} ${group.tasks.length === 1 ? 'task' : 'tasks'}`
@@ -162,7 +167,10 @@ export const VirtualizedTaskGroup = memo(function VirtualizedTaskGroup({
           {hasMore && ` (showing ${visibleCount})`}
         </span>
 
-        <button className="p-1 rounded hover:bg-muted transition-smooth opacity-0 group-hover:opacity-100">
+        <button 
+          className="p-1 rounded hover:bg-muted transition-smooth opacity-0 group-hover:opacity-100 ml-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
           <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
         </button>
       </div>

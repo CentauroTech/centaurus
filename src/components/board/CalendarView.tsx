@@ -524,9 +524,32 @@ export function CalendarView({ tasks, onTaskClick, onUpdateTask, boardName, isHQ
             </button>
           ))}
           {dayEvents.length > maxEvents && (
-            <span className="text-[10px] text-muted-foreground px-1">
-              +{dayEvents.length - maxEvents} more
-            </span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="text-[10px] text-muted-foreground px-1 hover:text-foreground hover:underline cursor-pointer transition-colors">
+                  +{dayEvents.length - maxEvents} more
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-72 p-2 z-[100]" side="right">
+                <div className="space-y-1 max-h-64 overflow-y-auto">
+                  <h4 className="text-xs font-medium text-muted-foreground mb-1.5">{format(day, 'MMM d')} – {dayEvents.length} events</h4>
+                  {dayEvents.map((ev, i) => (
+                    <button
+                      key={`${ev.task.id}-${ev.type}-${i}`}
+                      onClick={() => onTaskClick?.(ev.task.id)}
+                      className={cn(
+                        "w-full text-left text-xs leading-tight px-2 py-1.5 rounded truncate block transition-colors hover:opacity-80",
+                        getEventClasses(ev.type)
+                      )}
+                      title={`${ev.task.name} (${ev.label})`}
+                    >
+                      <span className={cn("inline-block w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0", LEGEND_DOT_STYLES[ev.type] || 'bg-gray-500')} />
+                      {ev.task.name}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
         </div>
       </div>

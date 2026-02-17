@@ -1048,18 +1048,27 @@ function BoardViewContent({
 
           {/* Phase Filter Tabs for HQ boards */}
           {board.is_hq && (() => {
-            // Fixed phase list in board order — always shown
-            const HQ_PHASES = [
+            const isMiami = workspaceName.toLowerCase().includes('mia');
+            const isCol = workspaceName.toLowerCase().includes('col');
+            // Workspace-specific phase lists matching board order
+            const MIAMI_PHASES = [
+              'Kickoff', 'Assets', 'Translation', 'Adapting', 'VoiceTests',
+              'Recording', 'Premix', 'QC Premix', 'Retakes', 'QC Retakes',
+              'Mix', 'QC Mix', 'MixRetakes', 'Deliveries',
+            ];
+            const COL_PHASES = [
               'Kickoff', 'Assets', 'Translation', 'Adapting', 'Breakdown',
               'Casting', 'Scheduling', 'Recording', 'Premix', 'QC Premix',
               'Retakes', 'QC Retakes', 'Mix', 'QC Mix', 'MixRetakes', 'Deliveries',
             ];
+            const HQ_PHASES = isMiami ? MIAMI_PHASES : isCol ? COL_PHASES : COL_PHASES;
             const phaseColors: Record<string, string> = {
               'Kickoff': 'bg-gray-900 text-white border-gray-900',
               'Assets': 'bg-cyan-200 text-cyan-900 border-cyan-200',
               'Translation': 'bg-blue-300 text-blue-900 border-blue-300',
               'Adapting': 'bg-teal-400 text-white border-teal-400',
               'Breakdown': 'bg-yellow-400 text-yellow-900 border-yellow-400',
+              'VoiceTests': 'bg-yellow-500 text-white border-yellow-500',
               'Casting': 'bg-yellow-500 text-white border-yellow-500',
               'Scheduling': 'bg-yellow-600 text-white border-yellow-600',
               'Recording': 'bg-red-800 text-white border-red-800',
@@ -1075,6 +1084,7 @@ function BoardViewContent({
             const phaseLabels: Record<string, string> = {
               'QC Premix': 'QC 1',
               'MixRetakes': 'Mix Retakes',
+              'VoiceTests': 'Voice Tests',
             };
             return (
               <div className="flex items-center gap-1.5 mb-3 px-[10px] flex-wrap">

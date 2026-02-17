@@ -109,6 +109,8 @@ const FIELD_TO_DB_COLUMN: Record<string, string> = {
   guestDueDate: 'guest_due_date',
   deliveryComment: 'delivery_comment',
   asignacion: 'asignacion',
+  estudioRevisado: 'estudio_revisado',
+  retakesProgramados: 'retakes_programados',
 };
 
 // Helper function to get task value using the mapping

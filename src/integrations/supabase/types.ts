@@ -1225,6 +1225,7 @@ export type Database = {
           entrega_miami_start: string | null
           entrega_mix_retakes: string | null
           entrega_sesiones: string | null
+          estudio_revisado: string | null
           fase: string | null
           final_runtime: string | null
           formato: string[] | null
@@ -1258,6 +1259,7 @@ export type Database = {
           rates: number | null
           recording_due_date: string | null
           retakes_due_date: string | null
+          retakes_programados: string | null
           servicios: string[] | null
           show_guide: string | null
           sort_order: number
@@ -1301,6 +1303,7 @@ export type Database = {
           entrega_miami_start?: string | null
           entrega_mix_retakes?: string | null
           entrega_sesiones?: string | null
+          estudio_revisado?: string | null
           fase?: string | null
           final_runtime?: string | null
           formato?: string[] | null
@@ -1334,6 +1337,7 @@ export type Database = {
           rates?: number | null
           recording_due_date?: string | null
           retakes_due_date?: string | null
+          retakes_programados?: string | null
           servicios?: string[] | null
           show_guide?: string | null
           sort_order?: number
@@ -1377,6 +1381,7 @@ export type Database = {
           entrega_miami_start?: string | null
           entrega_mix_retakes?: string | null
           entrega_sesiones?: string | null
+          estudio_revisado?: string | null
           fase?: string | null
           final_runtime?: string | null
           formato?: string[] | null
@@ -1410,6 +1415,7 @@ export type Database = {
           rates?: number | null
           recording_due_date?: string | null
           retakes_due_date?: string | null
+          retakes_programados?: string | null
           servicios?: string[] | null
           show_guide?: string | null
           sort_order?: number

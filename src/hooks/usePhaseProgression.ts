@@ -303,6 +303,12 @@ export function useMoveToNextPhase(boardId: string, currentUserId?: string | nul
         date_delivered: null, // Reset date_delivered for the new board
       };
 
+      // When arriving at Retakes, set retakes workflow columns to On Hold
+      if (nextPhase === 'retakes') {
+        updateData.estudio_revisado = 'On Hold';
+        updateData.retakes_programados = 'On Hold';
+      }
+
       const { error: updateError } = await supabase
         .from('tasks')
         .update(updateData)

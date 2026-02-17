@@ -102,6 +102,17 @@ export function useColumnOrder(boardId: string, workspaceName: string, boardName
       });
     }
     
+    // For Col-Retakes boards, rename Status column to "Retakes Grabados"
+    const isColRetakes = boardLower.includes('retakes') && !boardLower.includes('mix');
+    if (isColRetakes && workspaceName.toLowerCase().includes('col')) {
+      return base.map(col => {
+        if (col.id === 'status') {
+          return { ...col, label: 'Retakes Grabados' };
+        }
+        return col;
+      });
+    }
+
     return base;
   }, [workspaceName, boardName]);
   const defaultOrder = defaultColumns.map(col => col.id);

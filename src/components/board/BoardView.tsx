@@ -147,6 +147,7 @@ function BoardViewContent({
   const isKickoffBoard = board.name.toLowerCase().includes('kickoff');
   const isTranslationOrAdaptingBoard = /-(translation|adapting|adaptacion)/i.test(board.name);
   const isRecordingBoard = /-(recording)/i.test(board.name) && workspaceName.toLowerCase().includes('col');
+  const isColRetakesBoard = /-(retakes)/i.test(board.name) && workspaceName.toLowerCase().includes('col') && !board.name.toLowerCase().includes('mix');
   // Extract phase from board name for currentPhase field
   const boardPhase = useMemo(() => {
     const parts = board.name.split('-');
@@ -208,6 +209,8 @@ function BoardViewContent({
         guestDueDate: t.guest_due_date || undefined,
         deliveryComment: t.delivery_comment || undefined,
         kickoffBrief: t.kickoff_brief || undefined,
+        estudioRevisado: t.estudio_revisado || undefined,
+        retakesProgramados: t.retakes_programados || undefined,
         lastUpdated: t.last_updated ? new Date(t.last_updated) : undefined,
         aorComplete: t.aor_complete,
         director: getTeamMember(t.director_id),
@@ -341,6 +344,8 @@ function BoardViewContent({
     if (updates.guestDueDate !== undefined) dbUpdates.guest_due_date = updates.guestDueDate;
     if (updates.deliveryComment !== undefined) dbUpdates.delivery_comment = updates.deliveryComment;
     if (updates.asignacion !== undefined) dbUpdates.asignacion = updates.asignacion;
+    if (updates.estudioRevisado !== undefined) dbUpdates.estudio_revisado = updates.estudioRevisado;
+    if (updates.retakesProgramados !== undefined) dbUpdates.retakes_programados = updates.retakesProgramados;
     // Person fields - use 'in' operator to detect when field is explicitly set (including to undefined/null)
     if ('projectManager' in updates) dbUpdates.project_manager_id = updates.projectManager?.id || null;
     if ('director' in updates) dbUpdates.director_id = updates.director?.id || null;
@@ -431,6 +436,17 @@ function BoardViewContent({
           if (targetGroup && rawTask?.group_id !== targetGroup.id) {
             dbUpdates.group_id = targetGroup.id;
           }
+        }
+      }
+    }
+
+    // Col-Retakes: Auto-set status to 'working' when estudio_revisado or retakes_programados changes
+    if (isColRetakesBoard && (updates.estudioRevisado !== undefined || updates.retakesProgramados !== undefined)) {
+      const currentStatus = rawTask?.status;
+      if (currentStatus !== 'working' && currentStatus !== 'done') {
+        dbUpdates.status = 'working';
+        if (!rawTask?.started_at) {
+          dbUpdates.started_at = new Date().toISOString();
         }
       }
     }
@@ -608,6 +624,14 @@ function BoardViewContent({
                 const { applyPhaseAutomation, normalizePhase } = await import('@/hooks/usePhaseProgression');
                 const normalizedPhase = normalizePhase(newPhase);
                 await applyPhaseAutomation(taskId, normalizedPhase, board.workspace_id, currentUserId);
+                
+                // When arriving at Retakes, set retakes workflow columns to On Hold
+                if (normalizedPhase === 'retakes') {
+                  await supabase.from('tasks').update({
+                    estudio_revisado: 'On Hold',
+                    retakes_programados: 'On Hold',
+                  }).eq('id', taskId);
+                }
               } catch (e) {
                 console.error('Failed to apply phase automation:', e);
               }

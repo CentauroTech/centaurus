@@ -181,6 +181,7 @@ function BoardViewContent({
         showGuide: t.show_guide,
         tituloAprobadoEspanol: t.titulo_aprobado_espanol,
         workOrderNumber: t.work_order_number,
+        abbreviation: t.abbreviation,
         fase: t.fase,
         startedAt: t.started_at || undefined,
         completedAt: t.completed_at || undefined,
@@ -279,6 +280,7 @@ function BoardViewContent({
     if (updates.showGuide !== undefined) dbUpdates.show_guide = updates.showGuide;
     if (updates.tituloAprobadoEspanol !== undefined) dbUpdates.titulo_aprobado_espanol = updates.tituloAprobadoEspanol;
     if (updates.workOrderNumber !== undefined) dbUpdates.work_order_number = updates.workOrderNumber;
+    if (updates.abbreviation !== undefined) dbUpdates.abbreviation = updates.abbreviation;
     if (updates.fase !== undefined) dbUpdates.fase = updates.fase;
     if (updates.phaseDueDate !== undefined) dbUpdates.phase_due_date = updates.phaseDueDate;
     if (updates.assetsDueDate !== undefined) dbUpdates.assets_due_date = updates.assetsDueDate;

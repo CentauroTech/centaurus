@@ -13,6 +13,7 @@ import { BulkActionsToolbar } from './BulkActionsToolbar';
 import { MultipleWODialog } from './MultipleWODialog';
 import { TaskSelectionProvider } from '@/contexts/TaskSelectionContext';
 import { CalendarView } from './CalendarView';
+import TaskDetailsPanel from './TaskDetailsPanel';
 import { BulkEditProvider, BulkUpdateParams } from '@/contexts/BulkEditContext';
 import { ColumnFiltersProvider, useColumnFilters } from '@/contexts/ColumnFiltersContext';
 import { useAddTaskGroup, useUpdateTaskGroup, useDeleteTaskGroup, useAddTask, useUpdateTask, useDeleteTask, useWorkspaces } from '@/hooks/useWorkspaces';
@@ -815,6 +816,20 @@ function BoardViewContent({
           isHQ={board.is_hq}
         />
       )}
+
+      {/* Task Details Panel for Calendar View */}
+      {viewMode === 'calendar' && selectedTaskId && (() => {
+        const selectedTask = allBoardTasks.find(t => t.id === selectedTaskId);
+        return selectedTask ? (
+          <TaskDetailsPanel
+            task={selectedTask}
+            isOpen={true}
+            onClose={handleTaskPanelClose}
+            boardId={boardId}
+            workspaceName={workspaceName}
+          />
+        ) : null;
+      })()}
 
       {/* Scrollable Board Area */}
       {viewMode === 'table' && (

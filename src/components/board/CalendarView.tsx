@@ -536,12 +536,14 @@ export function CalendarView({ tasks, onTaskClick, onUpdateTask, boardName, isHQ
                   {dayEvents.map((ev, i) => (
                     <button
                       key={`${ev.task.id}-${ev.type}-${i}`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, ev)}
                       onClick={() => onTaskClick?.(ev.task.id)}
                       className={cn(
-                        "w-full text-left text-xs leading-tight px-2 py-1.5 rounded truncate block transition-colors hover:opacity-80",
+                        "w-full text-left text-xs leading-tight px-2 py-1.5 rounded truncate block transition-colors hover:opacity-80 cursor-grab active:cursor-grabbing",
                         getEventClasses(ev.type)
                       )}
-                      title={`${ev.task.name} (${ev.label})`}
+                      title={`${ev.task.name} (${ev.label}) – Drag to reschedule`}
                     >
                       <span className={cn("inline-block w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0", LEGEND_DOT_STYLES[ev.type] || 'bg-gray-500')} />
                       {ev.task.name}

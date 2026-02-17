@@ -68,6 +68,7 @@ function BoardViewContent({
   const [isMultipleWODialogOpen, setIsMultipleWODialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'calendar' | 'entregados'>('table');
   const [studioFilter, setStudioFilter] = useState<string | null>(null);
+  const [phaseFilter, setPhaseFilter] = useState<string | null>(null);
 
   // Internal completion dialog state (for Jennyfer/Diana in Translation/Adapting)
   const INTERNAL_COMPLETION_MEMBERS: Record<string, string> = {
@@ -249,12 +250,21 @@ function BoardViewContent({
 
   // Apply studio filter for Recording boards
   const filteredGroups = useMemo(() => {
-    if (!studioFilter) return transformedGroups;
-    return transformedGroups.map(group => ({
-      ...group,
-      tasks: group.tasks.filter(t => t.studio === studioFilter)
-    })).filter(group => group.tasks.length > 0);
-  }, [transformedGroups, studioFilter]);
+    let groups = transformedGroups;
+    if (studioFilter) {
+      groups = groups.map(group => ({
+        ...group,
+        tasks: group.tasks.filter(t => t.studio === studioFilter)
+      })).filter(group => group.tasks.length > 0);
+    }
+    if (phaseFilter) {
+      groups = groups.map(group => ({
+        ...group,
+        tasks: group.tasks.filter(t => (t.fase || t.currentPhase) === phaseFilter)
+      })).filter(group => group.tasks.length > 0);
+    }
+    return groups;
+  }, [transformedGroups, studioFilter, phaseFilter]);
 
   // Handle task update from TaskRow - convert camelCase to snake_case
   const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
@@ -1029,6 +1039,71 @@ function BoardViewContent({
                       )}
                     >
                       {label}{count > 0 ? ` (${count})` : ''}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          {/* Phase Filter Tabs for HQ boards */}
+          {board.is_hq && (() => {
+            const phaseColors: Record<string, string> = {
+              'On Hold': 'bg-gray-400 text-white border-gray-400',
+              'Kickoff': 'bg-gray-900 text-white border-gray-900',
+              'Assets': 'bg-cyan-200 text-cyan-900 border-cyan-200',
+              'Translation': 'bg-blue-300 text-blue-900 border-blue-300',
+              'Adapting': 'bg-teal-400 text-white border-teal-400',
+              'Breakdown': 'bg-yellow-400 text-yellow-900 border-yellow-400',
+              'Casting': 'bg-yellow-500 text-white border-yellow-500',
+              'Scheduling': 'bg-yellow-600 text-white border-yellow-600',
+              'Recording': 'bg-red-800 text-white border-red-800',
+              'Premix': 'bg-pink-200 text-pink-900 border-pink-200',
+              'QC 1': 'bg-purple-200 text-purple-900 border-purple-200',
+              'Retakes': 'bg-purple-500 text-white border-purple-500',
+              'QC Retakes': 'bg-amber-200 text-amber-900 border-amber-200',
+              'Mix': 'bg-blue-200 text-blue-900 border-blue-200',
+              'QC Mix': 'bg-purple-300 text-purple-900 border-purple-300',
+              'Mix Retakes': 'bg-pink-500 text-white border-pink-500',
+              'Client Retakes': 'bg-amber-700 text-white border-amber-700',
+              'Final Delivery': 'bg-green-500 text-white border-green-500',
+              'Deliveries': 'bg-green-500 text-white border-green-500',
+            };
+            // Collect unique phases from tasks, preserving workflow order
+            const orderedPhases = Object.keys(phaseColors);
+            const taskPhases = new Set(allBoardTasks.map(t => t.fase || t.currentPhase || '').filter(Boolean));
+            const phases = orderedPhases.filter(p => taskPhases.has(p));
+            // Also add any phases not in our predefined order
+            taskPhases.forEach(p => { if (!phases.includes(p)) phases.push(p); });
+
+            if (phases.length === 0) return null;
+            return (
+              <div className="flex items-center gap-1.5 mb-3 px-[10px] flex-wrap">
+                <button
+                  onClick={() => setPhaseFilter(null)}
+                  className={cn(
+                    "px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors",
+                    phaseFilter === null
+                      ? "bg-foreground text-background"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  )}
+                >
+                  All
+                </button>
+                {phases.map(phase => {
+                  const count = allBoardTasks.filter(t => (t.fase || t.currentPhase) === phase).length;
+                  const isActive = phaseFilter === phase;
+                  return (
+                    <button
+                      key={phase}
+                      onClick={() => setPhaseFilter(isActive ? null : phase)}
+                      className={cn(
+                        "px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors",
+                        phaseColors[phase] || 'bg-muted text-muted-foreground',
+                        isActive && "ring-2 ring-offset-1 ring-foreground/50"
+                      )}
+                    >
+                      {phase}{count > 0 ? ` (${count})` : ''}
                     </button>
                   );
                 })}

@@ -397,15 +397,14 @@ function BoardViewContent({
       }
     }
 
-    // Auto-move task to named group when Jennyfer/Diana is assigned as translator/adapter
+    // Auto-move task to named group when asignacion is set to "Asignado" and Jennyfer/Diana is the translator/adapter
     if ((normalizedPhase === 'translation' || normalizedPhase === 'adapting' || normalizedPhase === 'adaptacion')) {
-      const roleField = (normalizedPhase === 'translation') ? 'traductor' : 'adaptador';
-      if (roleField in updates) {
-        const assignedPerson = updates[roleField as keyof typeof updates] as User | null | undefined;
-        if (assignedPerson && INTERNAL_COMPLETION_MEMBERS[assignedPerson.id]) {
-          // Find the group named after this person in the current board
+      if (updates.asignacion === 'Asignado') {
+        const roleField = (normalizedPhase === 'translation') ? 'traductor_id' : 'adaptador_id';
+        const assignedPersonId = rawTask?.[roleField] as string | null;
+        if (assignedPersonId && INTERNAL_COMPLETION_MEMBERS[assignedPersonId]) {
           const targetGroup = board.groups.find(g => 
-            g.name.toLowerCase() === INTERNAL_COMPLETION_MEMBERS[assignedPerson.id].toLowerCase()
+            g.name.toLowerCase() === INTERNAL_COMPLETION_MEMBERS[assignedPersonId].toLowerCase()
           );
           if (targetGroup && rawTask?.group_id !== targetGroup.id) {
             dbUpdates.group_id = targetGroup.id;

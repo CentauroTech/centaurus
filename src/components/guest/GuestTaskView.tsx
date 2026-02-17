@@ -109,7 +109,7 @@ export function GuestTaskView({ task, isOpen, onClose, episodeIndex }: GuestTask
     }
   };
 
-  const isDone = task.status === 'done';
+  const isDone = task.status === 'done' || task.status === 'pending_approval';
 
   return (
     <>

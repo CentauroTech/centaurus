@@ -15,6 +15,7 @@ interface InternalCompletionDialogProps {
   taskId: string;
   taskName: string;
   phase?: string;
+  assignedMemberId: string;
   isOpen: boolean;
   onClose: () => void;
   onComplete: () => void;
@@ -31,6 +32,7 @@ export function InternalCompletionDialog({
   taskId,
   taskName,
   phase,
+  assignedMemberId,
   isOpen,
   onClose,
   onComplete,
@@ -234,7 +236,7 @@ export function InternalCompletionDialog({
 
       await supabase.from('guest_completed_tasks').insert({
         task_id: taskId,
-        team_member_id: currentMember.id,
+        team_member_id: assignedMemberId,
         task_name: taskData?.name || taskName,
         phase: phase || '',
         role_performed: rolePerformed,

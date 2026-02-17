@@ -1203,6 +1203,7 @@ export type Database = {
           adapting_due_date: string | null
           aor_complete: boolean | null
           aor_needed: boolean | null
+          asignacion: string | null
           assets_due_date: string | null
           branch: string
           cantidad_episodios: number | null
@@ -1278,6 +1279,7 @@ export type Database = {
           adapting_due_date?: string | null
           aor_complete?: boolean | null
           aor_needed?: boolean | null
+          asignacion?: string | null
           assets_due_date?: string | null
           branch: string
           cantidad_episodios?: number | null
@@ -1353,6 +1355,7 @@ export type Database = {
           adapting_due_date?: string | null
           aor_complete?: boolean | null
           aor_needed?: boolean | null
+          asignacion?: string | null
           assets_due_date?: string | null
           branch?: string
           cantidad_episodios?: number | null
@@ -1561,6 +1564,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_language_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          language: string
+          team_member_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          language?: string
+          team_member_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          language?: string
+          team_member_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       workspaces: {
         Row: {

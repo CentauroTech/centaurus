@@ -37,6 +37,8 @@ export function LinguisticCalendarView({ tasks, teamMemberMap, onTaskClick, work
       currentPhase: lt.phase,
       translationDueDate: lt.translationDueDate || undefined,
       adaptingDueDate: lt.adaptingDueDate || undefined,
+      entregaMiamiEnd: lt.entregaMiamiEnd || undefined,
+      entregaCliente: lt.entregaCliente || undefined,
       projectManager: lt.projectManager,
       traductor: lt.traductor,
       adaptador: lt.adaptador,
@@ -80,6 +82,7 @@ export function LinguisticCalendarView({ tasks, teamMemberMap, onTaskClick, work
       onUpdateTask={handleUpdateTask}
       boardName="linguistic-center"
       isHQ={true}
+      defaultEnabledSources={['miami', 'client', 'translation', 'adapting']}
     />
   );
 }

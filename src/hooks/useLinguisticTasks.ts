@@ -18,6 +18,8 @@ interface LinguisticTaskRaw {
   adaptador_id: string | null;
   group_id: string;
   cantidad_episodios: number | null;
+  entrega_miami_end: string | null;
+  entrega_cliente: string | null;
 }
 
 export interface LinguisticTask {
@@ -39,6 +41,8 @@ export interface LinguisticTask {
   adaptadorId: string | null;
   groupId: string;
   cantidadEpisodios: number | null;
+  entregaMiamiEnd: string | null;
+  entregaCliente: string | null;
   // Computed signals
   hasTranslatedFile: boolean;
   hasAdaptedFile: boolean;
@@ -73,7 +77,7 @@ export function useLinguisticTasks(workspaceId: string | null) {
       // Fetch tasks in translation or adapting phase, not done
       const { data: tasks, error: tasksErr } = await supabase
         .from('tasks')
-        .select('id, name, status, fase, branch, client_name, work_order_number, translation_due_date, adapting_due_date, last_updated, project_manager_id, traductor_id, adaptador_id, group_id, cantidad_episodios')
+        .select('id, name, status, fase, branch, client_name, work_order_number, translation_due_date, adapting_due_date, last_updated, project_manager_id, traductor_id, adaptador_id, group_id, cantidad_episodios, entrega_miami_end, entrega_cliente')
         .in('group_id', groupIds)
         .in('fase', ['translation', 'adapting', 'Translation', 'Adapting'])
         .neq('status', 'done');
@@ -173,6 +177,8 @@ export function useLinguisticTasks(workspaceId: string | null) {
           adaptadorId: t.adaptador_id,
           groupId: t.group_id,
           cantidadEpisodios: t.cantidad_episodios,
+          entregaMiamiEnd: t.entrega_miami_end,
+          entregaCliente: t.entrega_cliente,
           hasTranslatedFile: fileCats.has('translated'),
           hasAdaptedFile: fileCats.has('adapted'),
           guestSignal: guestSignalMap.get(t.id) || 'none',

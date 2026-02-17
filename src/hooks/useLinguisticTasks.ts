@@ -70,7 +70,7 @@ export function useLinguisticTasks(workspaceId: string | null) {
         .from('tasks')
         .select('id, name, status, fase, branch, client_name, work_order_number, translation_due_date, adapting_due_date, last_updated, project_manager_id, traductor_id, adaptador_id, group_id')
         .in('group_id', groupIds)
-        .in('fase', ['translation', 'adapting'])
+        .in('fase', ['translation', 'adapting', 'Translation', 'Adapting'])
         .neq('status', 'done');
       if (tasksErr) throw tasksErr;
 
@@ -134,7 +134,7 @@ export function useLinguisticTasks(workspaceId: string | null) {
       }
 
       const linguisticTasks: LinguisticTask[] = (tasks || []).map(t => {
-        const phase = t.fase || 'translation';
+        const phase = (t.fase || 'translation').toLowerCase();
         const fileCats = fileMap.get(t.id) || new Set();
         return {
           id: t.id,

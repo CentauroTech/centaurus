@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { useAccessibleWorkspaces } from '@/hooks/useAccessibleWorkspaces';
+import { useAccessibleWorkspaces, EXCLUDED_LCC_WORKSPACES } from '@/hooks/useAccessibleWorkspaces';
 import { useCanAccessFeature } from '@/hooks/useFeatureSettings';
 import { useLinguisticTasks, LinguisticTask } from '@/hooks/useLinguisticTasks';
 import { LinguisticTaskList } from '@/components/linguistic/LinguisticTaskList';
@@ -22,13 +22,19 @@ export default function LinguisticControlCenter() {
 
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null);
   const [phaseFilter, setPhaseFilter] = useState<'all' | 'translation' | 'adapting'>('all');
+
+  // Filter out excluded workspaces
+  const filteredWorkspaces = useMemo(() => 
+    workspaces?.filter(ws => !EXCLUDED_LCC_WORKSPACES.includes(ws.name)) || [],
+    [workspaces]
+  );
   const [focusFilter, setFocusFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('tasks');
 
-  // Default to first workspace
-  const effectiveWorkspaceId = selectedWorkspaceId || workspaces?.[0]?.id || null;
+  // Default to first filtered workspace
+  const effectiveWorkspaceId = selectedWorkspaceId || filteredWorkspaces[0]?.id || null;
 
   const { data: linguisticData, isLoading: tasksLoading } = useLinguisticTasks(effectiveWorkspaceId);
   const tasks = linguisticData?.tasks || [];
@@ -107,7 +113,7 @@ export default function LinguisticControlCenter() {
     );
   }
 
-  const currentWorkspace = workspaces?.find(w => w.id === effectiveWorkspaceId);
+  const currentWorkspace = filteredWorkspaces.find(w => w.id === effectiveWorkspaceId);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -127,9 +133,9 @@ export default function LinguisticControlCenter() {
             </div>
 
             {/* Workspace selector */}
-            {workspaces && workspaces.length > 1 && (
+            {filteredWorkspaces.length > 1 && (
               <div className="ml-4 flex gap-1">
-                {workspaces.map(ws => (
+                {filteredWorkspaces.map(ws => (
                   <button
                     key={ws.id}
                     onClick={() => setSelectedWorkspaceId(ws.id)}

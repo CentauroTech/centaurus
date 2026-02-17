@@ -2,6 +2,10 @@ import { useState, useCallback, memo, CSSProperties } from 'react';
 import { GripVertical, Trash2, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Task, User, Phase, Status, ColumnConfig } from '@/types/board';
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction
+} from '@/components/ui/alert-dialog';
 import { isStickyColumn, getStickyLeftOffset } from './stickyColumns';
 import { StatusBadge } from './StatusBadge';
 import { OwnerCell } from './OwnerCell';
@@ -121,6 +125,7 @@ export const MemoizedTaskRow = memo(function MemoizedTaskRow({
 }: MemoizedTaskRowProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
+  const [schedulingWarning, setSchedulingWarning] = useState<{ missing: string[] } | null>(null);
   const { toggleTaskSelection, isSelected } = useTaskSelection();
   const { shouldApplyBulkEdit, getSelectedTaskIds, onBulkUpdate } = useBulkEdit();
 
@@ -290,10 +295,24 @@ export const MemoizedTaskRow = memo(function MemoizedTaskRow({
         return <PeopleCell people={value as User[]} onChange={val => handleUpdate(column.field, val)} />;
       case 'status':
         const isKickoffPhase = boardName?.toLowerCase().includes('kickoff') || task.currentPhase?.toLowerCase() === 'kickoff' || false;
+        const isColScheduling = boardName?.toLowerCase().includes('scheduling') && workspaceName?.toLowerCase().includes('col');
+        const handleStatusWithValidation = (val: Status) => {
+          if (val === 'done' && isColScheduling) {
+            const missing: string[] = [];
+            if (!task.studio) missing.push('Studio');
+            if (!task.director) missing.push('Director');
+            if (!task.tecnico) missing.push('Técnico');
+            if (missing.length > 0) {
+              setSchedulingWarning({ missing });
+              return;
+            }
+          }
+          handleUpdate('status', val);
+        };
         return (
           <StatusBadge 
             status={getTaskValue(task, 'status') as Status} 
-            onStatusChange={val => handleUpdate('status', val)} 
+            onStatusChange={handleStatusWithValidation} 
             isKickoffPhase={isKickoffPhase} 
             onSendToPhase={onSendToPhase} 
           />
@@ -465,6 +484,23 @@ export const MemoizedTaskRow = memo(function MemoizedTaskRow({
         workspaceName={workspaceName}
         viewerIds={viewerIds}
       />
+
+      <AlertDialog open={!!schedulingWarning} onOpenChange={(open) => !open && setSchedulingWarning(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Warning</AlertDialogTitle>
+            <AlertDialogDescription>
+              This project doesn't have {schedulingWarning?.missing.join(', ')} attached. Are you sure you want to move this task to recording?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { handleUpdate('status', 'done'); setSchedulingWarning(null); }}>
+              Yes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }, (prevProps, nextProps) => {

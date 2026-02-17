@@ -17,6 +17,7 @@ interface LinguisticTaskRaw {
   traductor_id: string | null;
   adaptador_id: string | null;
   group_id: string;
+  cantidad_episodios: number | null;
 }
 
 export interface LinguisticTask {
@@ -34,11 +35,15 @@ export interface LinguisticTask {
   projectManager: User | undefined;
   traductor: User | undefined;
   adaptador: User | undefined;
+  traductorId: string | null;
+  adaptadorId: string | null;
   groupId: string;
+  cantidadEpisodios: number | null;
   // Computed signals
   hasTranslatedFile: boolean;
   hasAdaptedFile: boolean;
   guestSignal: 'none' | 'waiting' | 'replied';
+  latestComment: { content: string; authorName: string; createdAt: Date } | null;
 }
 
 export function useLinguisticTasks(workspaceId: string | null) {
@@ -68,7 +73,7 @@ export function useLinguisticTasks(workspaceId: string | null) {
       // Fetch tasks in translation or adapting phase, not done
       const { data: tasks, error: tasksErr } = await supabase
         .from('tasks')
-        .select('id, name, status, fase, branch, client_name, work_order_number, translation_due_date, adapting_due_date, last_updated, project_manager_id, traductor_id, adaptador_id, group_id')
+        .select('id, name, status, fase, branch, client_name, work_order_number, translation_due_date, adapting_due_date, last_updated, project_manager_id, traductor_id, adaptador_id, group_id, cantidad_episodios')
         .in('group_id', groupIds)
         .in('fase', ['translation', 'adapting', 'Translation', 'Adapting'])
         .neq('status', 'done');
@@ -94,24 +99,24 @@ export function useLinguisticTasks(workspaceId: string | null) {
         });
       }
 
-      // Fetch guest signals (simple: check if guest-visible comments exist)
+      // Fetch guest signals
       let guestSignalMap = new Map<string, 'none' | 'waiting' | 'replied'>();
+      // Fetch latest comment per task
+      let latestCommentMap = new Map<string, { content: string; authorName: string; createdAt: Date }>();
       if (taskIds.length > 0) {
         const { data: comments } = await supabase
           .from('comments')
-          .select('task_id, is_guest_visible, user_id, created_at')
+          .select('task_id, is_guest_visible, user_id, created_at, content')
           .in('task_id', taskIds)
-          .eq('is_guest_visible', true)
           .order('created_at', { ascending: false });
 
-        // Build guest signal per task
+        // Build guest signal and latest comment per task
         const taskComments = new Map<string, typeof comments>();
         comments?.forEach(c => {
           if (!taskComments.has(c.task_id)) taskComments.set(c.task_id, []);
           taskComments.get(c.task_id)!.push(c);
         });
 
-        // For each task, check latest comment author
         // Get guest member IDs
         const { data: guestMembers } = await supabase
           .from('team_members')
@@ -120,12 +125,25 @@ export function useLinguisticTasks(workspaceId: string | null) {
         const guestIds = new Set(guestMembers?.map(g => g.id) || []);
 
         taskComments.forEach((cmts, taskId) => {
-          if (cmts.length === 0) {
+          // Latest comment (first in array since ordered desc)
+          if (cmts.length > 0) {
+            const latest = cmts[0];
+            const author = teamMemberMap.get(latest.user_id);
+            latestCommentMap.set(taskId, {
+              content: latest.content,
+              authorName: author?.name || 'Unknown',
+              createdAt: new Date(latest.created_at),
+            });
+          }
+
+          // Guest signal from guest-visible comments only
+          const guestVisibleCmts = cmts.filter(c => c.is_guest_visible);
+          if (guestVisibleCmts.length === 0) {
             guestSignalMap.set(taskId, 'none');
             return;
           }
-          const latest = cmts[0];
-          if (guestIds.has(latest.user_id)) {
+          const latestGuestVisible = guestVisibleCmts[0];
+          if (guestIds.has(latestGuestVisible.user_id)) {
             guestSignalMap.set(taskId, 'replied');
           } else {
             guestSignalMap.set(taskId, 'waiting');
@@ -151,10 +169,14 @@ export function useLinguisticTasks(workspaceId: string | null) {
           projectManager: teamMemberMap.get(t.project_manager_id),
           traductor: t.traductor_id ? teamMemberMap.get(t.traductor_id) : undefined,
           adaptador: t.adaptador_id ? teamMemberMap.get(t.adaptador_id) : undefined,
+          traductorId: t.traductor_id,
+          adaptadorId: t.adaptador_id,
           groupId: t.group_id,
+          cantidadEpisodios: t.cantidad_episodios,
           hasTranslatedFile: fileCats.has('translated'),
           hasAdaptedFile: fileCats.has('adapted'),
           guestSignal: guestSignalMap.get(t.id) || 'none',
+          latestComment: latestCommentMap.get(t.id) || null,
         };
       });
 

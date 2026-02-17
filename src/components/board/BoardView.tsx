@@ -4,6 +4,7 @@ import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy,
 import { PHASE_DUE_DATE_MAP, ALL_PHASE_DUE_DATE_FIELDS, STUDIO_OPTIONS_COLOMBIA } from '@/types/board';
 import { BoardGuide, useBoardGuide } from './BoardGuide';
 import { addBusinessDays, getLocalDateString } from '@/lib/businessDays';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TaskGroup } from './TaskGroup';
@@ -989,33 +990,52 @@ function BoardViewContent({
       {viewMode === 'table' && (
         <div className="flex-1 overflow-auto custom-scrollbar">
           {/* Studio Filter Tabs for Recording boards */}
-          {isRecordingBoard && (
-            <div className="flex items-center gap-1 mb-3 px-[10px]">
-              <Button
-                variant={studioFilter === null ? 'default' : 'outline'}
-                size="sm"
-                className="h-7 px-3 text-xs"
-                onClick={() => setStudioFilter(null)}
-              >
-                All
-              </Button>
-              {STUDIO_OPTIONS_COLOMBIA.map(studio => {
-                const label = studio.replace('Studio ', 'S');
-                const count = allBoardTasks.filter(t => t.studio === studio).length;
-                return (
-                  <Button
-                    key={studio}
-                    variant={studioFilter === studio ? 'default' : 'outline'}
-                    size="sm"
-                    className="h-7 px-3 text-xs"
-                    onClick={() => setStudioFilter(studioFilter === studio ? null : studio)}
-                  >
-                    {label} {count > 0 && <span className="ml-1 opacity-70">({count})</span>}
-                  </Button>
-                );
-              })}
-            </div>
-          )}
+          {isRecordingBoard && (() => {
+            const studioColors: Record<string, string> = {
+              'Studio 1': 'bg-red-800 text-white border-red-800',
+              'Studio 2': 'bg-blue-500 text-white border-blue-500',
+              'Studio 3': 'bg-orange-500 text-white border-orange-500',
+              'Studio 4': 'bg-purple-500 text-white border-purple-500',
+              'Studio 5': 'bg-teal-500 text-white border-teal-500',
+              'Studio 6': 'bg-pink-500 text-white border-pink-500',
+              'Studio 7': 'bg-amber-600 text-white border-amber-600',
+              'Studio 8': 'bg-cyan-600 text-white border-cyan-600',
+            };
+            return (
+              <div className="flex items-center gap-1.5 mb-3 px-[10px]">
+                <button
+                  onClick={() => setStudioFilter(null)}
+                  className={cn(
+                    "px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors",
+                    studioFilter === null
+                      ? "bg-foreground text-background"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  )}
+                >
+                  All
+                </button>
+                {STUDIO_OPTIONS_COLOMBIA.map(studio => {
+                  const label = studio.replace('Studio ', 'S');
+                  const count = allBoardTasks.filter(t => t.studio === studio).length;
+                  const isActive = studioFilter === studio;
+                  return (
+                    <button
+                      key={studio}
+                      onClick={() => setStudioFilter(isActive ? null : studio)}
+                      className={cn(
+                        "px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors",
+                        isActive
+                          ? studioColors[studio]
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      )}
+                    >
+                      {label}{count > 0 ? ` (${count})` : ''}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
         {/* Task Groups */}
           <div className="space-y-6 min-w-max">
             {filteredGroups.map(group => <TaskGroup key={group.id} group={group} onUpdateTask={handleUpdateTask} onDeleteTask={deleteTask} onAddTask={() => addTask(group.id)} onUpdateGroup={updates => updateGroup(group.id, updates)} onDeleteGroup={() => deleteGroup(group.id)} onSendToPhase={handleSendTaskToPhase} boardId={boardId} boardName={board.name} workspaceName={workspaceName} columns={columns} isLocked={isLocked || !canReorderColumns} onReorderColumns={reorderColumns} canDeleteTasks={canDeleteTasks} canDeleteGroups={canDeleteTasks} allBoardTasks={allBoardTasks} selectedTaskId={selectedTaskId} onTaskPanelClose={handleTaskPanelClose} />)}

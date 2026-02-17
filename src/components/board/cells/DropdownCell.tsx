@@ -113,9 +113,14 @@ export function DropdownCell({ value, onChange, options, placeholder = 'Select..
 
   const getStudioBadgeClass = (val?: string) => {
     if (!val) return "bg-muted text-muted-foreground";
-    if (val === 'Studio 4') return "bg-purple-500 text-white";
-    if (val === 'Studio 3') return "bg-orange-500 text-white";
+    if (val === 'Studio 1') return "bg-red-800 text-white";
     if (val === 'Studio 2') return "bg-blue-500 text-white";
+    if (val === 'Studio 3') return "bg-orange-500 text-white";
+    if (val === 'Studio 4') return "bg-purple-500 text-white";
+    if (val === 'Studio 5') return "bg-teal-500 text-white";
+    if (val === 'Studio 6') return "bg-pink-500 text-white";
+    if (val === 'Studio 7') return "bg-amber-600 text-white";
+    if (val === 'Studio 8') return "bg-cyan-600 text-white";
     return "bg-muted text-muted-foreground";
   };
 

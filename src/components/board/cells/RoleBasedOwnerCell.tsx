@@ -23,9 +23,10 @@ interface RoleBasedOwnerCellProps {
   disabled?: boolean;
   onInstructionsComment?: (comment: string, viewerIds: string[]) => void;
   taskId?: string;
+  compact?: boolean;
 }
 
-export const RoleBasedOwnerCell = memo(function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled = false, onInstructionsComment, taskId }: RoleBasedOwnerCellProps) {
+export const RoleBasedOwnerCell = memo(function RoleBasedOwnerCell({ owner, onOwnerChange, roleFilter, disabled = false, onInstructionsComment, taskId, compact = false }: RoleBasedOwnerCellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [instructionsDialogOpen, setInstructionsDialogOpen] = useState(false);
   const [pendingUser, setPendingUser] = useState<User | null>(null);
@@ -106,14 +107,16 @@ export const RoleBasedOwnerCell = memo(function RoleBasedOwnerCell({ owner, onOw
         <div className="flex items-center gap-1">
           {owner ? (
             <div className="flex items-center gap-2">
-              <Avatar className="h-6 w-6">
-                <AvatarFallback
-                  style={{ backgroundColor: owner.color }}
-                  className="text-xs text-white"
-                >
-                  {owner.initials}
-                </AvatarFallback>
-              </Avatar>
+              {!compact && (
+                <Avatar className="h-6 w-6">
+                  <AvatarFallback
+                    style={{ backgroundColor: owner.color }}
+                    className="text-xs text-white"
+                  >
+                    {owner.initials}
+                  </AvatarFallback>
+                </Avatar>
+              )}
               <span className="text-sm truncate max-w-[100px]">{owner.name}</span>
             </div>
           ) : (
@@ -136,15 +139,17 @@ export const RoleBasedOwnerCell = memo(function RoleBasedOwnerCell({ owner, onOw
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center gap-2 hover:bg-accent rounded px-1 py-0.5 transition-smooth cursor-pointer"
               >
-                <Avatar className="h-6 w-6">
-                  <AvatarFallback
-                    style={{ backgroundColor: owner.color }}
-                    className="text-xs text-white"
-                  >
-                    {owner.initials}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm truncate max-w-[100px]">{owner.name}</span>
+                {!compact && (
+                  <Avatar className="h-6 w-6">
+                    <AvatarFallback
+                      style={{ backgroundColor: owner.color }}
+                      className="text-xs text-white"
+                    >
+                      {owner.initials}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+                <span className={cn("text-sm truncate", compact ? "max-w-[120px]" : "max-w-[100px]")}>{owner.name}</span>
               </div>
               <div
                 role="button"

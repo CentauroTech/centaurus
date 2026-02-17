@@ -1087,11 +1087,11 @@ function BoardViewContent({
               'VoiceTests': 'Voice Tests',
             };
             return (
-              <div className="flex items-center gap-1.5 mb-3 px-[10px] flex-wrap">
+              <div className="flex items-center gap-1 mb-3 px-[10px] flex-nowrap overflow-x-auto">
                 <button
                   onClick={() => setPhaseFilter(null)}
                   className={cn(
-                    "px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors",
+                    "px-2 py-0.5 rounded-md text-[10px] font-medium whitespace-nowrap transition-colors",
                     phaseFilter === null
                       ? "bg-foreground text-background"
                       : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -1107,7 +1107,7 @@ function BoardViewContent({
                       key={phase}
                       onClick={() => setPhaseFilter(isActive ? null : phase)}
                       className={cn(
-                        "px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors",
+                        "px-2 py-0.5 rounded-md text-[10px] font-medium whitespace-nowrap transition-colors",
                         phaseColors[phase] || 'bg-muted text-muted-foreground',
                         isActive && "ring-2 ring-offset-1 ring-foreground/50"
                       )}

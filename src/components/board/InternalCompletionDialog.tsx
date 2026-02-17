@@ -161,14 +161,22 @@ export function InternalCompletionDialog({
 
     setIsSubmitting(true);
     try {
+      let fileUrl: string | null = null;
+      let fileName: string | null = null;
+
       // Upload file if provided
       if (droppedFile) {
         const category = getFileCategory();
-        await uploadFile.mutateAsync({
+        const result = await uploadFile.mutateAsync({
           file: droppedFile,
           category,
           isGuestAccessible: true,
         });
+        // Extract the file URL from the upload result
+        if (result) {
+          fileUrl = (result as any).url || null;
+          fileName = droppedFile.name;
+        }
       }
 
       // Add comment if provided
@@ -182,6 +190,64 @@ export function InternalCompletionDialog({
           viewerId: currentMember.id,
         });
       }
+
+      // Record to guest_completed_tasks for the Entregados view
+      // Fetch task data for the record
+      const { data: taskData } = await supabase
+        .from('tasks')
+        .select('name, work_order_number, titulo_aprobado_espanol, locked_runtime, cantidad_episodios, branch, date_assigned')
+        .eq('id', taskId)
+        .single();
+
+      // Get workspace name from the board
+      const { data: boardData } = await supabase
+        .from('tasks')
+        .select('group_id')
+        .eq('id', taskId)
+        .single();
+
+      let workspaceName: string | null = null;
+      if (boardData?.group_id) {
+        const { data: groupData } = await supabase
+          .from('task_groups')
+          .select('board_id')
+          .eq('id', boardData.group_id)
+          .single();
+        if (groupData?.board_id) {
+          const { data: bData } = await supabase
+            .from('boards')
+            .select('workspace_id')
+            .eq('id', groupData.board_id)
+            .single();
+          if (bData?.workspace_id) {
+            const { data: wsData } = await supabase
+              .from('workspaces')
+              .select('name')
+              .eq('id', bData.workspace_id)
+              .single();
+            workspaceName = wsData?.name || null;
+          }
+        }
+      }
+
+      const rolePerformed = phase?.toLowerCase().includes('translat') ? 'Translator' : 'Adapter';
+
+      await supabase.from('guest_completed_tasks').insert({
+        task_id: taskId,
+        team_member_id: currentMember.id,
+        task_name: taskData?.name || taskName,
+        phase: phase || '',
+        role_performed: rolePerformed,
+        delivery_comment: comment.trim() || null,
+        delivery_file_url: fileUrl,
+        delivery_file_name: fileName,
+        work_order_number: taskData?.work_order_number || null,
+        titulo_aprobado_espanol: taskData?.titulo_aprobado_espanol || null,
+        locked_runtime: taskData?.locked_runtime || null,
+        cantidad_episodios: taskData?.cantidad_episodios || null,
+        workspace_name: workspaceName,
+        branch: taskData?.branch || null,
+      });
 
       // Signal parent to proceed with the status change + phase progression
       onComplete();

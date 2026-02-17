@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy, X, HelpCircle, LayoutGrid } from 'lucide-react';
+import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy, X, HelpCircle, LayoutGrid, CheckCircle } from 'lucide-react';
 import { PHASE_DUE_DATE_MAP, ALL_PHASE_DUE_DATE_FIELDS } from '@/types/board';
 import { BoardGuide, useBoardGuide } from './BoardGuide';
 import { addBusinessDays, getLocalDateString } from '@/lib/businessDays';
@@ -12,6 +12,7 @@ import { Task, User, TaskGroup as TaskGroupType } from '@/types/board';
 import { BulkActionsToolbar } from './BulkActionsToolbar';
 import { MultipleWODialog } from './MultipleWODialog';
 import { InternalCompletionDialog } from './InternalCompletionDialog';
+import { EntregadosView } from './EntregadosView';
 import { TaskSelectionProvider } from '@/contexts/TaskSelectionContext';
 import { CalendarView } from './CalendarView';
 import TaskDetailsPanel from './TaskDetailsPanel';
@@ -64,7 +65,7 @@ function BoardViewContent({
   const currentUserId = currentTeamMember?.id || null;
   const queryClient = useQueryClient();
   const [isMultipleWODialogOpen, setIsMultipleWODialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'calendar' | 'entregados'>('table');
 
   // Internal completion dialog state (for Jennyfer/Diana in Translation/Adapting)
   const INTERNAL_COMPLETION_MEMBERS: Record<string, string> = {
@@ -140,6 +141,7 @@ function BoardViewContent({
 
   // Check if this is a Kickoff board
   const isKickoffBoard = board.name.toLowerCase().includes('kickoff');
+  const isTranslationOrAdaptingBoard = /-(translation|adapting|adaptacion)/i.test(board.name);
 
   // Extract phase from board name for currentPhase field
   const boardPhase = useMemo(() => {
@@ -792,6 +794,17 @@ function BoardViewContent({
               <Calendar className="w-4 h-4 mr-1" />
               Calendar
             </Button>
+            {isTranslationOrAdaptingBoard && (
+              <Button
+                variant={viewMode === 'entregados' ? 'default' : 'ghost'}
+                size="sm"
+                className="rounded-none h-8 px-3"
+                onClick={() => setViewMode('entregados')}
+              >
+                <CheckCircle className="w-4 h-4 mr-1" />
+                Entregados
+              </Button>
+            )}
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -950,6 +963,11 @@ function BoardViewContent({
           />
         ) : null;
       })()}
+
+      {/* Entregados View */}
+      {viewMode === 'entregados' && (
+        <EntregadosView boardPhase={boardPhase} />
+      )}
 
       {/* Scrollable Board Area */}
       {viewMode === 'table' && (

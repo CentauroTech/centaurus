@@ -1,8 +1,15 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Languages, Sparkles, X, CalendarDays } from 'lucide-react';
+import { Search, Languages, Sparkles, X, CalendarDays, LogOut, Settings, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useAccessibleWorkspaces, EXCLUDED_LCC_WORKSPACES } from '@/hooks/useAccessibleWorkspaces';
 import { useCanAccessFeature } from '@/hooks/useFeatureSettings';
@@ -14,6 +21,12 @@ import { TodaysFocusStrip, isOverdue, isDueNext48h, isMissingFile } from '@/comp
 import TaskDetailsPanel from '@/components/board/TaskDetailsPanel';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { NotificationSettings } from '@/components/notifications/NotificationSettings';
+import { ChatWidget } from '@/components/chat/ChatWidget';
+import { useAuth } from '@/hooks/useAuth';
+import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { Task, User } from '@/types/board';
 import { Loader2 } from 'lucide-react';
 
@@ -22,7 +35,10 @@ export default function LinguisticControlCenter() {
   const { canAccess, isLoading: accessLoading } = useCanAccessFeature('linguistic_control_center');
   const { data: workspaces, isLoading: wsLoading } = useAccessibleWorkspaces();
   const { data: sidebarWorkspaces } = useWorkspaces();
-
+  const { user, signOut } = useAuth();
+  const { data: currentTeamMember } = useCurrentTeamMember();
+  const { language, updateLanguage } = useLanguagePreference();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null);
   const [phaseFilter, setPhaseFilter] = useState<'all' | 'translation' | 'adapting'>('all');
 
@@ -178,6 +194,43 @@ export default function LinguisticControlCenter() {
                   </button>
                 )}
               </div>
+
+              {/* Notification bell */}
+              <NotificationBell />
+
+              {/* Profile dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
+                    {currentTeamMember?.initials || user?.email?.substring(0, 2).toUpperCase() || 'U'}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem className="text-xs text-muted-foreground cursor-default">
+                    {user?.email}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Notification Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => updateLanguage.mutate(language === 'en' ? 'es' : 'en')} disabled={updateLanguage.isPending}>
+                    <Globe className="mr-2 h-4 w-4" />
+                    {language === 'en' ? '🇪🇸 Cambiar a Español' : '🇺🇸 Switch to English'}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <NotificationSettings open={settingsOpen} onOpenChange={setSettingsOpen} />
             </div>
           </div>
         </header>
@@ -293,6 +346,8 @@ export default function LinguisticControlCenter() {
           />
         )}
       </div>
+
+      <ChatWidget />
     </div>
   );
 }

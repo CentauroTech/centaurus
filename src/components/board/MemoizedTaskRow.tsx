@@ -296,12 +296,22 @@ export const MemoizedTaskRow = memo(function MemoizedTaskRow({
       case 'status':
         const isKickoffPhase = boardName?.toLowerCase().includes('kickoff') || task.currentPhase?.toLowerCase() === 'kickoff' || false;
         const isColScheduling = boardName?.toLowerCase().includes('scheduling') && workspaceName?.toLowerCase().includes('col');
+        const isColRetakes = boardName?.toLowerCase().includes('retakes') && workspaceName?.toLowerCase().includes('col');
         const handleStatusWithValidation = (val: Status) => {
           if (val === 'done' && isColScheduling) {
             const missing: string[] = [];
             if (!task.studio) missing.push('Studio');
             if (!task.director) missing.push('Director');
             if (!task.tecnico) missing.push('Técnico');
+            if (missing.length > 0) {
+              setSchedulingWarning({ missing });
+              return;
+            }
+          }
+          if (val === 'done' && isColRetakes) {
+            const missing: string[] = [];
+            if (!task.estudioRevisado || task.estudioRevisado === 'On Hold') missing.push('Estudio Revisado');
+            if (!task.retakesProgramados || task.retakesProgramados === 'On Hold') missing.push('Retakes Programados');
             if (missing.length > 0) {
               setSchedulingWarning({ missing });
               return;
@@ -490,7 +500,7 @@ export const MemoizedTaskRow = memo(function MemoizedTaskRow({
           <AlertDialogHeader>
             <AlertDialogTitle>Warning</AlertDialogTitle>
             <AlertDialogDescription>
-              This project doesn't have {schedulingWarning?.missing.join(', ')} attached. Are you sure you want to move this task to recording?
+              The following columns are still on hold: {schedulingWarning?.missing.join(', ')}. Are you sure you want to proceed?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

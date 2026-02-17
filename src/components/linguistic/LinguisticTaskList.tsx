@@ -4,6 +4,9 @@ import { LinguisticTask } from '@/hooks/useLinguisticTasks';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { RoleBasedOwnerCell } from '@/components/board/cells/RoleBasedOwnerCell';
+import { TextCell } from '@/components/board/cells/TextCell';
+import { NumberCell } from '@/components/board/cells/NumberCell';
+import { DateCell } from '@/components/board/DateCell';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { User } from '@/types/board';
 import { supabase } from '@/integrations/supabase/client';
@@ -68,6 +71,15 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
   }, [allTeamMembers]);
 
   const isColombiaWorkspace = workspaceName.toLowerCase().includes('colombia') || workspaceName.toLowerCase().includes('col');
+
+  const handleFieldUpdate = useCallback(async (taskId: string, field: string, value: unknown) => {
+    const { error } = await supabase.from('tasks').update({
+      [field]: value,
+      last_updated: new Date().toISOString(),
+    }).eq('id', taskId);
+    if (error) { toast.error('Failed to update task'); return; }
+    queryClient.invalidateQueries({ queryKey: ['linguistic-tasks', workspaceId] });
+  }, [queryClient, workspaceId]);
 
   const handleOwnerChange = useCallback(async (task: LinguisticTask, field: 'traductor_id' | 'adaptador_id', user: User | undefined) => {
     const updateData: Record<string, unknown> = {
@@ -196,50 +208,73 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
             )}
           >
             {/* Project + WO */}
-            <button className="min-w-0 text-left" onClick={() => onSelectTask(task.id)}>
-              <p className="text-sm font-medium truncate">{task.name}</p>
+            <div className="min-w-0 self-center" onClick={e => e.stopPropagation()}>
+              <TextCell
+                value={task.name}
+                onChange={(val) => handleFieldUpdate(task.id, 'name', val)}
+                placeholder="Project name"
+              />
               {task.workOrderNumber && (
-                <p className="text-xs text-muted-foreground">WO# {task.workOrderNumber}</p>
+                <p className="text-xs text-muted-foreground px-2.5">WO# {task.workOrderNumber}</p>
               )}
-            </button>
-
-            {/* Client */}
-            <div className="text-sm text-muted-foreground truncate self-center">
-              {task.clientName || '—'}
             </div>
 
-            {/* Phase */}
+            {/* Client */}
+            <div className="self-center" onClick={e => e.stopPropagation()}>
+              <TextCell
+                value={task.clientName || ''}
+                onChange={(val) => handleFieldUpdate(task.id, 'client_name', val || null)}
+                placeholder="—"
+              />
+            </div>
+
+            {/* Phase - read only */}
             <div className="self-center">
               <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-medium", PHASE_BADGE[task.phase] || 'bg-muted text-muted-foreground')}>
                 {task.phase === 'translation' ? 'Translation' : 'Adapting'}
               </span>
             </div>
 
-            {/* Status */}
-            <div className="self-center">
-              <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-medium", STATUS_BADGE[task.status] || STATUS_BADGE.default)}>
-                {STATUS_LABELS[task.status] || task.status}
-              </span>
+            {/* Status - editable dropdown */}
+            <div className="self-center" onClick={e => e.stopPropagation()}>
+              {(() => {
+                const statusKey = task.status;
+                const statusOptions = ['default', 'working', 'delayed', 'done', 'pending_approval'];
+                return (
+                  <select
+                    value={statusKey}
+                    onChange={(e) => handleFieldUpdate(task.id, 'status', e.target.value)}
+                    className={cn(
+                      "px-2 py-0.5 rounded-full text-xs font-medium border-0 outline-none cursor-pointer appearance-none text-center",
+                      STATUS_BADGE[statusKey] || STATUS_BADGE.default
+                    )}
+                  >
+                    {statusOptions.map(opt => (
+                      <option key={opt} value={opt}>{STATUS_LABELS[opt]}</option>
+                    ))}
+                  </select>
+                );
+              })()}
             </div>
 
-            {/* Due Date */}
-            <div className="self-center">
-              {task.phaseDueDate ? (
-                <span className={cn("text-xs font-medium", isOverdue ? "text-red-500" : "text-foreground")}>
-                  {format(new Date(task.phaseDueDate), 'MMM d')}
-                </span>
-              ) : (
-                <span className="text-xs text-muted-foreground">—</span>
-              )}
+            {/* Due Date - editable */}
+            <div className="self-center" onClick={e => e.stopPropagation()}>
+              <DateCell
+                date={task.phaseDueDate || undefined}
+                onDateChange={(val) => {
+                  const field = task.phase === 'translation' ? 'translation_due_date' : 'adapting_due_date';
+                  handleFieldUpdate(task.id, field, val || null);
+                }}
+              />
             </div>
 
-            {/* Episodes */}
-            <div className="self-center text-center">
-              {task.cantidadEpisodios ? (
-                <span className="text-xs font-medium">{task.cantidadEpisodios}</span>
-              ) : (
-                <span className="text-xs text-muted-foreground">—</span>
-              )}
+            {/* Episodes - editable */}
+            <div className="self-center text-center" onClick={e => e.stopPropagation()}>
+              <NumberCell
+                value={task.cantidadEpisodios ?? undefined}
+                onChange={(val) => handleFieldUpdate(task.id, 'cantidad_episodios', val ?? null)}
+                placeholder="—"
+              />
             </div>
 
             {/* Translator - assignable */}

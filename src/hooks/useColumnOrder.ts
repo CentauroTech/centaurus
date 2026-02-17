@@ -89,24 +89,19 @@ export function useColumnOrder(boardId: string, workspaceName: string, boardName
       }
     }
     
-    if (matchedPhase) {
+    // For Col-Retakes boards, rename Status column to "Retakes Grabados"
+    const isColRetakes = boardLower.includes('retakes') && !boardLower.includes('mix') && workspaceName.toLowerCase().includes('col');
+
+    if (matchedPhase || isColRetakes) {
       return base.map(col => {
-        if (col.id === 'phaseDueDate') {
+        if (matchedPhase && col.id === 'phaseDueDate') {
           return {
             ...col,
             label: matchedPhase!.label,
             field: matchedPhase!.field as any,
           };
         }
-        return col;
-      });
-    }
-    
-    // For Col-Retakes boards, rename Status column to "Retakes Grabados"
-    const isColRetakes = boardLower.includes('retakes') && !boardLower.includes('mix');
-    if (isColRetakes && workspaceName.toLowerCase().includes('col')) {
-      return base.map(col => {
-        if (col.id === 'status') {
+        if (isColRetakes && col.id === 'status') {
           return { ...col, label: 'Retakes Grabados' };
         }
         return col;

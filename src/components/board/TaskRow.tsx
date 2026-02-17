@@ -402,9 +402,10 @@ export function TaskRow({
         return <MultiSelectCell value={value as string[]} onChange={val => handleUpdate(column.field, val)} options={column.options || []} placeholder="Select..." isPrivate={isPrivate} />;
       case 'time-tracked':
         return <TimeTrackedCell startedAt={getTaskValue(task, 'startedAt') as string} completedAt={getTaskValue(task, 'completedAt') as string} isPrivate={isPrivate} />;
-      case 'asignacion':
+      case 'asignacion': {
         const asignacionPhase = boardName && boardName.includes('-') ? boardName.split('-').slice(1).join('-') : boardName || '';
         return <AsignacionCell value={value as string} onChange={val => handleUpdate(column.field, val)} disabled={disabled} phase={asignacionPhase} />;
+      }
       default:
         return <span className="text-sm text-muted-foreground">-</span>;
     }

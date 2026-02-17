@@ -45,7 +45,7 @@ export function TodaysFocusStrip({ tasks, activeFilter, onFilterClick }: TodaysF
   ];
 
   return (
-    <div className="flex gap-3 flex-wrap">
+    <>
       {counters.map(c => {
         const isActive = activeFilter === c.key;
         return (
@@ -64,7 +64,7 @@ export function TodaysFocusStrip({ tasks, activeFilter, onFilterClick }: TodaysF
           </button>
         );
       })}
-    </div>
+    </>
   );
 }
 

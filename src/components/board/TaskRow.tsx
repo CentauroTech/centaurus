@@ -360,7 +360,7 @@ export function TaskRow({
         }
         // Use RoleBasedOwnerCell if roleFilter is specified
         if (column.roleFilter) {
-          return <RoleBasedOwnerCell owner={value as User} onOwnerChange={val => handleUpdate(column.field, val)} roleFilter={column.roleFilter as RoleType} disabled={disabled} />;
+          return <RoleBasedOwnerCell owner={value as User} onOwnerChange={val => handleUpdate(column.field, val)} roleFilter={column.roleFilter as RoleType} disabled={disabled} onInstructionsComment={handleInstructionsComment} taskId={task.id} />;
         }
         // Use regular OwnerCell for other person fields
         return <OwnerCell owner={value as User} onOwnerChange={val => handleUpdate(column.field, val)} disabled={disabled} />;

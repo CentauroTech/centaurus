@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Download, Loader2, MessageSquare, Calendar, ChevronDown, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
@@ -45,6 +46,16 @@ const MEMBER_GROUPS = [
 
 const MEMBER_IDS = MEMBER_GROUPS.map(m => m.id);
 
+const PHASE_BADGE_STYLES: Record<string, string> = {
+  'Translation': 'bg-blue-200 text-blue-800',
+  'Adapting': 'bg-teal-500 text-white',
+  'Adaptacion': 'bg-teal-500 text-white',
+};
+
+function getPhaseBadgeStyle(phase: string): string {
+  return PHASE_BADGE_STYLES[phase] || 'bg-muted text-muted-foreground';
+}
+
 interface EntregadosViewProps {
   boardPhase: string;
 }
@@ -74,11 +85,13 @@ export function EntregadosView({ boardPhase }: EntregadosViewProps) {
         .select('id, traductor_id, adaptador_id')
         .in('id', taskIds);
 
+      // Collect all member IDs we need (from task assignments + completion member IDs)
       const memberIds = new Set<string>();
       taskDetails?.forEach(t => {
         if (t.traductor_id) memberIds.add(t.traductor_id);
         if (t.adaptador_id) memberIds.add(t.adaptador_id);
       });
+      tasks.forEach(t => memberIds.add(t.team_member_id));
 
       const { data: members } = await supabase
         .from('team_members')
@@ -90,10 +103,19 @@ export function EntregadosView({ boardPhase }: EntregadosViewProps) {
 
       return tasks.map(t => {
         const td = taskMap.get(t.task_id);
+        // For translator: use task's traductor_id, fallback to completing member if phase is Translation
+        const translatorId = td?.traductor_id;
+        const adapterId = td?.adaptador_id;
+        const completingMemberName = memberMap.get(t.team_member_id) || null;
+
         return {
           ...t,
-          translator_name: td?.traductor_id ? memberMap.get(td.traductor_id) || null : null,
-          adapter_name: td?.adaptador_id ? memberMap.get(td.adaptador_id) || null : null,
+          translator_name: translatorId
+            ? memberMap.get(translatorId) || null
+            : (t.phase.toLowerCase().includes('translat') ? completingMemberName : null),
+          adapter_name: adapterId
+            ? memberMap.get(adapterId) || null
+            : (t.phase.toLowerCase().includes('adapt') ? completingMemberName : null),
         };
       });
     },
@@ -200,7 +222,9 @@ export function EntregadosView({ boardPhase }: EntregadosViewProps) {
                             )}
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm capitalize">{task.phase}</span>
+                            <Badge className={`text-xs ${getPhaseBadgeStyle(task.phase)}`}>
+                              {task.phase}
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             {task.translator_name ? (

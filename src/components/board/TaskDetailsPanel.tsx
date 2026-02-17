@@ -184,7 +184,7 @@ export default function TaskDetailsPanel({
             </span>
           </button>
           {infoExpanded && (
-            <div className="px-4 pb-3 space-y-3">
+            <div className="px-4 pb-3 pt-2 space-y-3 bg-card">
               <div className="grid grid-cols-2 gap-2.5 text-sm">
                 {pm && (
                   <div className="flex items-center gap-2">

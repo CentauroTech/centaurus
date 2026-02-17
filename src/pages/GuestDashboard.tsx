@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { LogOut, CheckCircle, Clock, AlertTriangle, Table, LayoutGrid, FileText, Hash, Download, Loader2, MessageSquare, Receipt, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -52,6 +52,26 @@ export default function GuestDashboard() {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(false);
+
+  // Compute episode indices grouped by WO prefix
+  const episodeIndexMap = useMemo(() => {
+    if (!tasks) return new Map<string, number>();
+    const map = new Map<string, number>();
+    const counters = new Map<string, number>();
+    for (const task of tasks) {
+      let groupKey: string;
+      const wo = task.workOrderNumber || '';
+      if (wo.length >= 3) {
+        groupKey = wo.slice(0, -2);
+      } else {
+        groupKey = (task.name || '').replace(/\s*(S\d+|EP\d+|\d+)\s*$/i, '').trim();
+      }
+      const count = (counters.get(groupKey) || 0) + 1;
+      counters.set(groupKey, count);
+      map.set(task.id, count);
+    }
+    return map;
+  }, [tasks]);
 
   // Handle file download with signed URL
   const handleFileDownload = async (fileUrl: string, fileName: string, recordId: string) => {
@@ -270,6 +290,7 @@ export default function GuestDashboard() {
                 tasks={activeTasks}
                 onTaskClick={setSelectedTask}
                 onStatusChange={handleStatusChange}
+                episodeIndexMap={episodeIndexMap}
               />
             ) : (
               <div className="grid gap-4">
@@ -467,7 +488,7 @@ export default function GuestDashboard() {
           task={selectedTask}
           isOpen={!!selectedTask}
           onClose={() => setSelectedTask(null)}
-          episodeIndex={tasks ? tasks.findIndex(t => t.id === selectedTask.id) + 1 : 1}
+          episodeIndex={episodeIndexMap.get(selectedTask.id) ?? 1}
         />
       )}
 

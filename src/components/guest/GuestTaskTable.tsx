@@ -25,6 +25,7 @@ interface GuestTaskTableProps {
   tasks: GuestTask[];
   onTaskClick: (task: GuestTask) => void;
   onStatusChange: (taskId: string, status: 'default' | 'working' | 'done') => void;
+  episodeIndexMap?: Map<string, number>;
 }
 
 const PHASE_LABELS: Record<string, string> = {
@@ -72,7 +73,7 @@ const isTranslationPhase = (fase?: string): boolean => {
 };
 
 
-export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTaskTableProps) {
+export function GuestTaskTable({ tasks, onTaskClick, onStatusChange, episodeIndexMap }: GuestTaskTableProps) {
   // Check if any task is NOT in translation phase (to show File to Adapt column)
   const hasNonTranslationTasks = tasks.some(task => !isTranslationPhase(task.fase));
 
@@ -251,7 +252,7 @@ export function GuestTaskTable({ tasks, onTaskClick, onStatusChange }: GuestTask
                     <TableCell onClick={() => onTaskClick(task)} className="text-center">
                       <span className="text-sm">
                         {task.cantidadEpisodios 
-                          ? `${index + 1}/${task.cantidadEpisodios}` 
+                          ? `${episodeIndexMap?.get(task.id) ?? (index + 1)}/${task.cantidadEpisodios}` 
                           : '—'}
                       </span>
                     </TableCell>

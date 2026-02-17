@@ -196,12 +196,13 @@ export function useMoveToNextPhase(boardId: string, currentUserId?: string | nul
       // 2. Get current board to find workspace and phase
       const { data: currentBoard, error: boardError } = await supabase
         .from('boards')
-        .select('workspace_id, name')
+        .select('workspace_id, name, workspaces!boards_workspace_id_fkey(name)')
         .eq('id', currentGroup.board_id)
         .single();
       
       if (boardError) throw boardError;
 
+      const workspaceName = (currentBoard as any).workspaces?.name || '';
       const currentPhase = extractPhaseFromBoardName(currentBoard.name);
       const nextPhase = getNextPhase(currentPhase, pruebaDeVoz);
 
@@ -304,9 +305,10 @@ export function useMoveToNextPhase(boardId: string, currentUserId?: string | nul
         guest_due_date: null,
       };
 
-      // Set asignacion to "On Hold" when arriving at Translation or Adapting
+      // Set asignacion to "On Hold" when arriving at Translation or Adapting (Colombia only)
       const normalizedNext = nextPhase.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (['translation', 'adapting', 'adaptacion'].includes(normalizedNext)) {
+      const isColombiaWorkspace = workspaceName.toLowerCase().includes('colombia') || workspaceName.toLowerCase().includes('col');
+      if (isColombiaWorkspace && ['translation', 'adapting', 'adaptacion'].includes(normalizedNext)) {
         updateData.asignacion = 'On Hold';
       }
 
@@ -363,8 +365,8 @@ export function useMoveToNextPhase(boardId: string, currentUserId?: string | nul
               guest_due_date: guestDueStr,
             };
 
-            // For adapting phase, also set asignacion to Asignado
-            if (normalizedNext === 'adapting' || normalizedNext === 'adaptacion') {
+            // For adapting phase in Colombia, also set asignacion to Asignado
+            if (isColombiaWorkspace && (normalizedNext === 'adapting' || normalizedNext === 'adaptacion')) {
               privacyUpdate.asignacion = 'Asignado';
             }
 
@@ -389,7 +391,7 @@ export function useMoveToNextPhase(boardId: string, currentUserId?: string | nul
               user_id: currentUserId || null,
             });
 
-            if (normalizedNext === 'adapting' || normalizedNext === 'adaptacion') {
+            if (isColombiaWorkspace && (normalizedNext === 'adapting' || normalizedNext === 'adaptacion')) {
               await supabase.from('activity_log').insert({
                 task_id: taskId,
                 type: 'field_change',

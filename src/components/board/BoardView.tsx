@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Filter, Users, Calendar, ListPlus, Lock, Unlock, RotateCcw, Copy, X, HelpCircle, LayoutGrid, CheckCircle } from 'lucide-react';
-import { PHASE_DUE_DATE_MAP, ALL_PHASE_DUE_DATE_FIELDS } from '@/types/board';
+import { PHASE_DUE_DATE_MAP, ALL_PHASE_DUE_DATE_FIELDS, STUDIO_OPTIONS_COLOMBIA } from '@/types/board';
 import { BoardGuide, useBoardGuide } from './BoardGuide';
 import { addBusinessDays, getLocalDateString } from '@/lib/businessDays';
 import { Button } from '@/components/ui/button';
@@ -66,6 +66,7 @@ function BoardViewContent({
   const queryClient = useQueryClient();
   const [isMultipleWODialogOpen, setIsMultipleWODialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'calendar' | 'entregados'>('table');
+  const [studioFilter, setStudioFilter] = useState<string | null>(null);
 
   // Internal completion dialog state (for Jennyfer/Diana in Translation/Adapting)
   const INTERNAL_COMPLETION_MEMBERS: Record<string, string> = {
@@ -143,7 +144,7 @@ function BoardViewContent({
   // Check if this is a Kickoff board
   const isKickoffBoard = board.name.toLowerCase().includes('kickoff');
   const isTranslationOrAdaptingBoard = /-(translation|adapting|adaptacion)/i.test(board.name);
-
+  const isRecordingBoard = /-(recording)/i.test(board.name) && workspaceName.toLowerCase().includes('col');
   // Extract phase from board name for currentPhase field
   const boardPhase = useMemo(() => {
     const parts = board.name.split('-');
@@ -244,6 +245,15 @@ function BoardViewContent({
   const allBoardTasks = useMemo(() => {
     return transformedGroups.flatMap(g => g.tasks);
   }, [transformedGroups]);
+
+  // Apply studio filter for Recording boards
+  const filteredGroups = useMemo(() => {
+    if (!studioFilter) return transformedGroups;
+    return transformedGroups.map(group => ({
+      ...group,
+      tasks: group.tasks.filter(t => t.studio === studioFilter)
+    })).filter(group => group.tasks.length > 0);
+  }, [transformedGroups, studioFilter]);
 
   // Handle task update from TaskRow - convert camelCase to snake_case
   const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
@@ -978,9 +988,37 @@ function BoardViewContent({
       {/* Scrollable Board Area */}
       {viewMode === 'table' && (
         <div className="flex-1 overflow-auto custom-scrollbar">
+          {/* Studio Filter Tabs for Recording boards */}
+          {isRecordingBoard && (
+            <div className="flex items-center gap-1 mb-3 px-[10px]">
+              <Button
+                variant={studioFilter === null ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 px-3 text-xs"
+                onClick={() => setStudioFilter(null)}
+              >
+                All
+              </Button>
+              {STUDIO_OPTIONS_COLOMBIA.map(studio => {
+                const label = studio.replace('Studio ', 'S');
+                const count = allBoardTasks.filter(t => t.studio === studio).length;
+                return (
+                  <Button
+                    key={studio}
+                    variant={studioFilter === studio ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-7 px-3 text-xs"
+                    onClick={() => setStudioFilter(studioFilter === studio ? null : studio)}
+                  >
+                    {label} {count > 0 && <span className="ml-1 opacity-70">({count})</span>}
+                  </Button>
+                );
+              })}
+            </div>
+          )}
         {/* Task Groups */}
           <div className="space-y-6 min-w-max">
-            {transformedGroups.map(group => <TaskGroup key={group.id} group={group} onUpdateTask={handleUpdateTask} onDeleteTask={deleteTask} onAddTask={() => addTask(group.id)} onUpdateGroup={updates => updateGroup(group.id, updates)} onDeleteGroup={() => deleteGroup(group.id)} onSendToPhase={handleSendTaskToPhase} boardId={boardId} boardName={board.name} workspaceName={workspaceName} columns={columns} isLocked={isLocked || !canReorderColumns} onReorderColumns={reorderColumns} canDeleteTasks={canDeleteTasks} canDeleteGroups={canDeleteTasks} allBoardTasks={allBoardTasks} selectedTaskId={selectedTaskId} onTaskPanelClose={handleTaskPanelClose} />)}
+            {filteredGroups.map(group => <TaskGroup key={group.id} group={group} onUpdateTask={handleUpdateTask} onDeleteTask={deleteTask} onAddTask={() => addTask(group.id)} onUpdateGroup={updates => updateGroup(group.id, updates)} onDeleteGroup={() => deleteGroup(group.id)} onSendToPhase={handleSendTaskToPhase} boardId={boardId} boardName={board.name} workspaceName={workspaceName} columns={columns} isLocked={isLocked || !canReorderColumns} onReorderColumns={reorderColumns} canDeleteTasks={canDeleteTasks} canDeleteGroups={canDeleteTasks} allBoardTasks={allBoardTasks} selectedTaskId={selectedTaskId} onTaskPanelClose={handleTaskPanelClose} />)}
           </div>
 
           {/* Empty State */}

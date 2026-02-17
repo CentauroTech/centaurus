@@ -299,9 +299,16 @@ export function useMoveToNextPhase(boardId: string, currentUserId?: string | nul
         status: 'default',
         fase: nextPhaseName,
         last_updated: now,
-        date_assigned: currentDate, // Set date_assigned for the new board
-        date_delivered: null, // Reset date_delivered for the new board
+        date_assigned: currentDate,
+        date_delivered: null,
+        guest_due_date: null,
       };
+
+      // Set asignacion to "On Hold" when arriving at Translation or Adapting
+      const normalizedNext = nextPhase.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (['translation', 'adapting', 'adaptacion'].includes(normalizedNext)) {
+        updateData.asignacion = 'On Hold';
+      }
 
       // When arriving at Retakes, set retakes workflow columns to On Hold
       if (nextPhase === 'retakes') {
@@ -315,6 +322,86 @@ export function useMoveToNextPhase(boardId: string, currentUserId?: string | nul
         .eq('id', taskId);
 
       if (updateError) throw updateError;
+
+      // 7.5 Clear existing viewers on phase transition
+      await supabase.from('task_viewers').delete().eq('task_id', taskId);
+
+      // 7.6 Auto-privacy: check if role column for this phase has a guest assigned
+      const ROLE_COLUMN_MAP: Record<string, string> = {
+        translation: 'traductor_id',
+        adapting: 'adaptador_id',
+        qc1: 'qc_1_id',
+        retakes: 'qc_retakes_id',
+        qcmix: 'qc_mix_id',
+        mix: prefix.toLowerCase() === 'mia' || prefix.toLowerCase() === 'se' ? 'mixer_miami_id' : 'mixer_bogota_id',
+      };
+
+      const roleColumn = ROLE_COLUMN_MAP[normalizedNext];
+      if (roleColumn) {
+        const roleValue = currentTask[roleColumn as keyof typeof currentTask] as string | null;
+        if (roleValue) {
+          // Check if this team member is a guest (non-@centauro.com)
+          const { data: roleMember } = await supabase
+            .from('team_members')
+            .select('id, email')
+            .eq('id', roleValue)
+            .single();
+
+          const isGuest = roleMember && (!roleMember.email || !roleMember.email.toLowerCase().includes('@centauro.com'));
+
+          if (isGuest) {
+            // Calculate next business day for guest_due_date
+            let guestDue = new Date();
+            guestDue.setDate(guestDue.getDate() + 1);
+            while (guestDue.getDay() === 0 || guestDue.getDay() === 6) {
+              guestDue.setDate(guestDue.getDate() + 1);
+            }
+            const guestDueStr = guestDue.toISOString().split('T')[0];
+
+            const privacyUpdate: Record<string, unknown> = {
+              is_private: true,
+              guest_due_date: guestDueStr,
+            };
+
+            // For adapting phase, also set asignacion to Asignado
+            if (normalizedNext === 'adapting' || normalizedNext === 'adaptacion') {
+              privacyUpdate.asignacion = 'Asignado';
+            }
+
+            await supabase.from('tasks').update(privacyUpdate).eq('id', taskId);
+
+            // Add the role member as a viewer
+            await supabase.from('task_viewers').insert({
+              task_id: taskId,
+              team_member_id: roleValue,
+            });
+
+            // Make all task files guest-accessible
+            await supabase.from('task_files').update({ is_guest_accessible: true }).eq('task_id', taskId);
+
+            // Log the privacy change
+            await supabase.from('activity_log').insert({
+              task_id: taskId,
+              type: 'field_change',
+              field: 'is_private',
+              old_value: 'false',
+              new_value: 'true',
+              user_id: currentUserId || null,
+            });
+
+            if (normalizedNext === 'adapting' || normalizedNext === 'adaptacion') {
+              await supabase.from('activity_log').insert({
+                task_id: taskId,
+                type: 'field_change',
+                field: 'asignacion',
+                old_value: 'On Hold',
+                new_value: 'Asignado',
+                user_id: currentUserId || null,
+              });
+            }
+          }
+        }
+      }
 
       // 8. Apply phase automation (assign people based on phase and workspace)
       await applyPhaseAutomation(taskId, nextPhase, currentBoard.workspace_id, currentUserId);

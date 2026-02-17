@@ -361,6 +361,26 @@ function BoardViewContent({
       }
     }
 
+    // Auto-privacy: In Translation boards, when asignacion changes to "Asignado" or "Audio Description"
+    if (updates.asignacion !== undefined && normalizedPhase === 'translation') {
+      const triggerValues = ['Asignado', 'Audio Description'];
+      if (triggerValues.includes(updates.asignacion as string)) {
+        if (!rawTask?.is_private) {
+          dbUpdates.is_private = true;
+          // Add translator as viewer if assigned
+          const traductorId = rawTask?.traductor_id;
+          if (traductorId) {
+            await addGuestViewerIfNeeded(taskId, traductorId);
+          }
+          // Set assignment dates
+          const today = getLocalDateString();
+          const dueDate = getLocalDateString(addBusinessDays(new Date(), 1));
+          dbUpdates.date_assigned = today;
+          dbUpdates.guest_due_date = dueDate;
+        }
+      }
+    }
+
     // Handle people updates separately
     if (updates.people !== undefined) {
       const oldPeople = rawTask?.people || [];

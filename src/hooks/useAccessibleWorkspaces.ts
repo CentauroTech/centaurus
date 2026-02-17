@@ -12,6 +12,9 @@ const BRANCH_TO_WORKSPACE: Record<string, string> = {
   'Mexico': 'Mexico',
 };
 
+// Workspaces to exclude from the Linguistic Control Center
+export const EXCLUDED_LCC_WORKSPACES = ['Estudios Externos', 'Admin', 'Tutorial System'];
+
 /**
  * Returns workspaces filtered based on the current user's assigned branches.
  * - God and Admin users can see all workspaces

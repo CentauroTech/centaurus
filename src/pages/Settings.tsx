@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Users, Columns, X, Plus, Minus, Zap, DollarSign, BookOpen, LogOut, Globe } from 'lucide-react';
+import { ArrowLeft, Search, Users, Columns, X, Plus, Minus, Zap, DollarSign, BookOpen, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,7 +49,7 @@ import { EditableEmailCell } from '@/components/settings/EditableEmailCell';
 import { BillingTab } from '@/components/settings/BillingTab';
 import { GuideEditorTab } from '@/components/settings/GuideEditorTab';
 import { ColumnVisibilityTab } from '@/components/settings/ColumnVisibilityTab';
-import { useLanguagePreference, Language } from '@/hooks/useLanguagePreference';
+
 
 const BRANCH_COLORS: Record<Branch, string> = {
   Colombia: 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
@@ -97,7 +97,7 @@ export default function Settings() {
 
   // Check billing role access
   const { hasBillingRole } = useHasBillingRole();
-  const { language, updateLanguage } = useLanguagePreference();
+  
 
   // Create maps for quick lookup
   const branchesMap = useMemo(() => {
@@ -471,10 +471,6 @@ export default function Settings() {
                 Billing
               </TabsTrigger>
             )}
-            <TabsTrigger value="preferences" className="gap-2">
-              <Globe className="h-4 w-4" />
-              Preferences
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="directory" className="space-y-6">
@@ -767,33 +763,6 @@ export default function Settings() {
             </TabsContent>
           )}
 
-          {/* Preferences Tab - Available to all */}
-          <TabsContent value="preferences" className="space-y-6">
-            <div className="max-w-md space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-1">Language / Idioma</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Choose your preferred language. This setting is saved to your profile.
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant={language === 'en' ? 'default' : 'outline'}
-                    onClick={() => updateLanguage.mutate('en')}
-                    disabled={updateLanguage.isPending}
-                  >
-                    🇺🇸 English
-                  </Button>
-                  <Button
-                    variant={language === 'es' ? 'default' : 'outline'}
-                    onClick={() => updateLanguage.mutate('es')}
-                    disabled={updateLanguage.isPending}
-                  >
-                    🇪🇸 Español
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
         </Tabs>
       </main>
     </div>

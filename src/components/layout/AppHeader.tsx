@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, ChevronDown, LogOut, Settings } from 'lucide-react';
+import { Search, ChevronDown, LogOut, Settings, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { NotificationSettings } from '@/components/notifications/NotificationSettings';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 
 interface AppHeaderProps {
   boardName: string;
@@ -21,6 +22,7 @@ export function AppHeader({ boardName }: AppHeaderProps) {
   const { user, signOut } = useAuth();
   const { data: currentTeamMember } = useCurrentTeamMember();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { language, updateLanguage } = useLanguagePreference();
   
   const userInitials = currentTeamMember?.initials || user?.email?.substring(0, 2).toUpperCase() || 'U';
 
@@ -62,6 +64,10 @@ export function AppHeader({ boardName }: AppHeaderProps) {
             <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
               <Settings className="mr-2 h-4 w-4" />
               Notification Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => updateLanguage.mutate(language === 'en' ? 'es' : 'en')} disabled={updateLanguage.isPending}>
+              <Globe className="mr-2 h-4 w-4" />
+              {language === 'en' ? '🇪🇸 Cambiar a Español' : '🇺🇸 Switch to English'}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">

@@ -101,6 +101,7 @@ interface CalendarViewProps {
   onUpdateTask?: (taskId: string, updates: Partial<Task>) => void;
   boardName: string;
   isHQ: boolean;
+  defaultEnabledSources?: string[];
 }
 
 // Map date source key to Task field for updates
@@ -147,7 +148,7 @@ function getDateSources(boardName: string, isHQ: boolean) {
   return sources;
 }
 
-export function CalendarView({ tasks, onTaskClick, onUpdateTask, boardName, isHQ }: CalendarViewProps) {
+export function CalendarView({ tasks, onTaskClick, onUpdateTask, boardName, isHQ, defaultEnabledSources }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>('monthly');
   const [searchQuery, setSearchQuery] = useState('');
@@ -167,6 +168,7 @@ export function CalendarView({ tasks, onTaskClick, onUpdateTask, boardName, isHQ
   const dateSources = useMemo(() => getDateSources(boardName, isHQ), [boardName, isHQ]);
 
   const [enabledSources, setEnabledSources] = useState<Set<string>>(() => {
+    if (defaultEnabledSources) return new Set(defaultEnabledSources);
     return new Set(dateSources.filter(s => s.defaultOn).map(s => s.key));
   });
 

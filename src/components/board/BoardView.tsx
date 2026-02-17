@@ -76,6 +76,7 @@ function BoardViewContent({
     taskId: string;
     taskName: string;
     groupId: string;
+    assignedMemberId: string;
   } | null>(null);
   
   // URL-based task selection for notification deep links
@@ -430,11 +431,16 @@ function BoardViewContent({
         );
         
         if (isInNamedGroup) {
+          // Find which internal member owns this group
+          const assignedMemberId = Object.entries(INTERNAL_COMPLETION_MEMBERS).find(
+            ([, name]) => name.toLowerCase() === currentGroup!.name.toLowerCase()
+          )?.[0] || '';
           // Show completion dialog instead of immediately setting done
           setCompletionDialogTask({
             taskId,
             taskName: rawTask?.name || '',
             groupId: realGroupId!,
+            assignedMemberId,
           });
           return; // Don't proceed with the update yet
         }
@@ -907,6 +913,7 @@ function BoardViewContent({
           taskId={completionDialogTask.taskId}
           taskName={completionDialogTask.taskName}
           phase={boardPhase}
+          assignedMemberId={completionDialogTask.assignedMemberId}
           isOpen={!!completionDialogTask}
           onClose={() => setCompletionDialogTask(null)}
           onComplete={() => {

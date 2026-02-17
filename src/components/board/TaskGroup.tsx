@@ -118,14 +118,23 @@ export function TaskGroup({
     return filterTasks(group.tasks);
   }, [group.tasks, filterTasks]);
 
-  // Compute per-project episode indices
+  // Compute per-project episode indices by grouping tasks that share the same
+  // work order prefix (everything except the last 2 digits) or base project name
   const episodeIndexMap = useMemo(() => {
     const map = new Map<string, number>();
     const counters = new Map<string, number>();
     for (const task of filteredTasks) {
-      const projectName = task.name || '';
-      const count = (counters.get(projectName) || 0) + 1;
-      counters.set(projectName, count);
+      // Group by WO prefix (strip last 2 digits) if available, otherwise strip trailing episode suffixes from name
+      let groupKey: string;
+      const wo = task.workOrderNumber || '';
+      if (wo.length >= 3) {
+        groupKey = wo.slice(0, -2);
+      } else {
+        // Strip trailing numbers, "S" + digits, "EP" + digits, spaces
+        groupKey = (task.name || '').replace(/\s*(S\d+|EP\d+|\d+)\s*$/i, '').trim();
+      }
+      const count = (counters.get(groupKey) || 0) + 1;
+      counters.set(groupKey, count);
       map.set(task.id, count);
     }
     return map;

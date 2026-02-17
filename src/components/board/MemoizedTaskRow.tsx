@@ -310,8 +310,8 @@ export const MemoizedTaskRow = memo(function MemoizedTaskRow({
           }
           if (val === 'done' && isColRetakes) {
             const missing: string[] = [];
-            if (!task.estudioRevisado || task.estudioRevisado === 'On Hold') missing.push('Estudio Revisado');
-            if (!task.retakesProgramados || task.retakesProgramados === 'On Hold') missing.push('Retakes Programados');
+            if (task.estudioRevisado !== 'Done') missing.push('Estudio Revisado (must be Done)');
+            if (task.retakesProgramados !== 'Retakes Programados') missing.push('Retakes Programados (must be Retakes Programados)');
             if (missing.length > 0) {
               setSchedulingWarning({ missing });
               return;

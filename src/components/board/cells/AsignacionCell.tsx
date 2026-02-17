@@ -58,9 +58,9 @@ export const AsignacionCell = memo(function AsignacionCell({ value, onChange, di
 
   if (disabled) {
     return (
-      <div className="flex items-center justify-center">
-        <span className={cn('px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap', badgeClass)}>
-          {value || 'Select'}
+      <div className="h-full w-full">
+        <span className={cn('h-full w-full px-2 py-1 text-xs font-medium text-center truncate block', badgeClass)}>
+          {value || '-'}
         </span>
       </div>
     );
@@ -94,12 +94,13 @@ export const AsignacionCell = memo(function AsignacionCell({ value, onChange, di
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-full"
+        className={cn(
+          "h-full w-full px-2 py-1 text-xs font-medium transition-smooth text-center truncate",
+          badgeClass
+        )}
         type="button"
       >
-        <span className={cn('px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-smooth', badgeClass)}>
-          {value || 'Select'}
-        </span>
+        {value || '-'}
       </button>
       {dropdown}
     </>

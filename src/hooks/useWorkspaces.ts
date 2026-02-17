@@ -297,10 +297,18 @@ export function useAddTask(boardId: string) {
       branch?: string;           
       project_manager_id?: string;  
     }) => {
-      // Branch and project_manager_id are required by database constraints
-      // If not provided, use default values (will be updated by user after creation)
       if (!task.branch || !task.project_manager_id) {
-        throw new Error('Branch and Project Manager are required. Please use the Multiple WO tool to create tasks.');
+        // Try to get current user as fallback PM
+        const { data: currentMemberId } = await supabase.rpc('current_team_member_id');
+        if (!task.project_manager_id && currentMemberId) {
+          task.project_manager_id = currentMemberId;
+        }
+        if (!task.branch) {
+          task.branch = 'Miami'; // Fallback
+        }
+        if (!task.project_manager_id) {
+          throw new Error('Branch and Project Manager are required.');
+        }
       }
 
       // The database trigger will auto-generate the work order number

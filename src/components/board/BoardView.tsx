@@ -554,10 +554,27 @@ function BoardViewContent({
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   
   const addTask = (groupId: string) => {
-    // Open Multiple WO dialog instead of single task creation
-    // (Single tasks require branch and project_manager_id which the dialog provides)
-    setSelectedGroupId(groupId);
-    setIsMultipleWODialogOpen(true);
+    if (isKickoffBoard) {
+      // Open Multiple WO dialog for kickoff boards
+      setSelectedGroupId(groupId);
+      setIsMultipleWODialogOpen(true);
+    } else {
+      // For non-kickoff boards, create a simple task inline
+      // Derive branch from workspace name
+      const branchMap: Record<string, string> = {
+        'miami': 'Miami',
+        'colombia': 'Colombia',
+        'estudios externos': 'Brazil',
+      };
+      const branch = branchMap[workspaceName.toLowerCase()] || 'Miami';
+      
+      addTaskMutation.mutate({
+        group_id: groupId,
+        name: '',
+        branch,
+        project_manager_id: currentUserId || undefined,
+      });
+    }
   };
   const updateGroup = (groupId: string, updates: Partial<{
     name: string;

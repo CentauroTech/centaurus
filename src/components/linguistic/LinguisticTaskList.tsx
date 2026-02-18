@@ -72,7 +72,6 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
 
   const isColombiaWorkspace = workspaceName.toLowerCase().includes('colombia') || workspaceName.toLowerCase().includes('col');
 
-  // Compute episode indices grouped by WO prefix
   const episodeIndexMap = useMemo(() => {
     const map = new Map<string, number>();
     const counters = new Map<string, number>();
@@ -106,9 +105,7 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
       last_updated: new Date().toISOString(),
     };
 
-    // If assigning a guest, apply the full privacy workflow
     if (user && isGuestMember(user.id)) {
-      // Calculate next business day for guest_due_date
       const guestDue = new Date();
       guestDue.setDate(guestDue.getDate() + 1);
       while (guestDue.getDay() === 0 || guestDue.getDay() === 6) {
@@ -121,7 +118,6 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
       updateData.guest_due_date = guestDueStr;
       updateData.date_assigned = today;
 
-      // For Colombia adapting phase, also set asignacion to Asignado
       if (isColombiaWorkspace && task.phase === 'adapting' && field === 'adaptador_id') {
         updateData.asignacion = 'Asignado';
       }
@@ -129,21 +125,16 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
       const { error } = await supabase.from('tasks').update(updateData).eq('id', task.id);
       if (error) { toast.error('Failed to update task'); return; }
 
-      // Clear existing viewers and add the new guest as viewer
       await supabase.from('task_viewers').delete().eq('task_id', task.id);
       await supabase.from('task_viewers').insert({ task_id: task.id, team_member_id: user.id });
-
-      // Make all task files guest-accessible
       await supabase.from('task_files').update({ is_guest_accessible: true }).eq('task_id', task.id);
 
-      // Send guest notification
       sendGuestNotification.mutate({
         taskId: task.id,
         taskName: task.name || 'Untitled Task',
         guestIds: [user.id],
       });
 
-      // Log privacy change
       await supabase.from('activity_log').insert({
         task_id: task.id,
         type: 'field_change',
@@ -153,7 +144,6 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
         user_id: currentTeamMember?.id || null,
       });
     } else {
-      // Non-guest or removing assignment - just update the field
       const { error } = await supabase.from('tasks').update(updateData).eq('id', task.id);
       if (error) { toast.error('Failed to update task'); return; }
     }
@@ -186,190 +176,199 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
   }
 
   return (
-    <div className="space-y-1">
-      {/* Header */}
-      <div className="grid grid-cols-[1fr_100px_100px_110px_90px_50px_140px_140px_100px_100px_120px_100px_40px] gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
-        <span>Project</span>
-        <span>Client</span>
-        <span>Phase</span>
-        <span>Status</span>
-        <span>Due Date</span>
-        <span>Ep.</span>
-        <span>Translator</span>
-        <span>Adapter</span>
-        <span>Files</span>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex items-center gap-1 cursor-help">Guest <HelpCircle className="w-3 h-3" /></span>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[220px] text-xs normal-case tracking-normal font-normal">
-              Shows the latest guest-visible comment activity: <strong>No Activity</strong> = no comments, <strong>Waiting</strong> = internal reply sent, <strong>Replied</strong> = guest has responded.
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <span>Latest Comment</span>
-        <span>Updated</span>
-        <span></span>
-      </div>
+    <div className="w-full overflow-x-auto">
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr className="border-b bg-muted/30">
+            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">Project</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">Client</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">Phase</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[110px]">Status</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[90px]">Due Date</th>
+            <th className="px-2 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[50px]">Ep.</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[140px]">Translator</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[140px]">Adapter</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">Files</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center gap-1 cursor-help">Guest <HelpCircle className="w-3 h-3" /></span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[220px] text-xs normal-case tracking-normal font-normal">
+                    Shows the latest guest-visible comment activity: <strong>No Activity</strong> = no comments, <strong>Waiting</strong> = internal reply sent, <strong>Replied</strong> = guest has responded.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">Latest Comment</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">Updated</th>
+            <th className="px-2 py-2 w-[40px]"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {tasks.map(task => {
+            const guestConfig = GUEST_SIGNAL_CONFIG[task.guestSignal];
+            const epIndex = episodeIndexMap.get(task.id) ?? 1;
 
-      {/* Rows */}
-      {tasks.map(task => {
-        const guestConfig = GUEST_SIGNAL_CONFIG[task.guestSignal];
-        const isOverdue = task.phaseDueDate && new Date(task.phaseDueDate) < new Date();
+            return (
+              <tr
+                key={task.id}
+                className={cn(
+                  "border-b border-border/40 transition-all hover:bg-muted/60",
+                  selectedTaskId === task.id && "bg-muted ring-1 ring-primary/20"
+                )}
+              >
+                {/* Project + WO */}
+                <td className="px-4 py-3 align-middle" onClick={e => e.stopPropagation()}>
+                  <div className="min-w-0">
+                    <TextCell
+                      value={task.name}
+                      onChange={(val) => handleFieldUpdate(task.id, 'name', val)}
+                      placeholder="Project name"
+                    />
+                    {task.workOrderNumber && (
+                      <p className="text-xs text-muted-foreground px-2.5">WO# {task.workOrderNumber}</p>
+                    )}
+                  </div>
+                </td>
 
-        return (
-          <div
-            key={task.id}
-            className={cn(
-              "w-full grid grid-cols-[1fr_100px_100px_110px_90px_50px_140px_140px_100px_100px_120px_100px_40px] gap-2 px-4 py-3 text-left rounded-lg transition-all hover:bg-muted/60",
-              selectedTaskId === task.id && "bg-muted ring-1 ring-primary/20"
-            )}
-          >
-            {/* Project + WO */}
-            <div className="min-w-0 self-center" onClick={e => e.stopPropagation()}>
-              <TextCell
-                value={task.name}
-                onChange={(val) => handleFieldUpdate(task.id, 'name', val)}
-                placeholder="Project name"
-              />
-              {task.workOrderNumber && (
-                <p className="text-xs text-muted-foreground px-2.5">WO# {task.workOrderNumber}</p>
-              )}
-            </div>
+                {/* Client */}
+                <td className="px-2 py-3 align-middle" onClick={e => e.stopPropagation()}>
+                  <TextCell
+                    value={task.clientName || ''}
+                    onChange={(val) => handleFieldUpdate(task.id, 'client_name', val || null)}
+                    placeholder="—"
+                  />
+                </td>
 
-            {/* Client */}
-            <div className="self-center" onClick={e => e.stopPropagation()}>
-              <TextCell
-                value={task.clientName || ''}
-                onChange={(val) => handleFieldUpdate(task.id, 'client_name', val || null)}
-                placeholder="—"
-              />
-            </div>
+                {/* Phase */}
+                <td className="px-2 py-3 align-middle">
+                  <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-medium", PHASE_BADGE[task.phase] || 'bg-muted text-muted-foreground')}>
+                    {task.phase === 'translation' ? 'Translation' : 'Adapting'}
+                  </span>
+                </td>
 
-            {/* Phase - read only */}
-            <div className="self-center">
-              <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-medium", PHASE_BADGE[task.phase] || 'bg-muted text-muted-foreground')}>
-                {task.phase === 'translation' ? 'Translation' : 'Adapting'}
-              </span>
-            </div>
-
-            {/* Status - editable dropdown */}
-            <div className="self-center" onClick={e => e.stopPropagation()}>
-              {(() => {
-                const statusKey = task.status;
-                const statusOptions = ['default', 'working', 'delayed', 'done', 'pending_approval'];
-                return (
+                {/* Status */}
+                <td className="px-2 py-3 align-middle" onClick={e => e.stopPropagation()}>
                   <select
-                    value={statusKey}
+                    value={task.status}
                     onChange={(e) => handleFieldUpdate(task.id, 'status', e.target.value)}
                     className={cn(
                       "px-2 py-0.5 rounded-full text-xs font-medium border-0 outline-none cursor-pointer appearance-none text-center",
-                      STATUS_BADGE[statusKey] || STATUS_BADGE.default
+                      STATUS_BADGE[task.status] || STATUS_BADGE.default
                     )}
                   >
-                    {statusOptions.map(opt => (
+                    {['default', 'working', 'delayed', 'done', 'pending_approval'].map(opt => (
                       <option key={opt} value={opt}>{STATUS_LABELS[opt]}</option>
                     ))}
                   </select>
-                );
-              })()}
-            </div>
+                </td>
 
-            {/* Due Date - editable */}
-            <div className="self-center" onClick={e => e.stopPropagation()}>
-              <DateCell
-                date={task.phaseDueDate || undefined}
-                onDateChange={(val) => {
-                  const field = task.phase === 'translation' ? 'translation_due_date' : 'adapting_due_date';
-                  handleFieldUpdate(task.id, field, val || null);
-                }}
-              />
-            </div>
+                {/* Due Date */}
+                <td className="px-2 py-3 align-middle" onClick={e => e.stopPropagation()}>
+                  <DateCell
+                    date={task.phaseDueDate || undefined}
+                    onDateChange={(val) => {
+                      const field = task.phase === 'translation' ? 'translation_due_date' : 'adapting_due_date';
+                      handleFieldUpdate(task.id, field, val || null);
+                    }}
+                  />
+                </td>
 
-            {/* Episodes - X/Total format */}
-            <div className="self-center text-center" onClick={e => e.stopPropagation()}>
-              <NumberCell
-                value={task.cantidadEpisodios ?? undefined}
-                onChange={(val) => handleFieldUpdate(task.id, 'cantidad_episodios', val ?? null)}
-                placeholder="—"
-                displayFormat="episodes"
-                episodeIndex={episodeIndexMap.get(task.id) ?? 1}
-              />
-            </div>
+                {/* Episodes */}
+                <td className="px-2 py-3 align-middle text-center" onClick={e => e.stopPropagation()}>
+                  <NumberCell
+                    value={task.cantidadEpisodios ?? undefined}
+                    onChange={(val) => handleFieldUpdate(task.id, 'cantidad_episodios', val ?? null)}
+                    placeholder="—"
+                    displayFormat="episodes"
+                    episodeIndex={epIndex}
+                  />
+                </td>
 
-            {/* Translator - assignable */}
-            <div className="self-center" onClick={e => e.stopPropagation()}>
-              <RoleBasedOwnerCell
-                owner={task.traductor}
-                onOwnerChange={(user) => handleOwnerChange(task, 'traductor_id', user)}
-                roleFilter="translator"
-                onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
-                taskId={task.id}
-                compact
-              />
-            </div>
+                {/* Translator */}
+                <td className="px-2 py-3 align-middle" onClick={e => e.stopPropagation()}>
+                  <RoleBasedOwnerCell
+                    owner={task.traductor}
+                    onOwnerChange={(user) => handleOwnerChange(task, 'traductor_id', user)}
+                    roleFilter="translator"
+                    onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
+                    taskId={task.id}
+                    compact
+                  />
+                </td>
 
-            {/* Adapter - assignable */}
-            <div className="self-center" onClick={e => e.stopPropagation()}>
-              <RoleBasedOwnerCell
-                owner={task.adaptador}
-                onOwnerChange={(user) => handleOwnerChange(task, 'adaptador_id', user)}
-                roleFilter="adapter"
-                onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
-                taskId={task.id}
-                compact
-              />
-            </div>
+                {/* Adapter */}
+                <td className="px-2 py-3 align-middle" onClick={e => e.stopPropagation()}>
+                  <RoleBasedOwnerCell
+                    owner={task.adaptador}
+                    onOwnerChange={(user) => handleOwnerChange(task, 'adaptador_id', user)}
+                    roleFilter="adapter"
+                    onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
+                    taskId={task.id}
+                    compact
+                  />
+                </td>
 
-            {/* File readiness */}
-            <div className="flex gap-1.5 self-center">
-              <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
-                task.hasTranslatedFile ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
-              )}>
-                {task.hasTranslatedFile ? <FileCheck className="w-3 h-3" /> : <FileX className="w-3 h-3" />}
-                T
-              </span>
-              <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
-                task.hasAdaptedFile ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
-              )}>
-                {task.hasAdaptedFile ? <FileCheck className="w-3 h-3" /> : <FileX className="w-3 h-3" />}
-                A
-              </span>
-            </div>
+                {/* File readiness */}
+                <td className="px-2 py-3 align-middle">
+                  <div className="flex gap-1.5">
+                    <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
+                      task.hasTranslatedFile ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                    )}>
+                      {task.hasTranslatedFile ? <FileCheck className="w-3 h-3" /> : <FileX className="w-3 h-3" />}
+                      T
+                    </span>
+                    <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
+                      task.hasAdaptedFile ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                    )}>
+                      {task.hasAdaptedFile ? <FileCheck className="w-3 h-3" /> : <FileX className="w-3 h-3" />}
+                      A
+                    </span>
+                  </div>
+                </td>
 
-            {/* Guest signal */}
-            <div className="self-center">
-              <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium", guestConfig.className)}>
-                <guestConfig.icon className="w-3 h-3" />
-                {guestConfig.label}
-              </span>
-            </div>
+                {/* Guest signal */}
+                <td className="px-2 py-3 align-middle">
+                  <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium", guestConfig.className)}>
+                    <guestConfig.icon className="w-3 h-3" />
+                    {guestConfig.label}
+                  </span>
+                </td>
 
-            {/* Latest comment */}
-            <div className="self-center min-w-0">
-              {task.latestComment ? (
-                <div className="text-xs text-muted-foreground truncate" title={`${task.latestComment.authorName}: ${stripHtml(task.latestComment.content)}`}>
-                  <span className="font-medium text-foreground">{task.latestComment.authorName.split(' ')[0]}: </span>
-                  {stripHtml(task.latestComment.content).slice(0, 40)}{stripHtml(task.latestComment.content).length > 40 ? '…' : ''}
-                </div>
-              ) : (
-                <span className="text-xs text-muted-foreground">—</span>
-              )}
-            </div>
+                {/* Latest comment */}
+                <td className="px-2 py-3 align-middle">
+                  <div className="min-w-0">
+                    {task.latestComment ? (
+                      <div className="text-xs text-muted-foreground truncate" title={`${task.latestComment.authorName}: ${stripHtml(task.latestComment.content)}`}>
+                        <span className="font-medium text-foreground">{task.latestComment.authorName.split(' ')[0]}: </span>
+                        {stripHtml(task.latestComment.content).slice(0, 40)}{stripHtml(task.latestComment.content).length > 40 ? '…' : ''}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </td>
 
-            {/* Last updated */}
-            <div className="text-xs text-muted-foreground self-center">
-              {task.lastUpdated ? formatDistanceToNow(task.lastUpdated, { addSuffix: true }) : '—'}
-            </div>
+                {/* Updated */}
+                <td className="px-2 py-3 align-middle">
+                  <span className="text-xs text-muted-foreground">
+                    {task.lastUpdated ? formatDistanceToNow(task.lastUpdated, { addSuffix: true }) : '—'}
+                  </span>
+                </td>
 
-            {/* Open icon */}
-            <button className="self-center flex justify-center" onClick={() => onSelectTask(task.id)}>
-              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/50" />
-            </button>
-          </div>
-        );
-      })}
+                {/* Open */}
+                <td className="px-2 py-3 align-middle text-center">
+                  <button onClick={() => onSelectTask(task.id)}>
+                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/50" />
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

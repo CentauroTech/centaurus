@@ -61,29 +61,8 @@ const GUEST_SIGNAL_CONFIG: Record<string, { label: string; className: string; ic
   replied: { label: 'Replied', className: 'text-green-700 bg-green-100', icon: MessageCircle },
 };
 
-// Role filter mapping for each assignment column
-const ROLE_COLUMN_CONFIG: { label: string; field: string; roleFilter: string }[] = [
-  { label: 'Premixer', field: 'mixer_miami_id', roleFilter: 'mixer' },
-  { label: 'QC Premix', field: 'qc_1_id', roleFilter: 'qc_premix' },
-  { label: 'QC Retakes', field: 'qc_retakes_id', roleFilter: 'qc_retakes' },
-  { label: 'Mixer', field: 'mixer_miami_id', roleFilter: 'mixer' },
-  { label: 'QC Mixer', field: 'qc_mix_id', roleFilter: 'qc_mix' },
-];
-
 function stripHtml(html: string): string {
   return DOMPurify.sanitize(html, { ALLOWED_TAGS: [] }).replace(/&nbsp;/g, ' ').trim();
-}
-
-function getAssigneeForColumn(task: QCTask, field: string): User | undefined {
-  const idMap: Record<string, string | null> = {
-    'qc_1_id': task.qc1Id,
-    'qc_retakes_id': task.qcRetakesId,
-    'qc_mix_id': task.qcMixId,
-    'mixer_miami_id': task.mixerMiamiId,
-    'mixer_bogota_id': task.mixerBogotaId,
-  };
-  const memberId = idMap[field];
-  return memberId ? task.projectManager : undefined; // We'll resolve from teamMemberMap
 }
 
 interface QCTaskListProps {
@@ -106,7 +85,6 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
     return !member.email || !member.email.toLowerCase().includes('@centauro.com');
   }, [allTeamMembers]);
 
-  // Compute episode indices
   const episodeIndexMap = useMemo(() => {
     const map = new Map<string, number>();
     const counters = new Map<string, number>();
@@ -204,214 +182,230 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
   };
 
   return (
-    <div className="space-y-1">
-      {/* Header */}
-      <div className="grid grid-cols-[1fr_90px_80px_120px_100px_90px_50px_120px_120px_120px_120px_120px_120px_100px_120px_100px_40px] gap-0 px-0 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b bg-muted/30">
-        <span className="px-4 border-r border-border/20">Project</span>
-        <span className="px-2 border-r border-border/20">Client</span>
-        <span className="px-2 border-r border-border/20">Branch</span>
-        <span className="px-2 border-r border-border/20">Stage</span>
-        <span className="px-2 border-r border-border/20">Status</span>
-        <span className="px-2 border-r border-border/20">Due Date</span>
-        <span className="px-2 border-r border-border/20">Ep.</span>
-        <span className="px-2 border-r border-border/20">Premixer</span>
-        <span className="px-2 border-r border-border/20">QC Premix</span>
-        <span className="px-2 border-r border-border/20">QC Retakes</span>
-        <span className="px-2 border-r border-border/20">Mixer</span>
-        <span className="px-2 border-r border-border/20">QC Mixer</span>
-        <span className="px-2 border-r border-border/20">Submission</span>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="px-2 border-r border-border/20 inline-flex items-center gap-1 cursor-help">Guest <HelpCircle className="w-3 h-3" /></span>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[220px] text-xs normal-case tracking-normal font-normal">
-              Shows the latest guest-visible comment activity: <strong>No Activity</strong> = no comments, <strong>Waiting</strong> = internal reply sent, <strong>Replied</strong> = guest has responded.
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <span className="px-2 border-r border-border/20">Vendor Comment</span>
-        <span className="px-2 border-r border-border/20">Updated</span>
-        <span className="px-2"></span>
-      </div>
+    <div className="w-full overflow-x-auto">
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr className="border-b bg-muted/30">
+            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">Project</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[90px]">Client</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[80px]">Branch</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">Stage</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">Status</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[90px]">Due Date</th>
+            <th className="px-2 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[50px]">Ep.</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">Premixer</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">QC Premix</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">QC Retakes</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">Mixer</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">QC Mixer</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">Submission</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex items-center gap-1 cursor-help">Guest <HelpCircle className="w-3 h-3" /></span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[220px] text-xs normal-case tracking-normal font-normal">
+                    Shows the latest guest-visible comment activity: <strong>No Activity</strong> = no comments, <strong>Waiting</strong> = internal reply sent, <strong>Replied</strong> = guest has responded.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">Vendor Comment</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">Updated</th>
+            <th className="px-2 py-2 w-[40px]"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {tasks.map(task => {
+            const submission = SUBMISSION_BADGE[task.submissionStatus];
+            const submissionType = SUBMISSION_TYPE_LABELS[task.phase] || 'Submission';
+            const guestConfig = GUEST_SIGNAL_CONFIG[task.guestSignal];
+            const epIndex = episodeIndexMap.get(task.id) ?? 1;
 
-      {tasks.map(task => {
-        const submission = SUBMISSION_BADGE[task.submissionStatus];
-        const submissionType = SUBMISSION_TYPE_LABELS[task.phase] || 'Submission';
-        const guestConfig = GUEST_SIGNAL_CONFIG[task.guestSignal];
-        const epIndex = episodeIndexMap.get(task.id) ?? 1;
-
-        return (
-          <div
-            key={task.id}
-            className={cn(
-              "w-full grid grid-cols-[1fr_90px_80px_120px_100px_90px_50px_120px_120px_120px_120px_120px_120px_100px_120px_100px_40px] gap-0 px-0 py-3 text-left transition-all hover:bg-muted/60 border-b border-border/40",
-              selectedTaskId === task.id && "bg-muted ring-1 ring-primary/20"
-            )}
-          >
-            {/* Project + WO */}
-            <div className="min-w-0 self-center px-4 border-r border-border/20">
-              <button onClick={() => onSelectTask(task.id)} className="text-sm font-medium truncate block text-left hover:text-primary transition-colors">
-                {task.name || 'Untitled'}
-              </button>
-              {task.workOrderNumber && (
-                <p className="text-xs text-muted-foreground">WO# {task.workOrderNumber}</p>
-              )}
-            </div>
-
-            {/* Client */}
-            <div className="text-xs text-muted-foreground self-center truncate px-2 border-r border-border/20">{task.clientName || '—'}</div>
-
-            {/* Branch */}
-            <div className="self-center px-2 border-r border-border/20">
-              <span className={cn("inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium",
-                task.branch === 'Miami' ? 'bg-blue-200 text-blue-800' : 'bg-yellow-200 text-yellow-800'
-              )}>
-                {task.branch}
-              </span>
-            </div>
-
-            {/* Stage */}
-            <div className="self-center px-2 border-r border-border/20">
-              <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap", PHASE_BADGE[task.phase] || 'bg-muted text-muted-foreground')}>
-                {QC_PHASE_LABELS[task.phase] || task.phase}
-              </span>
-            </div>
-
-            {/* Status */}
-            <div className="self-center px-2 border-r border-border/20" onClick={e => e.stopPropagation()}>
-              <select
-                value={task.status}
-                onChange={(e) => handleFieldUpdate(task.id, 'status', e.target.value)}
+            return (
+              <tr
+                key={task.id}
                 className={cn(
-                  "px-2 py-0.5 rounded-full text-xs font-medium border-0 outline-none cursor-pointer appearance-none text-center",
-                  STATUS_BADGE[task.status] || STATUS_BADGE.default
+                  "border-b border-border/40 transition-all hover:bg-muted/60",
+                  selectedTaskId === task.id && "bg-muted ring-1 ring-primary/20"
                 )}
               >
-                {['default', 'working', 'delayed', 'done'].map(opt => (
-                  <option key={opt} value={opt}>{STATUS_LABELS[opt]}</option>
-                ))}
-              </select>
-            </div>
+                {/* Project + WO */}
+                <td className="px-4 py-3 align-middle">
+                  <div className="min-w-0">
+                    <button onClick={() => onSelectTask(task.id)} className="text-sm font-medium truncate block text-left hover:text-primary transition-colors">
+                      {task.name || 'Untitled'}
+                    </button>
+                    {task.workOrderNumber && (
+                      <p className="text-xs text-muted-foreground">WO# {task.workOrderNumber}</p>
+                    )}
+                  </div>
+                </td>
 
-            {/* Due Date */}
-            <div className="self-center px-2 border-r border-border/20" onClick={e => e.stopPropagation()}>
-              <DateCell
-                date={task.phaseDueDate || undefined}
-                onDateChange={(val) => {
-                  const field = QC_PHASE_DUE_DATE_FIELD[task.phase];
-                  if (field) handleFieldUpdate(task.id, field, val || null);
-                }}
-              />
-            </div>
+                {/* Client */}
+                <td className="px-2 py-3 align-middle">
+                  <span className="text-xs text-muted-foreground truncate block">{task.clientName || '—'}</span>
+                </td>
 
-            {/* Episodes */}
-            <div className="self-center text-center text-sm px-2 border-r border-border/20">
-              {task.cantidadEpisodios ? `${epIndex}/${task.cantidadEpisodios}` : '—'}
-            </div>
+                {/* Branch */}
+                <td className="px-2 py-3 align-middle">
+                  <span className={cn("inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium",
+                    task.branch === 'Miami' ? 'bg-blue-200 text-blue-800' : 'bg-yellow-200 text-yellow-800'
+                  )}>
+                    {task.branch}
+                  </span>
+                </td>
 
-            {/* Premixer (mixer_miami_id) */}
-            <div className="self-center px-2 border-r border-border/20" onClick={e => e.stopPropagation()}>
-              <RoleBasedOwnerCell
-                owner={resolveUser(task.mixerMiamiId)}
-                onOwnerChange={(user) => handleOwnerChange(task.id, 'mixer_miami_id', user)}
-                roleFilter="mixer"
-                onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
-                taskId={task.id}
-                compact
-              />
-            </div>
+                {/* Stage */}
+                <td className="px-2 py-3 align-middle">
+                  <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap", PHASE_BADGE[task.phase] || 'bg-muted text-muted-foreground')}>
+                    {QC_PHASE_LABELS[task.phase] || task.phase}
+                  </span>
+                </td>
 
-            {/* QC Premix (qc_1_id) */}
-            <div className="self-center px-2 border-r border-border/20" onClick={e => e.stopPropagation()}>
-              <RoleBasedOwnerCell
-                owner={resolveUser(task.qc1Id)}
-                onOwnerChange={(user) => handleOwnerChange(task.id, 'qc_1_id', user)}
-                roleFilter="qc_premix"
-                onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
-                taskId={task.id}
-                compact
-              />
-            </div>
+                {/* Status */}
+                <td className="px-2 py-3 align-middle" onClick={e => e.stopPropagation()}>
+                  <select
+                    value={task.status}
+                    onChange={(e) => handleFieldUpdate(task.id, 'status', e.target.value)}
+                    className={cn(
+                      "px-2 py-0.5 rounded-full text-xs font-medium border-0 outline-none cursor-pointer appearance-none text-center",
+                      STATUS_BADGE[task.status] || STATUS_BADGE.default
+                    )}
+                  >
+                    {['default', 'working', 'delayed', 'done'].map(opt => (
+                      <option key={opt} value={opt}>{STATUS_LABELS[opt]}</option>
+                    ))}
+                  </select>
+                </td>
 
-            {/* QC Retakes (qc_retakes_id) */}
-            <div className="self-center px-2 border-r border-border/20" onClick={e => e.stopPropagation()}>
-              <RoleBasedOwnerCell
-                owner={resolveUser(task.qcRetakesId)}
-                onOwnerChange={(user) => handleOwnerChange(task.id, 'qc_retakes_id', user)}
-                roleFilter="qc_retakes"
-                onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
-                taskId={task.id}
-                compact
-              />
-            </div>
+                {/* Due Date */}
+                <td className="px-2 py-3 align-middle" onClick={e => e.stopPropagation()}>
+                  <DateCell
+                    date={task.phaseDueDate || undefined}
+                    onDateChange={(val) => {
+                      const field = QC_PHASE_DUE_DATE_FIELD[task.phase];
+                      if (field) handleFieldUpdate(task.id, field, val || null);
+                    }}
+                  />
+                </td>
 
-            {/* Mixer (mixer_bogota_id) */}
-            <div className="self-center px-2 border-r border-border/20" onClick={e => e.stopPropagation()}>
-              <RoleBasedOwnerCell
-                owner={resolveUser(task.mixerBogotaId)}
-                onOwnerChange={(user) => handleOwnerChange(task.id, 'mixer_bogota_id', user)}
-                roleFilter="mixer"
-                onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
-                taskId={task.id}
-                compact
-              />
-            </div>
+                {/* Episodes */}
+                <td className="px-2 py-3 align-middle text-center text-sm">
+                  {task.cantidadEpisodios ? `${epIndex}/${task.cantidadEpisodios}` : '—'}
+                </td>
 
-            {/* QC Mixer (qc_mix_id) */}
-            <div className="self-center px-2 border-r border-border/20" onClick={e => e.stopPropagation()}>
-              <RoleBasedOwnerCell
-                owner={resolveUser(task.qcMixId)}
-                onOwnerChange={(user) => handleOwnerChange(task.id, 'qc_mix_id', user)}
-                roleFilter="qc_mix"
-                onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
-                taskId={task.id}
-                compact
-              />
-            </div>
+                {/* Premixer (mixer_miami_id) */}
+                <td className="px-2 py-3 align-middle" onClick={e => e.stopPropagation()}>
+                  <RoleBasedOwnerCell
+                    owner={resolveUser(task.mixerMiamiId)}
+                    onOwnerChange={(user) => handleOwnerChange(task.id, 'mixer_miami_id', user)}
+                    roleFilter="mixer"
+                    onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
+                    taskId={task.id}
+                    compact
+                  />
+                </td>
 
-            {/* Submission with type */}
-            <div className="self-center px-2 border-r border-border/20">
-              <div className="flex flex-col gap-0.5">
-                <span className={cn("inline-flex px-2 py-0.5 rounded text-[10px] font-medium", submission.className)}>
-                  {submission.label}
-                </span>
-                <span className="text-[9px] text-muted-foreground truncate">{submissionType}</span>
-              </div>
-            </div>
+                {/* QC Premix (qc_1_id) */}
+                <td className="px-2 py-3 align-middle" onClick={e => e.stopPropagation()}>
+                  <RoleBasedOwnerCell
+                    owner={resolveUser(task.qc1Id)}
+                    onOwnerChange={(user) => handleOwnerChange(task.id, 'qc_1_id', user)}
+                    roleFilter="qc_premix"
+                    onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
+                    taskId={task.id}
+                    compact
+                  />
+                </td>
 
-            {/* Guest signal */}
-            <div className="self-center px-2 border-r border-border/20">
-              <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium", guestConfig.className)}>
-                <guestConfig.icon className="w-3 h-3" />
-                {guestConfig.label}
-              </span>
-            </div>
+                {/* QC Retakes (qc_retakes_id) */}
+                <td className="px-2 py-3 align-middle" onClick={e => e.stopPropagation()}>
+                  <RoleBasedOwnerCell
+                    owner={resolveUser(task.qcRetakesId)}
+                    onOwnerChange={(user) => handleOwnerChange(task.id, 'qc_retakes_id', user)}
+                    roleFilter="qc_retakes"
+                    onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
+                    taskId={task.id}
+                    compact
+                  />
+                </td>
 
-            {/* Vendor Comment (latest from vendor only) */}
-            <div className="self-center min-w-0 px-2 border-r border-border/20">
-              {task.latestVendorComment ? (
-                <div className="text-xs text-muted-foreground truncate" title={stripHtml(task.latestVendorComment.content)}>
-                  <span className="font-medium text-foreground">{task.latestVendorComment.authorName.split(' ')[0]}: </span>
-                  {stripHtml(task.latestVendorComment.content).slice(0, 30)}
-                </div>
-              ) : (
-                <span className="text-xs text-muted-foreground">—</span>
-              )}
-            </div>
+                {/* Mixer (mixer_bogota_id) */}
+                <td className="px-2 py-3 align-middle" onClick={e => e.stopPropagation()}>
+                  <RoleBasedOwnerCell
+                    owner={resolveUser(task.mixerBogotaId)}
+                    onOwnerChange={(user) => handleOwnerChange(task.id, 'mixer_bogota_id', user)}
+                    roleFilter="mixer"
+                    onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
+                    taskId={task.id}
+                    compact
+                  />
+                </td>
 
-            {/* Updated */}
-            <div className="text-xs text-muted-foreground self-center px-2 border-r border-border/20">
-              {task.lastUpdated ? formatDistanceToNow(task.lastUpdated, { addSuffix: true }) : '—'}
-            </div>
+                {/* QC Mixer (qc_mix_id) */}
+                <td className="px-2 py-3 align-middle" onClick={e => e.stopPropagation()}>
+                  <RoleBasedOwnerCell
+                    owner={resolveUser(task.qcMixId)}
+                    onOwnerChange={(user) => handleOwnerChange(task.id, 'qc_mix_id', user)}
+                    roleFilter="qc_mix"
+                    onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
+                    taskId={task.id}
+                    compact
+                  />
+                </td>
 
-            {/* Open */}
-            <button className="self-center flex justify-center px-2" onClick={() => onSelectTask(task.id)}>
-              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/50" />
-            </button>
-          </div>
-        );
-      })}
+                {/* Submission with type */}
+                <td className="px-2 py-3 align-middle">
+                  <div className="flex flex-col gap-0.5">
+                    <span className={cn("inline-flex px-2 py-0.5 rounded text-[10px] font-medium", submission.className)}>
+                      {submission.label}
+                    </span>
+                    <span className="text-[9px] text-muted-foreground truncate">{submissionType}</span>
+                  </div>
+                </td>
+
+                {/* Guest signal */}
+                <td className="px-2 py-3 align-middle">
+                  <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium", guestConfig.className)}>
+                    <guestConfig.icon className="w-3 h-3" />
+                    {guestConfig.label}
+                  </span>
+                </td>
+
+                {/* Vendor Comment */}
+                <td className="px-2 py-3 align-middle">
+                  <div className="min-w-0">
+                    {task.latestVendorComment ? (
+                      <div className="text-xs text-muted-foreground truncate" title={stripHtml(task.latestVendorComment.content)}>
+                        <span className="font-medium text-foreground">{task.latestVendorComment.authorName.split(' ')[0]}: </span>
+                        {stripHtml(task.latestVendorComment.content).slice(0, 30)}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </td>
+
+                {/* Updated */}
+                <td className="px-2 py-3 align-middle">
+                  <span className="text-xs text-muted-foreground">
+                    {task.lastUpdated ? formatDistanceToNow(task.lastUpdated, { addSuffix: true }) : '—'}
+                  </span>
+                </td>
+
+                {/* Open */}
+                <td className="px-2 py-3 align-middle text-center">
+                  <button onClick={() => onSelectTask(task.id)}>
+                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/50" />
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

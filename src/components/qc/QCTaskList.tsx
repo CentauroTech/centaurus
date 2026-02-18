@@ -193,7 +193,6 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">Status</th>
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[90px]">Due Date</th>
             <th className="px-2 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[50px]">Ep.</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">Premixer</th>
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">QC Premix</th>
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">QC Retakes</th>
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">Mixer</th>
@@ -294,18 +293,6 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
                 {/* Episodes */}
                 <td className="px-2 py-3 align-middle text-center text-sm">
                   {task.cantidadEpisodios ? `${epIndex}/${task.cantidadEpisodios}` : '—'}
-                </td>
-
-                {/* Premixer (mixer_miami_id) */}
-                <td className="px-2 py-3 align-middle" onClick={e => e.stopPropagation()}>
-                  <RoleBasedOwnerCell
-                    owner={resolveUser(task.mixerMiamiId)}
-                    onOwnerChange={(user) => handleOwnerChange(task.id, 'mixer_miami_id', user)}
-                    roleFilter="mixer"
-                    onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
-                    taskId={task.id}
-                    compact
-                  />
                 </td>
 
                 {/* QC Premix (qc_1_id) */}

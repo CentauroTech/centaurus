@@ -13,6 +13,7 @@ import GuestOnboarding from "./pages/GuestOnboarding";
 import Settings from "./pages/Settings";
 import Billing from "./pages/Billing";
 import LinguisticControlCenter from "./pages/LinguisticControlCenter";
+import QCControlCenter from "./pages/QCControlCenter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,11 @@ const App = () => (
             <Route path="/phase/linguistic" element={
               <ProtectedRoute>
                 <LinguisticControlCenter />
+              </ProtectedRoute>
+            } />
+            <Route path="/phase/qc" element={
+              <ProtectedRoute>
+                <QCControlCenter />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

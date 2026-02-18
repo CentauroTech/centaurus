@@ -62,6 +62,7 @@ export interface QCTask {
   hasFileUpload: boolean;
   // Vendor activity
   latestComment: { content: string; authorName: string; createdAt: Date; isVendor: boolean } | null;
+  latestVendorComment: { content: string; authorName: string; createdAt: Date } | null;
   lastVendorActivity: Date | null;
   guestSignal: 'none' | 'waiting' | 'replied';
   // Raw IDs for task construction
@@ -150,6 +151,7 @@ export function useQCTasks(workspaceIds: string[]) {
       let lastVendorActivityMap = new Map<string, Date>();
       let guestSignalMap = new Map<string, 'none' | 'waiting' | 'replied'>();
       let hasRetakeListMap = new Map<string, boolean>();
+      let vendorCommentMap = new Map<string, { content: string; authorName: string; createdAt: Date }>();
 
       if (taskIds.length > 0) {
         const { data: comments } = await supabase
@@ -182,6 +184,12 @@ export function useQCTasks(workspaceIds: string[]) {
           const vendorComments = cmts.filter(c => guestIds.has(c.user_id));
           if (vendorComments.length > 0) {
             lastVendorActivityMap.set(taskId, new Date(vendorComments[0].created_at));
+            const vendorAuthor = teamMemberMap.get(vendorComments[0].user_id);
+            vendorCommentMap.set(taskId, {
+              content: vendorComments[0].content,
+              authorName: vendorAuthor?.name || 'Unknown',
+              createdAt: new Date(vendorComments[0].created_at),
+            });
           }
 
           // Guest signal
@@ -269,6 +277,7 @@ export function useQCTasks(workspaceIds: string[]) {
           hasRetakeList: hasRetake,
           hasFileUpload: hasFile,
           latestComment: commentMap.get(t.id) || null,
+          latestVendorComment: vendorCommentMap.get(t.id) || null,
           lastVendorActivity: lastVendorActivityMap.get(t.id) || null,
           guestSignal: guestSignalMap.get(t.id) || 'none',
           projectManagerId: t.project_manager_id,

@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Shield, Sparkles, X, Inbox, LogOut, Settings, Globe } from 'lucide-react';
+import { Search, Shield, Sparkles, X, Inbox, LogOut, Settings, Globe, Calendar as CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -17,6 +17,7 @@ import { useQCTasks, QC_PHASES, QC_PHASE_LABELS } from '@/hooks/useQCTasks';
 import { QCTaskList } from '@/components/qc/QCTaskList';
 import { QCVendorInbox } from '@/components/qc/QCVendorInbox';
 import { QCAITab } from '@/components/qc/QCAITab';
+import { QCCalendarView } from '@/components/qc/QCCalendarView';
 import { QCFocusStrip, isQCOverdue, isQCDueNext48h, isQCMissingSubmission, isQCWaitingOnVendor, isQCNeedsAssignment } from '@/components/qc/QCFocusStrip';
 import TaskDetailsPanel from '@/components/board/TaskDetailsPanel';
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -181,27 +182,6 @@ export default function QCControlCenter() {
                 ))}
               </div>
 
-              {/* Stage filter chips */}
-              <div className="flex gap-1">
-                <button
-                  onClick={() => setStageFilter('all')}
-                  className={cn("px-2 py-1 rounded-full text-[11px] font-medium transition-colors",
-                    stageFilter === 'all' ? "bg-purple-600 text-white" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  )}
-                >All</button>
-                {QC_PHASES.map(phase => (
-                  <button
-                    key={phase}
-                    onClick={() => setStageFilter(stageFilter === phase ? 'all' : phase)}
-                    className={cn("px-2 py-1 rounded-full text-[11px] font-medium transition-colors",
-                      stageFilter === phase ? "bg-purple-600 text-white" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    )}
-                  >
-                    {QC_PHASE_LABELS[phase]}
-                  </button>
-                ))}
-              </div>
-
               {/* Toggle assigned to me */}
               <div className="flex items-center gap-2">
                 <Switch id="assigned-me" checked={assignedToMe} onCheckedChange={setAssignedToMe} />
@@ -261,6 +241,10 @@ export default function QCControlCenter() {
                 <Shield className="w-4 h-4" />
                 Tasks ({filteredTasks.length})
               </TabsTrigger>
+              <TabsTrigger value="calendar" className="gap-2">
+                <CalendarIcon className="w-4 h-4" />
+                Calendar
+              </TabsTrigger>
               <TabsTrigger value="inbox" className="gap-2">
                 <Inbox className="w-4 h-4" />
                 Vendor Inbox
@@ -274,9 +258,31 @@ export default function QCControlCenter() {
             <TabsContent value="tasks" className="space-y-4 mt-4">
               <div className="flex items-center gap-3 flex-wrap">
                 <QCFocusStrip tasks={tasks} activeFilter={focusFilter} onFilterClick={setFocusFilter} />
+
+                {/* Stage filter chips inline with focus strip */}
+                <div className="h-8 w-px bg-border mx-1" />
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setStageFilter('all')}
+                    className={cn("px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors border",
+                      stageFilter === 'all' ? "bg-purple-600 text-white border-purple-600" : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
+                    )}
+                  >All Stages</button>
+                  {QC_PHASES.map(phase => (
+                    <button
+                      key={phase}
+                      onClick={() => setStageFilter(stageFilter === phase ? 'all' : phase)}
+                      className={cn("px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors border",
+                        stageFilter === phase ? "bg-purple-600 text-white border-purple-600" : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
+                      )}
+                    >
+                      {QC_PHASE_LABELS[phase]}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="bg-card rounded-lg border">
+              <div className="bg-card rounded-lg border overflow-x-auto">
                 {tasksLoading ? (
                   <div className="flex items-center justify-center py-16">
                     <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -287,9 +293,19 @@ export default function QCControlCenter() {
                     onSelectTask={handleSelectTask}
                     selectedTaskId={selectedTaskId}
                     workspaceIds={workspaceIds}
+                    teamMemberMap={teamMemberMap}
                   />
                 )}
               </div>
+            </TabsContent>
+
+            <TabsContent value="calendar" className="mt-4">
+              <QCCalendarView
+                tasks={filteredTasks}
+                teamMemberMap={teamMemberMap}
+                onTaskClick={handleSelectTask}
+                workspaceIds={workspaceIds}
+              />
             </TabsContent>
 
             <TabsContent value="inbox" className="mt-4">

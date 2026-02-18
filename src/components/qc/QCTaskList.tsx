@@ -206,33 +206,33 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
   return (
     <div className="space-y-1">
       {/* Header */}
-      <div className="grid grid-cols-[1fr_90px_80px_100px_100px_90px_50px_120px_120px_120px_120px_120px_120px_100px_120px_100px_40px] gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
-        <span>Project</span>
-        <span>Client</span>
-        <span>Branch</span>
-        <span>Stage</span>
-        <span>Status</span>
-        <span>Due Date</span>
-        <span>Ep.</span>
-        <span>Premixer</span>
-        <span>QC Premix</span>
-        <span>QC Retakes</span>
-        <span>Mixer</span>
-        <span>QC Mixer</span>
-        <span>Submission</span>
+      <div className="grid grid-cols-[1fr_90px_80px_120px_100px_90px_50px_120px_120px_120px_120px_120px_120px_100px_120px_100px_40px] gap-0 px-0 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b bg-muted/30">
+        <span className="px-4 border-r border-border/20">Project</span>
+        <span className="px-2 border-r border-border/20">Client</span>
+        <span className="px-2 border-r border-border/20">Branch</span>
+        <span className="px-2 border-r border-border/20">Stage</span>
+        <span className="px-2 border-r border-border/20">Status</span>
+        <span className="px-2 border-r border-border/20">Due Date</span>
+        <span className="px-2 border-r border-border/20">Ep.</span>
+        <span className="px-2 border-r border-border/20">Premixer</span>
+        <span className="px-2 border-r border-border/20">QC Premix</span>
+        <span className="px-2 border-r border-border/20">QC Retakes</span>
+        <span className="px-2 border-r border-border/20">Mixer</span>
+        <span className="px-2 border-r border-border/20">QC Mixer</span>
+        <span className="px-2 border-r border-border/20">Submission</span>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="inline-flex items-center gap-1 cursor-help">Guest <HelpCircle className="w-3 h-3" /></span>
+              <span className="px-2 border-r border-border/20 inline-flex items-center gap-1 cursor-help">Guest <HelpCircle className="w-3 h-3" /></span>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-[220px] text-xs normal-case tracking-normal font-normal">
               Shows the latest guest-visible comment activity: <strong>No Activity</strong> = no comments, <strong>Waiting</strong> = internal reply sent, <strong>Replied</strong> = guest has responded.
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <span>Vendor Comment</span>
-        <span>Updated</span>
-        <span></span>
+        <span className="px-2 border-r border-border/20">Vendor Comment</span>
+        <span className="px-2 border-r border-border/20">Updated</span>
+        <span className="px-2"></span>
       </div>
 
       {tasks.map(task => {
@@ -245,12 +245,12 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
           <div
             key={task.id}
             className={cn(
-              "w-full grid grid-cols-[1fr_90px_80px_100px_100px_90px_50px_120px_120px_120px_120px_120px_120px_100px_120px_100px_40px] gap-2 px-4 py-3 text-left rounded-lg transition-all hover:bg-muted/60",
+              "w-full grid grid-cols-[1fr_90px_80px_120px_100px_90px_50px_120px_120px_120px_120px_120px_120px_100px_120px_100px_40px] gap-0 px-0 py-3 text-left transition-all hover:bg-muted/60 border-b border-border/40",
               selectedTaskId === task.id && "bg-muted ring-1 ring-primary/20"
             )}
           >
             {/* Project + WO */}
-            <div className="min-w-0 self-center">
+            <div className="min-w-0 self-center px-4 border-r border-border/20">
               <button onClick={() => onSelectTask(task.id)} className="text-sm font-medium truncate block text-left hover:text-primary transition-colors">
                 {task.name || 'Untitled'}
               </button>
@@ -260,10 +260,10 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
             </div>
 
             {/* Client */}
-            <div className="text-xs text-muted-foreground self-center truncate">{task.clientName || '—'}</div>
+            <div className="text-xs text-muted-foreground self-center truncate px-2 border-r border-border/20">{task.clientName || '—'}</div>
 
             {/* Branch */}
-            <div className="self-center">
+            <div className="self-center px-2 border-r border-border/20">
               <span className={cn("inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium",
                 task.branch === 'Miami' ? 'bg-blue-200 text-blue-800' : 'bg-yellow-200 text-yellow-800'
               )}>
@@ -272,14 +272,14 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
             </div>
 
             {/* Stage */}
-            <div className="self-center">
-              <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-medium", PHASE_BADGE[task.phase] || 'bg-muted text-muted-foreground')}>
+            <div className="self-center px-2 border-r border-border/20">
+              <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap", PHASE_BADGE[task.phase] || 'bg-muted text-muted-foreground')}>
                 {QC_PHASE_LABELS[task.phase] || task.phase}
               </span>
             </div>
 
             {/* Status */}
-            <div className="self-center" onClick={e => e.stopPropagation()}>
+            <div className="self-center px-2 border-r border-border/20" onClick={e => e.stopPropagation()}>
               <select
                 value={task.status}
                 onChange={(e) => handleFieldUpdate(task.id, 'status', e.target.value)}
@@ -295,7 +295,7 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
             </div>
 
             {/* Due Date */}
-            <div className="self-center" onClick={e => e.stopPropagation()}>
+            <div className="self-center px-2 border-r border-border/20" onClick={e => e.stopPropagation()}>
               <DateCell
                 date={task.phaseDueDate || undefined}
                 onDateChange={(val) => {
@@ -306,12 +306,12 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
             </div>
 
             {/* Episodes */}
-            <div className="self-center text-center text-sm">
+            <div className="self-center text-center text-sm px-2 border-r border-border/20">
               {task.cantidadEpisodios ? `${epIndex}/${task.cantidadEpisodios}` : '—'}
             </div>
 
             {/* Premixer (mixer_miami_id) */}
-            <div className="self-center" onClick={e => e.stopPropagation()}>
+            <div className="self-center px-2 border-r border-border/20" onClick={e => e.stopPropagation()}>
               <RoleBasedOwnerCell
                 owner={resolveUser(task.mixerMiamiId)}
                 onOwnerChange={(user) => handleOwnerChange(task.id, 'mixer_miami_id', user)}
@@ -323,7 +323,7 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
             </div>
 
             {/* QC Premix (qc_1_id) */}
-            <div className="self-center" onClick={e => e.stopPropagation()}>
+            <div className="self-center px-2 border-r border-border/20" onClick={e => e.stopPropagation()}>
               <RoleBasedOwnerCell
                 owner={resolveUser(task.qc1Id)}
                 onOwnerChange={(user) => handleOwnerChange(task.id, 'qc_1_id', user)}
@@ -335,7 +335,7 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
             </div>
 
             {/* QC Retakes (qc_retakes_id) */}
-            <div className="self-center" onClick={e => e.stopPropagation()}>
+            <div className="self-center px-2 border-r border-border/20" onClick={e => e.stopPropagation()}>
               <RoleBasedOwnerCell
                 owner={resolveUser(task.qcRetakesId)}
                 onOwnerChange={(user) => handleOwnerChange(task.id, 'qc_retakes_id', user)}
@@ -346,8 +346,8 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
               />
             </div>
 
-            {/* Mixer (mixer_bogota_id for Colombia, mixer_miami_id for Miami - use bogota as separate) */}
-            <div className="self-center" onClick={e => e.stopPropagation()}>
+            {/* Mixer (mixer_bogota_id) */}
+            <div className="self-center px-2 border-r border-border/20" onClick={e => e.stopPropagation()}>
               <RoleBasedOwnerCell
                 owner={resolveUser(task.mixerBogotaId)}
                 onOwnerChange={(user) => handleOwnerChange(task.id, 'mixer_bogota_id', user)}
@@ -359,7 +359,7 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
             </div>
 
             {/* QC Mixer (qc_mix_id) */}
-            <div className="self-center" onClick={e => e.stopPropagation()}>
+            <div className="self-center px-2 border-r border-border/20" onClick={e => e.stopPropagation()}>
               <RoleBasedOwnerCell
                 owner={resolveUser(task.qcMixId)}
                 onOwnerChange={(user) => handleOwnerChange(task.id, 'qc_mix_id', user)}
@@ -371,7 +371,7 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
             </div>
 
             {/* Submission with type */}
-            <div className="self-center">
+            <div className="self-center px-2 border-r border-border/20">
               <div className="flex flex-col gap-0.5">
                 <span className={cn("inline-flex px-2 py-0.5 rounded text-[10px] font-medium", submission.className)}>
                   {submission.label}
@@ -381,7 +381,7 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
             </div>
 
             {/* Guest signal */}
-            <div className="self-center">
+            <div className="self-center px-2 border-r border-border/20">
               <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium", guestConfig.className)}>
                 <guestConfig.icon className="w-3 h-3" />
                 {guestConfig.label}
@@ -389,7 +389,7 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
             </div>
 
             {/* Vendor Comment (latest from vendor only) */}
-            <div className="self-center min-w-0">
+            <div className="self-center min-w-0 px-2 border-r border-border/20">
               {task.latestVendorComment ? (
                 <div className="text-xs text-muted-foreground truncate" title={stripHtml(task.latestVendorComment.content)}>
                   <span className="font-medium text-foreground">{task.latestVendorComment.authorName.split(' ')[0]}: </span>
@@ -401,12 +401,12 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
             </div>
 
             {/* Updated */}
-            <div className="text-xs text-muted-foreground self-center">
+            <div className="text-xs text-muted-foreground self-center px-2 border-r border-border/20">
               {task.lastUpdated ? formatDistanceToNow(task.lastUpdated, { addSuffix: true }) : '—'}
             </div>
 
             {/* Open */}
-            <button className="self-center flex justify-center" onClick={() => onSelectTask(task.id)}>
+            <button className="self-center flex justify-center px-2" onClick={() => onSelectTask(task.id)}>
               <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/50" />
             </button>
           </div>

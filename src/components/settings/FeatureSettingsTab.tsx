@@ -14,8 +14,12 @@ const MEMBER_TYPES_OPTIONS = [
   { value: 'team_member', label: 'Team Member' },
 ];
 
-export function FeatureSettingsTab() {
-  const { data: setting, isLoading } = useFeatureSettings('linguistic_control_center');
+function FeatureBlock({ 
+  featureKey, title, description, icon 
+}: { 
+  featureKey: string; title: string; description: string; icon: React.ReactNode;
+}) {
+  const { data: setting, isLoading } = useFeatureSettings(featureKey);
   const updateMutation = useUpdateFeatureSetting();
 
   const [enabled, setEnabled] = useState(false);
@@ -36,11 +40,7 @@ export function FeatureSettingsTab() {
 
   const handleSave = async () => {
     try {
-      await updateMutation.mutateAsync({
-        featureKey: 'linguistic_control_center',
-        enabled,
-        allowedRoles,
-      });
+      await updateMutation.mutateAsync({ featureKey, enabled, allowedRoles });
       toast.success('Feature settings saved');
     } catch {
       toast.error('Failed to save');
@@ -56,61 +56,68 @@ export function FeatureSettingsTab() {
   }
 
   return (
-    <div className="space-y-8 max-w-xl">
-      {/* Linguistic Control Center */}
-      <div className="border rounded-lg p-6 space-y-6">
-        <div className="flex items-start gap-3">
-          <Shield className="w-5 h-5 text-primary mt-0.5" />
-          <div className="flex-1">
-            <h3 className="font-semibold text-base">Linguistic Control Center</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              A dashboard for managing Translation & Adapting phases with AI-powered insights.
-            </p>
-          </div>
-          <Switch checked={enabled} onCheckedChange={setEnabled} />
+    <div className="border rounded-lg p-6 space-y-6">
+      <div className="flex items-start gap-3">
+        {icon}
+        <div className="flex-1">
+          <h3 className="font-semibold text-base">{title}</h3>
+          <p className="text-sm text-muted-foreground mt-1">{description}</p>
         </div>
-
-        {enabled && (
-          <div className="space-y-4 pl-8 border-l-2 border-primary/20 ml-2">
-            <div>
-              <Label className="text-sm font-medium">Allowed Member Types</Label>
-              <div className="grid gap-2 mt-2">
-                {MEMBER_TYPES_OPTIONS.map(opt => (
-                  <label key={opt.value} className="flex items-center gap-2 text-sm">
-                    <Checkbox
-                      checked={allowedRoles.includes(opt.value)}
-                      onCheckedChange={() => toggleRole(opt.value)}
-                    />
-                    {opt.label}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium">Allowed Team Roles</Label>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {ROLE_TYPES.map(role => (
-                  <label key={role} className="flex items-center gap-2 text-sm">
-                    <Checkbox
-                      checked={allowedRoles.includes(role)}
-                      onCheckedChange={() => toggleRole(role)}
-                    />
-                    {ROLE_LABELS[role]}
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={updateMutation.isPending} size="sm">
-            {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Save Changes
-          </Button>
-        </div>
+        <Switch checked={enabled} onCheckedChange={setEnabled} />
       </div>
+
+      {enabled && (
+        <div className="space-y-4 pl-8 border-l-2 border-primary/20 ml-2">
+          <div>
+            <Label className="text-sm font-medium">Allowed Member Types</Label>
+            <div className="grid gap-2 mt-2">
+              {MEMBER_TYPES_OPTIONS.map(opt => (
+                <label key={opt.value} className="flex items-center gap-2 text-sm">
+                  <Checkbox checked={allowedRoles.includes(opt.value)} onCheckedChange={() => toggleRole(opt.value)} />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <Label className="text-sm font-medium">Allowed Team Roles</Label>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              {ROLE_TYPES.map(role => (
+                <label key={role} className="flex items-center gap-2 text-sm">
+                  <Checkbox checked={allowedRoles.includes(role)} onCheckedChange={() => toggleRole(role)} />
+                  {ROLE_LABELS[role]}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={updateMutation.isPending} size="sm">
+          {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+          Save Changes
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export function FeatureSettingsTab() {
+  return (
+    <div className="space-y-8 max-w-xl">
+      <FeatureBlock
+        featureKey="linguistic_control_center"
+        title="Linguistic Control Center"
+        description="A dashboard for managing Translation & Adapting phases with AI-powered insights."
+        icon={<Shield className="w-5 h-5 text-primary mt-0.5" />}
+      />
+      <FeatureBlock
+        featureKey="qc_control_center"
+        title="QC Control Center"
+        description="A dashboard for QC managers to oversee QC Premix, QC Retakes, Mix, QC Mix, and Mix Retakes phases."
+        icon={<Shield className="w-5 h-5 text-purple-600 mt-0.5" />}
+      />
     </div>
   );
 }

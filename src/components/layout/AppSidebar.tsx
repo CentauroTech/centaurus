@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Home, Search, Plus, Settings, HelpCircle, Inbox, Languages } from 'lucide-react';
+import { ChevronDown, ChevronRight, Home, Search, Plus, Settings, HelpCircle, Inbox, Languages, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkspaceWithBoards } from '@/hooks/useWorkspaces';
 import { useUnreadNotificationCount } from '@/hooks/useNotifications';

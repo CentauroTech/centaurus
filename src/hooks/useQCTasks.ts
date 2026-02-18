@@ -32,6 +32,15 @@ export const QC_PHASE_DUE_DATE_FIELD: Record<string, string> = {
   mix_retakes: 'mix_retakes_due_date',
 };
 
+// Maps QC phase to its retake list label
+export const QC_PHASE_RETAKE_LABEL: Record<string, string> = {
+  qc_premix: 'QC Premix Retake List',
+  qc_retakes: 'QC Retakes List',
+  mix: 'Mix Retake List',
+  qc_mix: 'QC Mix Retake List',
+  mix_retakes: 'Mix Retakes List',
+};
+
 // Maps QC phase to the assignee column
 export const QC_PHASE_ASSIGNEE_FIELD: Record<string, string> = {
   qc_premix: 'qc_1_id',
@@ -160,6 +169,7 @@ export function useQCTasks(workspaceIds: string[]) {
       let guestSignalMap = new Map<string, 'none' | 'waiting' | 'replied'>();
       let hasRetakeListMap = new Map<string, boolean>();
       let vendorCommentMap = new Map<string, { content: string; authorName: string; createdAt: Date }>();
+      let rawTaskComments = new Map<string, string[]>(); // task_id -> list of comment content
 
       if (taskIds.length > 0) {
         const { data: comments } = await supabase
@@ -210,12 +220,8 @@ export function useQCTasks(workspaceIds: string[]) {
             guestSignalMap.set(taskId, 'waiting');
           }
 
-          // Check for retake list in comments
-          const hasRetake = cmts.some(c => 
-            c.content.toLowerCase().includes('retake list') ||
-            c.content.includes('data-submission="retake_list"')
-          );
-          hasRetakeListMap.set(taskId, hasRetake);
+          // Store raw comment content for phase-specific retake list detection
+          rawTaskComments.set(taskId, cmts.map(c => c.content));
         });
       }
 
@@ -252,8 +258,16 @@ export function useQCTasks(workspaceIds: string[]) {
         const assigneeField = QC_PHASE_ASSIGNEE_FIELD[phase];
         const assigneeId = assigneeField ? (t as any)[assigneeField] : null;
 
-        // Determine submission status
-        const hasRetake = hasRetakeListMap.get(t.id) || false;
+        // Determine submission status - check for phase-specific retake list label
+        const phaseRetakeLabel = QC_PHASE_RETAKE_LABEL[phase];
+        const taskCmtContents = rawTaskComments.get(t.id) || [];
+        
+        const hasRetake = phaseRetakeLabel
+          ? taskCmtContents.some(content =>
+              content.toLowerCase().includes(phaseRetakeLabel.toLowerCase()) ||
+              content.includes(`data-submission="${phase}_retake_list"`)
+            )
+          : false;
         const hasFile = hasFileMap.get(t.id) || false;
         const isQCPhase = ['qc_premix', 'qc_retakes', 'qc_mix'].includes(phase);
         

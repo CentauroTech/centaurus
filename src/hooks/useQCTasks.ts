@@ -16,8 +16,8 @@ export const QC_PHASE_LABELS: Record<string, string> = {
 
 // Maps phases to board name suffixes (case-insensitive matching)
 const PHASE_TO_BOARD_SUFFIX: Record<string, string[]> = {
-  qc_premix: ['qc premix', 'qc-premix', 'qcpremix'],
-  qc_retakes: ['qc retakes', 'qc-retakes', 'qcretakes'],
+  qc_premix: ['qc premix', 'qc-premix', 'qcpremix', 'qc 1', 'qc1'],
+  qc_retakes: ['qc retakes', 'qc-retakes', 'qcretakes', 'retakes'],
   mix: ['mix'],
   qc_mix: ['qc-mix', 'qc mix', 'qcmix'],
   mix_retakes: ['mixretakes', 'mix retakes', 'mix-retakes'],
@@ -148,7 +148,7 @@ export function useQCTasks(workspaceIds: string[]) {
       // Fetch tasks that are not done
       const { data: tasks, error: tasksErr } = await supabase
         .from('tasks')
-        .select('id, name, status, fase, branch, client_name, work_order_number, last_updated, project_manager_id, qc_1_id, qc_retakes_id, qc_mix_id, mixer_miami_id, mixer_bogota_id, group_id, cantidad_episodios, qc_premix_due_date, qc_retakes_due_date, mix_due_date, qc_mix_due_date, mix_retakes_due_date, premix_due_date, retakes_due_date, entrega_miami_end, entrega_cliente')
+        .select('id, name, status, fase, branch, client_name, work_order_number, last_updated, project_manager_id, qc_1_id, qc_retakes_id, qc_mix_id, mixer_miami_id, mixer_bogota_id, group_id, cantidad_episodios, qc_premix_due_date, qc_retakes_due_date, mix_due_date, qc_mix_due_date, mix_retakes_due_date, premix_due_date, retakes_due_date, entrega_miami_end, entrega_cliente, guest_due_date')
         .in('group_id', groupIds)
         .neq('status', 'done');
       if (tasksErr) throw tasksErr;
@@ -250,9 +250,9 @@ export function useQCTasks(workspaceIds: string[]) {
         const phase = boardId ? boardPhaseMap.get(boardId) || 'unknown' : 'unknown';
         const wsId = boardId ? boardWorkspaceMap.get(boardId) : undefined;
         
-        // Get the phase-specific due date
+        // Get the phase-specific due date, fall back to guest_due_date
         const dueDateField = QC_PHASE_DUE_DATE_FIELD[phase];
-        const phaseDueDate = dueDateField ? (t as any)[dueDateField] : null;
+        const phaseDueDate = (dueDateField ? (t as any)[dueDateField] : null) || t.guest_due_date || null;
         
         // Get assignee based on phase
         const assigneeField = QC_PHASE_ASSIGNEE_FIELD[phase];

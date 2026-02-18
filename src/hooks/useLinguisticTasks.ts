@@ -77,7 +77,7 @@ export function useLinguisticTasks(workspaceId: string | null) {
       // Fetch tasks in translation or adapting phase, not done
       const { data: tasks, error: tasksErr } = await supabase
         .from('tasks')
-        .select('id, name, status, fase, branch, client_name, work_order_number, translation_due_date, adapting_due_date, last_updated, project_manager_id, traductor_id, adaptador_id, group_id, cantidad_episodios, entrega_miami_end, entrega_cliente')
+        .select('id, name, status, fase, branch, client_name, work_order_number, translation_due_date, adapting_due_date, last_updated, project_manager_id, traductor_id, adaptador_id, group_id, cantidad_episodios, entrega_miami_end, entrega_cliente, guest_due_date')
         .in('group_id', groupIds)
         .in('fase', ['translation', 'adapting', 'Translation', 'Adapting'])
         .neq('status', 'done');
@@ -168,7 +168,7 @@ export function useLinguisticTasks(workspaceId: string | null) {
           workOrderNumber: t.work_order_number,
           translationDueDate: t.translation_due_date,
           adaptingDueDate: t.adapting_due_date,
-          phaseDueDate: phase === 'translation' ? t.translation_due_date : t.adapting_due_date,
+          phaseDueDate: (phase === 'translation' ? t.translation_due_date : t.adapting_due_date) || t.guest_due_date || null,
           lastUpdated: t.last_updated ? new Date(t.last_updated) : null,
           projectManager: teamMemberMap.get(t.project_manager_id),
           traductor: t.traductor_id ? teamMemberMap.get(t.traductor_id) : undefined,

@@ -180,8 +180,8 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="border-b bg-muted/30">
-            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">Project</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">Client</th>
+            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap sticky left-0 z-20 bg-muted/30 min-w-[200px]">Project</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px] sticky left-[200px] z-20 bg-muted/30 after:absolute after:right-0 after:top-0 after:bottom-0 after:w-[3px] after:shadow-[2px_0_4px_rgba(0,0,0,0.08)]">Client</th>
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">Phase</th>
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[110px]">Status</th>
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[90px]">Due Date</th>
@@ -220,7 +220,7 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
                 )}
               >
                 {/* Project + WO */}
-                <td className="px-4 py-3 align-middle" onClick={e => e.stopPropagation()}>
+                <td className="px-4 py-3 align-middle sticky left-0 z-10 bg-background min-w-[200px]" onClick={e => e.stopPropagation()}>
                   <div className="min-w-0">
                     <TextCell
                       value={task.name}
@@ -234,7 +234,7 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
                 </td>
 
                 {/* Client */}
-                <td className="px-2 py-3 align-middle" onClick={e => e.stopPropagation()}>
+                <td className="px-2 py-3 align-middle sticky left-[200px] z-10 bg-background after:absolute after:right-0 after:top-0 after:bottom-0 after:w-[3px] after:shadow-[2px_0_4px_rgba(0,0,0,0.08)]" onClick={e => e.stopPropagation()}>
                   <TextCell
                     value={task.clientName || ''}
                     onChange={(val) => handleFieldUpdate(task.id, 'client_name', val || null)}

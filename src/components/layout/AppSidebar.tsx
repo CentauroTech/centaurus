@@ -17,6 +17,7 @@ export function AppSidebar({ workspaces, selectedBoardId, onSelectBoard }: AppSi
   const navigate = useNavigate();
   const unreadCount = useUnreadNotificationCount();
   const { canAccess: canAccessLinguistic } = useCanAccessFeature('linguistic_control_center');
+  const { canAccess: canAccessQC } = useCanAccessFeature('qc_control_center');
   const [expandedWorkspaces, setExpandedWorkspaces] = useState<string[]>(() => 
     workspaces.length > 0 ? [workspaces[0].id] : []
   );
@@ -70,6 +71,13 @@ export function AppSidebar({ workspaces, selectedBoardId, onSelectBoard }: AppSi
               icon={<Languages className="w-4 h-4" />} 
               label="Linguistic Center" 
               onClick={() => navigate('/phase/linguistic')}
+            />
+          )}
+          {canAccessQC && (
+            <SidebarItem 
+              icon={<Shield className="w-4 h-4" />} 
+              label="QC Control Center" 
+              onClick={() => navigate('/phase/qc')}
             />
           )}
         </div>

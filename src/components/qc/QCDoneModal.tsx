@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useUploadTaskFile } from '@/hooks/useTaskFiles';
 import { useAddComment } from '@/hooks/useComments';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
+import { QC_PHASE_RETAKE_LABEL } from '@/hooks/useQCTasks';
 
 interface QCDoneModalProps {
   taskId: string;
@@ -59,11 +60,12 @@ export function QCDoneModal({ taskId, taskName, phase, isOpen, onClose, onComple
       // Build comment content
       let fullComment = comment.trim();
 
-      // If retake list provided, append structured content
+      // If retake list provided, append structured content with phase-specific label
       if (retakeListText.trim()) {
+        const retakeLabel = QC_PHASE_RETAKE_LABEL[phase] || 'Retake List';
         const lines = retakeListText.split('\n').filter(l => l.trim());
         const bulletItems = lines.map(l => `<li><p>${l.trim()}</p></li>`).join('');
-        fullComment += `\n<h3>Retake List</h3><ul data-submission="retake_list">${bulletItems}</ul>`;
+        fullComment += `\n<h3>${retakeLabel}</h3><ul data-submission="${phase}_retake_list">${bulletItems}</ul>`;
       }
 
       await addComment.mutateAsync({
@@ -143,7 +145,7 @@ export function QCDoneModal({ taskId, taskName, phase, isOpen, onClose, onComple
                 className="gap-2"
               >
                 <List className="w-4 h-4" />
-                Add Retake List
+                Add {QC_PHASE_RETAKE_LABEL[phase] || 'Retake List'}
               </Button>
             </div>
           </div>
@@ -188,7 +190,7 @@ export function QCDoneModal({ taskId, taskName, phase, isOpen, onClose, onComple
             <div>
               <label className="text-sm font-medium mb-2 block">
                 <List className="w-4 h-4 inline mr-1.5" />
-                Retake List (one item per line)
+                {QC_PHASE_RETAKE_LABEL[phase] || 'Retake List'} (one item per line)
               </label>
               <Textarea
                 value={retakeListText}

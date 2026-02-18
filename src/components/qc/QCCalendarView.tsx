@@ -39,11 +39,14 @@ export function QCCalendarView({ tasks, teamMemberMap, onTaskClick, workspaceIds
       projectManager: qt.projectManager,
       groupId: qt.groupId,
       lastUpdated: qt.lastUpdated || undefined,
-      qcPremixDueDate: qt.phase === 'qc_premix' ? qt.phaseDueDate || undefined : undefined,
-      qcRetakesDueDate: qt.phase === 'qc_retakes' ? qt.phaseDueDate || undefined : undefined,
-      mixDueDate: qt.phase === 'mix' ? qt.phaseDueDate || undefined : undefined,
-      qcMixDueDate: qt.phase === 'qc_mix' ? qt.phaseDueDate || undefined : undefined,
-      mixRetakesDueDate: qt.phase === 'mix_retakes' ? qt.phaseDueDate || undefined : undefined,
+      // Map ALL QC date fields regardless of current phase
+      qcPremixDueDate: qt.qcPremixDueDate || undefined,
+      qcRetakesDueDate: qt.qcRetakesDueDate || undefined,
+      mixDueDate: qt.mixDueDate || undefined,
+      qcMixDueDate: qt.qcMixDueDate || undefined,
+      mixRetakesDueDate: qt.mixRetakesDueDate || undefined,
+      entregaMiamiEnd: qt.entregaMiamiEnd || undefined,
+      entregaCliente: qt.entregaCliente || undefined,
     } as Task));
   }, [tasks]);
 
@@ -79,7 +82,7 @@ export function QCCalendarView({ tasks, teamMemberMap, onTaskClick, workspaceIds
       onUpdateTask={handleUpdateTask}
       boardName="qc-center"
       isHQ={true}
-      defaultEnabledSources={['miami', 'client']}
+      defaultEnabledSources={['qc_premix', 'qc_retakes', 'mix', 'qc_mix', 'mix_retakes', 'miami', 'client']}
     />
   );
 }

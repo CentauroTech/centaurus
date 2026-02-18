@@ -186,9 +186,9 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="border-b bg-muted/30">
-            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">Project</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[90px]">Client</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[80px]">Branch</th>
+            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap sticky left-0 z-20 bg-muted/30 min-w-[200px]">Project</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[90px] sticky left-[200px] z-20 bg-muted/30">Client</th>
+            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[80px] sticky left-[290px] z-20 bg-muted/30 after:absolute after:right-0 after:top-0 after:bottom-0 after:w-[3px] after:shadow-[2px_0_4px_rgba(0,0,0,0.08)]">Branch</th>
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">Stage</th>
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">Status</th>
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[90px]">Due Date</th>
@@ -231,7 +231,7 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
                 )}
               >
                 {/* Project + WO */}
-                <td className="px-4 py-3 align-middle">
+                <td className="px-4 py-3 align-middle sticky left-0 z-10 bg-background min-w-[200px]">
                   <div className="min-w-0">
                     <button onClick={() => onSelectTask(task.id)} className="text-sm font-medium truncate block text-left hover:text-primary transition-colors">
                       {task.name || 'Untitled'}
@@ -243,12 +243,12 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
                 </td>
 
                 {/* Client */}
-                <td className="px-2 py-3 align-middle">
+                <td className="px-2 py-3 align-middle sticky left-[200px] z-10 bg-background">
                   <span className="text-xs text-muted-foreground truncate block">{task.clientName || '—'}</span>
                 </td>
 
                 {/* Branch */}
-                <td className="px-2 py-3 align-middle">
+                <td className="px-2 py-3 align-middle sticky left-[290px] z-10 bg-background after:absolute after:right-0 after:top-0 after:bottom-0 after:w-[3px] after:shadow-[2px_0_4px_rgba(0,0,0,0.08)]">
                   <span className={cn("inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium",
                     task.branch === 'Miami' ? 'bg-blue-200 text-blue-800' : 'bg-yellow-200 text-yellow-800'
                   )}>

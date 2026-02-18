@@ -65,6 +65,14 @@ export interface QCTask {
   latestVendorComment: { content: string; authorName: string; createdAt: Date } | null;
   lastVendorActivity: Date | null;
   guestSignal: 'none' | 'waiting' | 'replied';
+  // All QC date fields for calendar
+  qcPremixDueDate: string | null;
+  qcRetakesDueDate: string | null;
+  mixDueDate: string | null;
+  qcMixDueDate: string | null;
+  mixRetakesDueDate: string | null;
+  entregaMiamiEnd: string | null;
+  entregaCliente: string | null;
   // Raw IDs for task construction
   projectManagerId: string;
   qc1Id: string | null;
@@ -131,7 +139,7 @@ export function useQCTasks(workspaceIds: string[]) {
       // Fetch tasks that are not done
       const { data: tasks, error: tasksErr } = await supabase
         .from('tasks')
-        .select('id, name, status, fase, branch, client_name, work_order_number, last_updated, project_manager_id, qc_1_id, qc_retakes_id, qc_mix_id, mixer_miami_id, mixer_bogota_id, group_id, cantidad_episodios, qc_premix_due_date, qc_retakes_due_date, mix_due_date, qc_mix_due_date, mix_retakes_due_date, premix_due_date, retakes_due_date')
+        .select('id, name, status, fase, branch, client_name, work_order_number, last_updated, project_manager_id, qc_1_id, qc_retakes_id, qc_mix_id, mixer_miami_id, mixer_bogota_id, group_id, cantidad_episodios, qc_premix_due_date, qc_retakes_due_date, mix_due_date, qc_mix_due_date, mix_retakes_due_date, premix_due_date, retakes_due_date, entrega_miami_end, entrega_cliente')
         .in('group_id', groupIds)
         .neq('status', 'done');
       if (tasksErr) throw tasksErr;
@@ -280,6 +288,14 @@ export function useQCTasks(workspaceIds: string[]) {
           latestVendorComment: vendorCommentMap.get(t.id) || null,
           lastVendorActivity: lastVendorActivityMap.get(t.id) || null,
           guestSignal: guestSignalMap.get(t.id) || 'none',
+          // All QC date fields for calendar
+          qcPremixDueDate: t.qc_premix_due_date,
+          qcRetakesDueDate: t.qc_retakes_due_date,
+          mixDueDate: t.mix_due_date,
+          qcMixDueDate: t.qc_mix_due_date,
+          mixRetakesDueDate: t.mix_retakes_due_date,
+          entregaMiamiEnd: t.entrega_miami_end,
+          entregaCliente: t.entrega_cliente,
           projectManagerId: t.project_manager_id,
           qc1Id: t.qc_1_id,
           qcRetakesId: t.qc_retakes_id,

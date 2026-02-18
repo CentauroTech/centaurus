@@ -16,9 +16,9 @@ export const QC_PHASE_LABELS: Record<string, string> = {
 
 // Maps phases to board name suffixes (case-insensitive matching)
 const PHASE_TO_BOARD_SUFFIX: Record<string, string[]> = {
-  qc_premix: ['qc premix', 'qc-premix', 'qcpremix', 'premix'],
-  qc_retakes: ['qc retakes', 'qc-retakes', 'qcretakes', 'retakes'],
-  mix: ['mix', 'mixbogota'],
+  qc_premix: ['qc premix', 'qc-premix', 'qcpremix'],
+  qc_retakes: ['qc retakes', 'qc-retakes', 'qcretakes'],
+  mix: ['mix'],
   qc_mix: ['qc-mix', 'qc mix', 'qcmix'],
   mix_retakes: ['mixretakes', 'mix retakes', 'mix-retakes'],
 };

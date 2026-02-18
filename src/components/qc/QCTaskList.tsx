@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { ExternalLink, HelpCircle, MessageCircle, MessageSquare, User as UserIcon } from 'lucide-react';
 import { QCTask, QC_PHASE_LABELS, QC_PHASE_DUE_DATE_FIELD } from '@/hooks/useQCTasks';
+import { SortableTableHeader, useSortableTable } from '@/components/board/SortableTableHeader';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { DateCell } from '@/components/board/DateCell';
@@ -74,6 +75,7 @@ interface QCTaskListProps {
 }
 
 export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, teamMemberMap }: QCTaskListProps) {
+  const { sortConfig, handleSort, sortItems } = useSortableTable<QCTask>();
   const queryClient = useQueryClient();
   const { data: currentTeamMember } = useCurrentTeamMember();
   const { data: allTeamMembers = [] } = useTeamMembers();
@@ -186,18 +188,18 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="border-b bg-muted/30">
-            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap sticky left-0 z-20 bg-muted/30 min-w-[200px]">Project</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[90px] sticky left-[200px] z-20 bg-muted/30">Client</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[80px] sticky left-[290px] z-20 bg-muted/30 after:absolute after:right-0 after:top-0 after:bottom-0 after:w-[3px] after:shadow-[2px_0_4px_rgba(0,0,0,0.08)]">Branch</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">Stage</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">Status</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[90px]">Due Date</th>
+            <SortableTableHeader label="Project" sortKey="name" currentSort={sortConfig} onSort={handleSort} className="px-4 sticky left-0 z-20 bg-muted/30 min-w-[200px]" />
+            <SortableTableHeader label="Client" sortKey="clientName" currentSort={sortConfig} onSort={handleSort} className="w-[90px] sticky left-[200px] z-20 bg-muted/30" />
+            <SortableTableHeader label="Branch" sortKey="branch" currentSort={sortConfig} onSort={handleSort} className="w-[80px] sticky left-[290px] z-20 bg-muted/30 after:absolute after:right-0 after:top-0 after:bottom-0 after:w-[3px] after:shadow-[2px_0_4px_rgba(0,0,0,0.08)]" />
+            <SortableTableHeader label="Stage" sortKey="phase" currentSort={sortConfig} onSort={handleSort} className="w-[120px]" />
+            <SortableTableHeader label="Status" sortKey="status" currentSort={sortConfig} onSort={handleSort} className="w-[100px]" />
+            <SortableTableHeader label="Due Date" sortKey="phaseDueDate" currentSort={sortConfig} onSort={handleSort} className="w-[90px]" />
             <th className="px-2 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[50px]">Ep.</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">QC Premix</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">QC Retakes</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">Mixer</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">QC Mixer</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">Submission</th>
+            <SortableTableHeader label="QC Premix" sortKey="qc1Id" currentSort={sortConfig} onSort={handleSort} className="w-[120px]" />
+            <SortableTableHeader label="QC Retakes" sortKey="qcRetakesId" currentSort={sortConfig} onSort={handleSort} className="w-[120px]" />
+            <SortableTableHeader label="Mixer" sortKey="mixerBogotaId" currentSort={sortConfig} onSort={handleSort} className="w-[120px]" />
+            <SortableTableHeader label="QC Mixer" sortKey="qcMixId" currentSort={sortConfig} onSort={handleSort} className="w-[120px]" />
+            <SortableTableHeader label="Submission" sortKey="submissionStatus" currentSort={sortConfig} onSort={handleSort} className="w-[120px]" />
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">
               <TooltipProvider>
                 <Tooltip>
@@ -211,12 +213,26 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, 
               </TooltipProvider>
             </th>
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">Vendor Comment</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">Updated</th>
+            <SortableTableHeader label="Updated" sortKey="lastUpdated" currentSort={sortConfig} onSort={handleSort} className="w-[100px]" />
             <th className="px-2 py-2 w-[40px]"></th>
           </tr>
         </thead>
         <tbody>
-          {tasks.map(task => {
+          {sortItems(tasks, (t, key) => {
+            if (key === 'name') return t.name;
+            if (key === 'clientName') return t.clientName;
+            if (key === 'branch') return t.branch;
+            if (key === 'phase') return t.phase;
+            if (key === 'status') return t.status;
+            if (key === 'phaseDueDate') return t.phaseDueDate;
+            if (key === 'submissionStatus') return t.submissionStatus;
+            if (key === 'lastUpdated') return t.lastUpdated;
+            if (key === 'qc1Id') return teamMemberMap.get(t.qc1Id || '')?.name;
+            if (key === 'qcRetakesId') return teamMemberMap.get(t.qcRetakesId || '')?.name;
+            if (key === 'mixerBogotaId') return teamMemberMap.get(t.mixerBogotaId || '')?.name;
+            if (key === 'qcMixId') return teamMemberMap.get(t.qcMixId || '')?.name;
+            return null;
+          }).map(task => {
             const submission = SUBMISSION_BADGE[task.submissionStatus];
             const submissionType = SUBMISSION_TYPE_LABELS[task.phase] || 'Submission';
             const guestConfig = GUEST_SIGNAL_CONFIG[task.guestSignal];

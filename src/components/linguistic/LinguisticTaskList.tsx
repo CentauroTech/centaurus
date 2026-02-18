@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { ExternalLink, FileCheck, FileX, HelpCircle, MessageCircle, MessageSquare, User as UserIcon } from 'lucide-react';
 import { LinguisticTask } from '@/hooks/useLinguisticTasks';
+import { SortableTableHeader, useSortableTable } from '@/components/board/SortableTableHeader';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { RoleBasedOwnerCell } from '@/components/board/cells/RoleBasedOwnerCell';
@@ -59,6 +60,7 @@ interface LinguisticTaskListProps {
 }
 
 export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, workspaceId, workspaceName }: LinguisticTaskListProps) {
+  const { sortConfig, handleSort, sortItems } = useSortableTable<LinguisticTask>();
   const queryClient = useQueryClient();
   const { data: currentTeamMember } = useCurrentTeamMember();
   const { data: allTeamMembers = [] } = useTeamMembers();
@@ -180,14 +182,14 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="border-b bg-muted/30">
-            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap sticky left-0 z-20 bg-muted/30 min-w-[200px]">Project</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px] sticky left-[200px] z-20 bg-muted/30 after:absolute after:right-0 after:top-0 after:bottom-0 after:w-[3px] after:shadow-[2px_0_4px_rgba(0,0,0,0.08)]">Client</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">Phase</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[110px]">Status</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[90px]">Due Date</th>
+            <SortableTableHeader label="Project" sortKey="name" currentSort={sortConfig} onSort={handleSort} className="px-4 sticky left-0 z-20 bg-muted/30 min-w-[200px]" />
+            <SortableTableHeader label="Client" sortKey="clientName" currentSort={sortConfig} onSort={handleSort} className="w-[100px] sticky left-[200px] z-20 bg-muted/30 after:absolute after:right-0 after:top-0 after:bottom-0 after:w-[3px] after:shadow-[2px_0_4px_rgba(0,0,0,0.08)]" />
+            <SortableTableHeader label="Phase" sortKey="phase" currentSort={sortConfig} onSort={handleSort} className="w-[100px]" />
+            <SortableTableHeader label="Status" sortKey="status" currentSort={sortConfig} onSort={handleSort} className="w-[110px]" />
+            <SortableTableHeader label="Due Date" sortKey="phaseDueDate" currentSort={sortConfig} onSort={handleSort} className="w-[90px]" />
             <th className="px-2 py-2 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[50px]">Ep.</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[140px]">Translator</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[140px]">Adapter</th>
+            <SortableTableHeader label="Translator" sortKey="traductor" currentSort={sortConfig} onSort={handleSort} className="w-[140px]" />
+            <SortableTableHeader label="Adapter" sortKey="adaptador" currentSort={sortConfig} onSort={handleSort} className="w-[140px]" />
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">Files</th>
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">
               <TooltipProvider>
@@ -202,12 +204,22 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
               </TooltipProvider>
             </th>
             <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[120px]">Latest Comment</th>
-            <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap w-[100px]">Updated</th>
+            <SortableTableHeader label="Updated" sortKey="lastUpdated" currentSort={sortConfig} onSort={handleSort} className="w-[100px]" />
             <th className="px-2 py-2 w-[40px]"></th>
           </tr>
         </thead>
         <tbody>
-          {tasks.map(task => {
+          {sortItems(tasks, (t, key) => {
+            if (key === 'name') return t.name;
+            if (key === 'clientName') return t.clientName;
+            if (key === 'phase') return t.phase;
+            if (key === 'status') return t.status;
+            if (key === 'phaseDueDate') return t.phaseDueDate;
+            if (key === 'lastUpdated') return t.lastUpdated;
+            if (key === 'traductor') return t.traductor?.name;
+            if (key === 'adaptador') return t.adaptador?.name;
+            return null;
+          }).map(task => {
             const guestConfig = GUEST_SIGNAL_CONFIG[task.guestSignal];
             const epIndex = episodeIndexMap.get(task.id) ?? 1;
 

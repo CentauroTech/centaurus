@@ -55,6 +55,7 @@ export function useUpdateFeatureSetting() {
     },
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['feature-settings', vars.featureKey] });
+      queryClient.invalidateQueries({ queryKey: ['feature-settings'] });
     },
   });
 }

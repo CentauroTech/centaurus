@@ -1,11 +1,18 @@
-import { useCallback } from 'react';
-import { ExternalLink } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
+import { ExternalLink, HelpCircle, MessageCircle, MessageSquare, User as UserIcon } from 'lucide-react';
 import { QCTask, QC_PHASE_LABELS, QC_PHASE_DUE_DATE_FIELD } from '@/hooks/useQCTasks';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { DateCell } from '@/components/board/DateCell';
+import { RoleBasedOwnerCell } from '@/components/board/cells/RoleBasedOwnerCell';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { User } from '@/types/board';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
+import { useTeamMembers } from '@/hooks/useWorkspaces';
+import { useSendGuestAssignmentNotification } from '@/hooks/useGuestNotifications';
+import { getLocalDateString } from '@/lib/businessDays';
 import { toast } from 'sonner';
 import DOMPurify from 'dompurify';
 
@@ -25,13 +32,6 @@ const STATUS_LABELS: Record<string, string> = {
   pending_approval: 'Pending',
 };
 
-const SUBMISSION_BADGE: Record<string, { label: string; className: string }> = {
-  ready: { label: 'Ready', className: 'bg-green-100 text-green-700' },
-  missing: { label: 'Missing', className: 'bg-gray-100 text-gray-500' },
-  waiting: { label: 'Waiting', className: 'bg-amber-100 text-amber-700' },
-  blocked: { label: 'Blocked', className: 'bg-red-100 text-red-700' },
-};
-
 const PHASE_BADGE: Record<string, string> = {
   qc_premix: 'bg-purple-200 text-purple-800',
   qc_retakes: 'bg-amber-200 text-amber-800',
@@ -40,8 +40,50 @@ const PHASE_BADGE: Record<string, string> = {
   mix_retakes: 'bg-pink-500 text-white',
 };
 
+const SUBMISSION_TYPE_LABELS: Record<string, string> = {
+  qc_premix: 'Premix Retake List',
+  qc_retakes: 'Retake List',
+  qc_mix: 'Mix Retake List',
+  mix: 'File Upload',
+  mix_retakes: 'File Upload',
+};
+
+const SUBMISSION_BADGE: Record<string, { label: string; className: string }> = {
+  ready: { label: 'Ready', className: 'bg-green-100 text-green-700' },
+  missing: { label: 'Missing', className: 'bg-gray-100 text-gray-500' },
+  waiting: { label: 'Waiting', className: 'bg-amber-100 text-amber-700' },
+  blocked: { label: 'Blocked', className: 'bg-red-100 text-red-700' },
+};
+
+const GUEST_SIGNAL_CONFIG: Record<string, { label: string; className: string; icon: typeof MessageCircle }> = {
+  none: { label: 'No Activity', className: 'text-muted-foreground bg-muted', icon: UserIcon },
+  waiting: { label: 'Waiting', className: 'text-amber-700 bg-amber-100', icon: MessageSquare },
+  replied: { label: 'Replied', className: 'text-green-700 bg-green-100', icon: MessageCircle },
+};
+
+// Role filter mapping for each assignment column
+const ROLE_COLUMN_CONFIG: { label: string; field: string; roleFilter: string }[] = [
+  { label: 'Premixer', field: 'mixer_miami_id', roleFilter: 'mixer' },
+  { label: 'QC Premix', field: 'qc_1_id', roleFilter: 'qc_premix' },
+  { label: 'QC Retakes', field: 'qc_retakes_id', roleFilter: 'qc_retakes' },
+  { label: 'Mixer', field: 'mixer_miami_id', roleFilter: 'mixer' },
+  { label: 'QC Mixer', field: 'qc_mix_id', roleFilter: 'qc_mix' },
+];
+
 function stripHtml(html: string): string {
   return DOMPurify.sanitize(html, { ALLOWED_TAGS: [] }).replace(/&nbsp;/g, ' ').trim();
+}
+
+function getAssigneeForColumn(task: QCTask, field: string): User | undefined {
+  const idMap: Record<string, string | null> = {
+    'qc_1_id': task.qc1Id,
+    'qc_retakes_id': task.qcRetakesId,
+    'qc_mix_id': task.qcMixId,
+    'mixer_miami_id': task.mixerMiamiId,
+    'mixer_bogota_id': task.mixerBogotaId,
+  };
+  const memberId = idMap[field];
+  return memberId ? task.projectManager : undefined; // We'll resolve from teamMemberMap
 }
 
 interface QCTaskListProps {
@@ -49,10 +91,39 @@ interface QCTaskListProps {
   onSelectTask: (taskId: string) => void;
   selectedTaskId: string | null;
   workspaceIds: string[];
+  teamMemberMap: Map<string, User>;
 }
 
-export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds }: QCTaskListProps) {
+export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds, teamMemberMap }: QCTaskListProps) {
   const queryClient = useQueryClient();
+  const { data: currentTeamMember } = useCurrentTeamMember();
+  const { data: allTeamMembers = [] } = useTeamMembers();
+  const sendGuestNotification = useSendGuestAssignmentNotification();
+
+  const isGuestMember = useCallback((memberId: string): boolean => {
+    const member = allTeamMembers.find(m => m.id === memberId);
+    if (!member) return false;
+    return !member.email || !member.email.toLowerCase().includes('@centauro.com');
+  }, [allTeamMembers]);
+
+  // Compute episode indices
+  const episodeIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const counters = new Map<string, number>();
+    for (const task of tasks) {
+      let groupKey: string;
+      const wo = task.workOrderNumber || '';
+      if (wo.length >= 3) {
+        groupKey = wo.slice(0, -2);
+      } else {
+        groupKey = (task.name || '').replace(/\s*(S\d+|EP\d+|\d+)\s*$/i, '').trim();
+      }
+      const count = (counters.get(groupKey) || 0) + 1;
+      counters.set(groupKey, count);
+      map.set(task.id, count);
+    }
+    return map;
+  }, [tasks]);
 
   const handleFieldUpdate = useCallback(async (taskId: string, field: string, value: unknown) => {
     const { error } = await supabase.from('tasks').update({
@@ -63,6 +134,61 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds }
     queryClient.invalidateQueries({ queryKey: ['qc-tasks', workspaceIds] });
   }, [queryClient, workspaceIds]);
 
+  const handleOwnerChange = useCallback(async (taskId: string, field: string, user: User | undefined) => {
+    const updateData: Record<string, unknown> = {
+      [field]: user?.id || null,
+      last_updated: new Date().toISOString(),
+    };
+
+    if (user && isGuestMember(user.id)) {
+      const guestDue = new Date();
+      guestDue.setDate(guestDue.getDate() + 1);
+      while (guestDue.getDay() === 0 || guestDue.getDay() === 6) {
+        guestDue.setDate(guestDue.getDate() + 1);
+      }
+      updateData.is_private = true;
+      updateData.guest_due_date = guestDue.toISOString().split('T')[0];
+      updateData.date_assigned = getLocalDateString();
+
+      const { error } = await supabase.from('tasks').update(updateData).eq('id', taskId);
+      if (error) { toast.error('Failed to update'); return; }
+
+      await supabase.from('task_viewers').delete().eq('task_id', taskId);
+      await supabase.from('task_viewers').insert({ task_id: taskId, team_member_id: user.id });
+      await supabase.from('task_files').update({ is_guest_accessible: true }).eq('task_id', taskId);
+
+      sendGuestNotification.mutate({ taskId, taskName: 'QC Task', guestIds: [user.id] });
+
+      await supabase.from('activity_log').insert({
+        task_id: taskId,
+        type: 'field_change',
+        field: 'is_private',
+        old_value: 'false',
+        new_value: 'true',
+        user_id: currentTeamMember?.id || null,
+      });
+    } else {
+      const { error } = await supabase.from('tasks').update(updateData).eq('id', taskId);
+      if (error) { toast.error('Failed to update'); return; }
+    }
+
+    queryClient.invalidateQueries({ queryKey: ['qc-tasks', workspaceIds] });
+  }, [queryClient, workspaceIds, isGuestMember, currentTeamMember?.id, sendGuestNotification]);
+
+  const handleInstructionsComment = useCallback(async (taskId: string, comment: string, viewerIds: string[]) => {
+    if (!currentTeamMember?.id) return;
+    for (const viewerId of viewerIds) {
+      await supabase.from('comments').insert({
+        task_id: taskId,
+        user_id: currentTeamMember.id,
+        content: comment,
+        is_guest_visible: true,
+        viewer_id: viewerId,
+        phase: null,
+      });
+    }
+  }, [currentTeamMember?.id]);
+
   if (tasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -72,29 +198,54 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds }
     );
   }
 
+  const resolveUser = (id: string | null): User | undefined => {
+    if (!id) return undefined;
+    return teamMemberMap.get(id);
+  };
+
   return (
     <div className="space-y-1">
       {/* Header */}
-      <div className="grid grid-cols-[1fr_90px_80px_100px_100px_90px_100px_120px_100px_40px] gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
+      <div className="grid grid-cols-[1fr_90px_80px_100px_100px_90px_50px_120px_120px_120px_120px_120px_120px_100px_120px_100px_40px] gap-2 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
         <span>Project</span>
         <span>Client</span>
         <span>Branch</span>
         <span>Stage</span>
         <span>Status</span>
         <span>Due Date</span>
+        <span>Ep.</span>
+        <span>Premixer</span>
+        <span>QC Premix</span>
+        <span>QC Retakes</span>
+        <span>Mixer</span>
+        <span>QC Mixer</span>
         <span>Submission</span>
-        <span>Latest Comment</span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1 cursor-help">Guest <HelpCircle className="w-3 h-3" /></span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[220px] text-xs normal-case tracking-normal font-normal">
+              Shows the latest guest-visible comment activity: <strong>No Activity</strong> = no comments, <strong>Waiting</strong> = internal reply sent, <strong>Replied</strong> = guest has responded.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <span>Vendor Comment</span>
         <span>Updated</span>
         <span></span>
       </div>
 
       {tasks.map(task => {
         const submission = SUBMISSION_BADGE[task.submissionStatus];
+        const submissionType = SUBMISSION_TYPE_LABELS[task.phase] || 'Submission';
+        const guestConfig = GUEST_SIGNAL_CONFIG[task.guestSignal];
+        const epIndex = episodeIndexMap.get(task.id) ?? 1;
+
         return (
           <div
             key={task.id}
             className={cn(
-              "w-full grid grid-cols-[1fr_90px_80px_100px_100px_90px_100px_120px_100px_40px] gap-2 px-4 py-3 text-left rounded-lg transition-all hover:bg-muted/60",
+              "w-full grid grid-cols-[1fr_90px_80px_100px_100px_90px_50px_120px_120px_120px_120px_120px_120px_100px_120px_100px_40px] gap-2 px-4 py-3 text-left rounded-lg transition-all hover:bg-muted/60",
               selectedTaskId === task.id && "bg-muted ring-1 ring-primary/20"
             )}
           >
@@ -113,8 +264,8 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds }
 
             {/* Branch */}
             <div className="self-center">
-              <span className={cn("inline-flex px-2 py-0.5 rounded text-[10px] font-medium",
-                task.branch === 'Miami' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'
+              <span className={cn("inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium",
+                task.branch === 'Miami' ? 'bg-blue-200 text-blue-800' : 'bg-yellow-200 text-yellow-800'
               )}>
                 {task.branch}
               </span>
@@ -154,19 +305,95 @@ export function QCTaskList({ tasks, onSelectTask, selectedTaskId, workspaceIds }
               />
             </div>
 
-            {/* Submission */}
+            {/* Episodes */}
+            <div className="self-center text-center text-sm">
+              {task.cantidadEpisodios ? `${epIndex}/${task.cantidadEpisodios}` : '—'}
+            </div>
+
+            {/* Premixer (mixer_miami_id) */}
+            <div className="self-center" onClick={e => e.stopPropagation()}>
+              <RoleBasedOwnerCell
+                owner={resolveUser(task.mixerMiamiId)}
+                onOwnerChange={(user) => handleOwnerChange(task.id, 'mixer_miami_id', user)}
+                roleFilter="mixer"
+                onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
+                taskId={task.id}
+                compact
+              />
+            </div>
+
+            {/* QC Premix (qc_1_id) */}
+            <div className="self-center" onClick={e => e.stopPropagation()}>
+              <RoleBasedOwnerCell
+                owner={resolveUser(task.qc1Id)}
+                onOwnerChange={(user) => handleOwnerChange(task.id, 'qc_1_id', user)}
+                roleFilter="qc_premix"
+                onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
+                taskId={task.id}
+                compact
+              />
+            </div>
+
+            {/* QC Retakes (qc_retakes_id) */}
+            <div className="self-center" onClick={e => e.stopPropagation()}>
+              <RoleBasedOwnerCell
+                owner={resolveUser(task.qcRetakesId)}
+                onOwnerChange={(user) => handleOwnerChange(task.id, 'qc_retakes_id', user)}
+                roleFilter="qc_retakes"
+                onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
+                taskId={task.id}
+                compact
+              />
+            </div>
+
+            {/* Mixer (mixer_bogota_id for Colombia, mixer_miami_id for Miami - use bogota as separate) */}
+            <div className="self-center" onClick={e => e.stopPropagation()}>
+              <RoleBasedOwnerCell
+                owner={resolveUser(task.mixerBogotaId)}
+                onOwnerChange={(user) => handleOwnerChange(task.id, 'mixer_bogota_id', user)}
+                roleFilter="mixer"
+                onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
+                taskId={task.id}
+                compact
+              />
+            </div>
+
+            {/* QC Mixer (qc_mix_id) */}
+            <div className="self-center" onClick={e => e.stopPropagation()}>
+              <RoleBasedOwnerCell
+                owner={resolveUser(task.qcMixId)}
+                onOwnerChange={(user) => handleOwnerChange(task.id, 'qc_mix_id', user)}
+                roleFilter="qc_mix"
+                onInstructionsComment={(comment, viewerIds) => handleInstructionsComment(task.id, comment, viewerIds)}
+                taskId={task.id}
+                compact
+              />
+            </div>
+
+            {/* Submission with type */}
             <div className="self-center">
-              <span className={cn("inline-flex px-2 py-0.5 rounded text-[10px] font-medium", submission.className)}>
-                {submission.label}
+              <div className="flex flex-col gap-0.5">
+                <span className={cn("inline-flex px-2 py-0.5 rounded text-[10px] font-medium", submission.className)}>
+                  {submission.label}
+                </span>
+                <span className="text-[9px] text-muted-foreground truncate">{submissionType}</span>
+              </div>
+            </div>
+
+            {/* Guest signal */}
+            <div className="self-center">
+              <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium", guestConfig.className)}>
+                <guestConfig.icon className="w-3 h-3" />
+                {guestConfig.label}
               </span>
             </div>
 
-            {/* Latest Comment */}
+            {/* Vendor Comment (latest from vendor only) */}
             <div className="self-center min-w-0">
-              {task.latestComment ? (
-                <div className="text-xs text-muted-foreground truncate" title={stripHtml(task.latestComment.content)}>
-                  <span className="font-medium text-foreground">{task.latestComment.authorName.split(' ')[0]}: </span>
-                  {stripHtml(task.latestComment.content).slice(0, 30)}
+              {task.latestVendorComment ? (
+                <div className="text-xs text-muted-foreground truncate" title={stripHtml(task.latestVendorComment.content)}>
+                  <span className="font-medium text-foreground">{task.latestVendorComment.authorName.split(' ')[0]}: </span>
+                  {stripHtml(task.latestVendorComment.content).slice(0, 30)}
                 </div>
               ) : (
                 <span className="text-xs text-muted-foreground">—</span>

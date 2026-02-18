@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { ExternalLink, FileCheck, FileX, HelpCircle, MessageCircle, MessageSquare, User as UserIcon } from 'lucide-react';
 import { LinguisticTask } from '@/hooks/useLinguisticTasks';
 import { cn } from '@/lib/utils';
@@ -71,6 +71,25 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
   }, [allTeamMembers]);
 
   const isColombiaWorkspace = workspaceName.toLowerCase().includes('colombia') || workspaceName.toLowerCase().includes('col');
+
+  // Compute episode indices grouped by WO prefix
+  const episodeIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    const counters = new Map<string, number>();
+    for (const task of tasks) {
+      let groupKey: string;
+      const wo = task.workOrderNumber || '';
+      if (wo.length >= 3) {
+        groupKey = wo.slice(0, -2);
+      } else {
+        groupKey = (task.name || '').replace(/\s*(S\d+|EP\d+|\d+)\s*$/i, '').trim();
+      }
+      const count = (counters.get(groupKey) || 0) + 1;
+      counters.set(groupKey, count);
+      map.set(task.id, count);
+    }
+    return map;
+  }, [tasks]);
 
   const handleFieldUpdate = useCallback(async (taskId: string, field: string, value: unknown) => {
     const { error } = await supabase.from('tasks').update({
@@ -268,12 +287,14 @@ export function LinguisticTaskList({ tasks, onSelectTask, selectedTaskId, worksp
               />
             </div>
 
-            {/* Episodes - editable */}
+            {/* Episodes - X/Total format */}
             <div className="self-center text-center" onClick={e => e.stopPropagation()}>
               <NumberCell
                 value={task.cantidadEpisodios ?? undefined}
                 onChange={(val) => handleFieldUpdate(task.id, 'cantidad_episodios', val ?? null)}
                 placeholder="—"
+                displayFormat="episodes"
+                episodeIndex={episodeIndexMap.get(task.id) ?? 1}
               />
             </div>
 

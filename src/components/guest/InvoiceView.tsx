@@ -1,11 +1,10 @@
 import { format } from 'date-fns';
-import { ArrowLeft, Send, Printer, FileText, CheckCircle, XCircle, Clock, DollarSign } from 'lucide-react';
+import { ArrowLeft, Printer, FileText, CheckCircle, XCircle, Clock, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useInvoice, useSubmitInvoice, Invoice } from '@/hooks/useInvoices';
-import { toast } from 'sonner';
+import { useInvoice, Invoice } from '@/hooks/useInvoices';
 import centaurusLogo from '@/assets/centaurus-logo.jpeg';
 
 interface InvoiceViewProps {
@@ -16,38 +15,23 @@ interface InvoiceViewProps {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; className: string }> = {
-  draft: { label: 'Draft', icon: <FileText className="w-4 h-4" />, className: 'bg-gray-100 text-gray-700' },
-  submitted: { label: 'Pending', icon: <Clock className="w-4 h-4" />, className: 'bg-amber-100 text-amber-700' },
+  submitted: { label: 'Pending Approval', icon: <Clock className="w-4 h-4" />, className: 'bg-amber-100 text-amber-700' },
   approved: { label: 'Approved', icon: <CheckCircle className="w-4 h-4" />, className: 'bg-green-100 text-green-700' },
   rejected: { label: 'Rejected', icon: <XCircle className="w-4 h-4" />, className: 'bg-red-100 text-red-700' },
   paid: { label: 'Paid', icon: <DollarSign className="w-4 h-4" />, className: 'bg-emerald-100 text-emerald-700' },
 };
 
 export function InvoiceView({ invoiceId, invoice: passedInvoice, onBack, onClose }: InvoiceViewProps) {
-  // Always fetch the full invoice with items using either the passed ID or the passed invoice's ID
   const effectiveInvoiceId = invoiceId || passedInvoice?.id || '';
   const { data: fetchedInvoice, isLoading } = useInvoice(effectiveInvoiceId);
-  const submitInvoice = useSubmitInvoice();
   
-  // Prefer fetched invoice (has items) over passed invoice
   const invoice = fetchedInvoice || passedInvoice;
   const handleClose = onBack || onClose;
-
-  const handleSubmit = async () => {
-    if (!invoice) return;
-    try {
-      await submitInvoice.mutateAsync(invoice.id);
-      toast.success('Invoice submitted for approval');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to submit invoice');
-    }
-  };
 
   const handlePrint = () => {
     window.print();
   };
 
-  // Only show loading if we're fetching (not using passed invoice)
   if (!passedInvoice && isLoading) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -64,7 +48,7 @@ export function InvoiceView({ invoiceId, invoice: passedInvoice, onBack, onClose
     );
   }
 
-  const statusConfig = STATUS_CONFIG[invoice.status] || STATUS_CONFIG.draft;
+  const statusConfig = STATUS_CONFIG[invoice.status] || STATUS_CONFIG.submitted;
 
   return (
     <div className="space-y-6">
@@ -87,12 +71,6 @@ export function InvoiceView({ invoiceId, invoice: passedInvoice, onBack, onClose
             <Printer className="w-4 h-4" />
             Print
           </Button>
-          {invoice.status === 'draft' && (
-            <Button onClick={handleSubmit} className="gap-2">
-              <Send className="w-4 h-4" />
-              Submit for Approval
-            </Button>
-          )}
         </div>
       </div>
 

@@ -27,8 +27,8 @@ export function useInvoicedTaskIds() {
       const ids = new Set<string>();
       for (const item of data || []) {
         const invoice = item.invoices as any;
-        // Block tasks from invoices that are submitted, approved, or paid (not draft)
-        if (invoice?.status && invoice.status !== 'draft') {
+        // Block tasks from invoices that are submitted, approved, or paid (not draft or rejected)
+        if (invoice?.status && invoice.status !== 'draft' && invoice.status !== 'rejected') {
           if (item.completed_task_id) {
             ids.add(item.completed_task_id);
           }

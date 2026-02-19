@@ -780,6 +780,7 @@ export type Database = {
         Row: {
           approved_at: string | null
           approved_by_id: string | null
+          assigned_approver_id: string | null
           billing_address: string | null
           billing_bank_account: string | null
           billing_bank_name: string | null
@@ -808,6 +809,7 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by_id?: string | null
+          assigned_approver_id?: string | null
           billing_address?: string | null
           billing_bank_account?: string | null
           billing_bank_name?: string | null
@@ -836,6 +838,7 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by_id?: string | null
+          assigned_approver_id?: string | null
           billing_address?: string | null
           billing_bank_account?: string | null
           billing_bank_name?: string | null
@@ -865,6 +868,13 @@ export type Database = {
           {
             foreignKeyName: "invoices_approved_by_id_fkey"
             columns: ["approved_by_id"]
+            isOneToOne: false
+            referencedRelation: "team_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_assigned_approver_id_fkey"
+            columns: ["assigned_approver_id"]
             isOneToOne: false
             referencedRelation: "team_members"
             referencedColumns: ["id"]

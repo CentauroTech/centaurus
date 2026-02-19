@@ -37,3 +37,11 @@ export function useHasBillingRole() {
     isLoading,
   };
 }
+
+export function useHasPaymentRole() {
+  const { data: roles, isLoading } = useMyRoles();
+  return {
+    hasPaymentRole: roles?.some(r => r.role_type === 'payment') ?? false,
+    isLoading,
+  };
+}

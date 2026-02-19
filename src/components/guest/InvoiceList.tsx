@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { FileText, Plus, Send, Trash2, Eye, Clock, CheckCircle, XCircle, DollarSign, AlertCircle } from 'lucide-react';
+import { FileText, Plus, Eye, Clock, CheckCircle, XCircle, DollarSign, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useMyInvoices, useDeleteInvoice, useSubmitInvoice, Invoice } from '@/hooks/useInvoices';
+import { useMyInvoices, useDeleteInvoice, Invoice } from '@/hooks/useInvoices';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -23,7 +23,6 @@ interface InvoiceListProps {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; className: string }> = {
-  draft: { label: 'Draft', icon: <FileText className="w-3 h-3" />, className: 'bg-gray-100 text-gray-700' },
   submitted: { label: 'Pending Approval', icon: <Clock className="w-3 h-3" />, className: 'bg-amber-100 text-amber-700' },
   approved: { label: 'Approved', icon: <CheckCircle className="w-3 h-3" />, className: 'bg-green-100 text-green-700' },
   rejected: { label: 'Rejected', icon: <XCircle className="w-3 h-3" />, className: 'bg-red-100 text-red-700' },
@@ -32,32 +31,6 @@ const STATUS_CONFIG: Record<string, { label: string; icon: React.ReactNode; clas
 
 export function InvoiceList({ onCreateNew, onViewInvoice }: InvoiceListProps) {
   const { data: invoices, isLoading } = useMyInvoices();
-  const deleteInvoice = useDeleteInvoice();
-  const submitInvoice = useSubmitInvoice();
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [submitId, setSubmitId] = useState<string | null>(null);
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    try {
-      await deleteInvoice.mutateAsync(deleteId);
-      toast.success('Invoice deleted');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete invoice');
-    }
-    setDeleteId(null);
-  };
-
-  const handleSubmit = async () => {
-    if (!submitId) return;
-    try {
-      await submitInvoice.mutateAsync(submitId);
-      toast.success('Invoice submitted for approval');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to submit invoice');
-    }
-    setSubmitId(null);
-  };
 
   if (isLoading) {
     return (
@@ -94,7 +67,7 @@ export function InvoiceList({ onCreateNew, onViewInvoice }: InvoiceListProps) {
       ) : (
         <div className="space-y-3">
           {invoices.map((invoice) => {
-            const statusConfig = STATUS_CONFIG[invoice.status] || STATUS_CONFIG.draft;
+            const statusConfig = STATUS_CONFIG[invoice.status] || STATUS_CONFIG.submitted;
             
             return (
               <Card key={invoice.id} className="hover:shadow-md transition-shadow">
@@ -136,29 +109,6 @@ export function InvoiceList({ onCreateNew, onViewInvoice }: InvoiceListProps) {
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        
-                        {invoice.status === 'draft' && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setSubmitId(invoice.id)}
-                              title="Submit for approval"
-                              className="text-blue-600 hover:text-blue-700"
-                            >
-                              <Send className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setDeleteId(invoice.id)}
-                              title="Delete"
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
 
                         {invoice.status === 'rejected' && invoice.rejectionReason && (
                           <div className="flex items-center gap-1 ml-2 text-xs text-red-600">
@@ -177,42 +127,6 @@ export function InvoiceList({ onCreateNew, onViewInvoice }: InvoiceListProps) {
           })}
         </div>
       )}
-
-      {/* Delete confirmation */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Invoice?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. The invoice will be permanently deleted.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Submit confirmation */}
-      <AlertDialog open={!!submitId} onOpenChange={() => setSubmitId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Submit Invoice?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Once submitted, you won't be able to edit this invoice until it's reviewed. Are you sure it's ready?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSubmit}>
-              Submit for Approval
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

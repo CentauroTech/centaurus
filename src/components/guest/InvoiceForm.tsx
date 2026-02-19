@@ -10,9 +10,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useGuestCompletedHistory, GuestCompletedTask } from '@/hooks/useGuestCompletedHistory';
 import { supabase } from '@/integrations/supabase/client';
-import { useCreateInvoice, CreateInvoiceData, createItemsFromCompletedTasks } from '@/hooks/useInvoices';
+import { useCreateInvoice, CreateInvoiceData, createItemsFromCompletedTasks, useBillingUsers } from '@/hooks/useInvoices';
 import { useInvoicedTaskIds } from '@/hooks/useInvoicedTaskIds';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
 import { useBillingProfile } from '@/hooks/useBillingProfile';
@@ -45,6 +46,8 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
   const { user } = useAuth();
   const createInvoice = useCreateInvoice();
   const { data: invoicedTaskIds } = useInvoicedTaskIds();
+  const { data: billingUsers } = useBillingUsers();
+  const [selectedApproverId, setSelectedApproverId] = useState<string>('');
 
   // Billing info - pre-filled from billing profile
   const [billingName, setBillingName] = useState('');
@@ -235,7 +238,7 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
     }
   }, [currentMember, requestedUnblockIds]);
 
-  const handleSubmit = async (asDraft: boolean) => {
+  const handleSubmit = async () => {
     if (!billingName.trim()) {
       toast.error('Please enter your billing name');
       return;
@@ -265,7 +268,7 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
         dueDate: dueDate?.toISOString().split('T')[0],
         paymentInstructions,
         taxRate,
-        asDraft,
+        assignedApproverId: selectedApproverId || undefined,
         items: lineItems.map(item => ({
           completedTaskId: item.completedTaskId,
           description: item.description,
@@ -279,10 +282,10 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
         })),
       });
 
-      toast.success(asDraft ? 'Invoice saved as draft' : 'Invoice submitted successfully');
+      toast.success('Invoice submitted for approval');
       onSuccess();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create invoice');
+      toast.error(error.message || 'Failed to submit invoice');
     }
   };
 
@@ -729,22 +732,37 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
             </CardContent>
           </Card>
 
+          {/* Approver Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Submit To</CardTitle>
+              <CardDescription>Select who should review this invoice</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Select value={selectedApproverId} onValueChange={setSelectedApproverId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an approver..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {billingUsers?.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+
           {/* Actions */}
           <div className="flex gap-3">
             <Button 
-              variant="outline" 
               className="flex-1"
-              onClick={() => handleSubmit(true)}
+              onClick={() => handleSubmit()}
               disabled={createInvoice.isPending}
             >
-              Save as Draft
-            </Button>
-            <Button 
-              className="flex-1"
-              onClick={() => handleSubmit(false)}
-              disabled={createInvoice.isPending}
-            >
-              {createInvoice.isPending ? 'Creating...' : 'Create Invoice'}
+              <Send className="w-4 h-4 mr-2" />
+              {createInvoice.isPending ? 'Submitting...' : 'Submit Invoice'}
             </Button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Search, Filter, X, ChevronDown, User, Calendar, Check, Layers } from 'lucide-react';
+import { Search, Filter, X, ChevronDown, User, Calendar, Check } from 'lucide-react';
+import { APPROVED_PROJECT_MANAGER_NAMES } from '@/hooks/useProjectManagers';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +43,7 @@ export function BoardFilterBar({
   const [clientOpen, setClientOpen] = useState(false);
   const [phaseOpen, setPhaseOpen] = useState(false);
 
-  // Get unique people from tasks
+  // Get unique people from tasks - on HQ, only show Project Managers
   const uniquePeople = useMemo(() => {
     const peopleMap = new Map<string, {
       id: string;
@@ -50,36 +51,52 @@ export function BoardFilterBar({
       count: number;
     }>();
     allTasks.forEach(task => {
-      // Project Manager
-      if (task.projectManager) {
-        const existing = peopleMap.get(task.projectManager.id);
-        peopleMap.set(task.projectManager.id, {
-          id: task.projectManager.id,
-          name: task.projectManager.name,
-          count: (existing?.count || 0) + 1
+      if (isHQ) {
+        // HQ: only show Project Managers
+        if (task.projectManager) {
+          const existing = peopleMap.get(task.projectManager.id);
+          peopleMap.set(task.projectManager.id, {
+            id: task.projectManager.id,
+            name: task.projectManager.name,
+            count: (existing?.count || 0) + 1
+          });
+        }
+      } else {
+        // Non-HQ: show all people
+        if (task.projectManager) {
+          const existing = peopleMap.get(task.projectManager.id);
+          peopleMap.set(task.projectManager.id, {
+            id: task.projectManager.id,
+            name: task.projectManager.name,
+            count: (existing?.count || 0) + 1
+          });
+        }
+        if (task.director) {
+          const existing = peopleMap.get(task.director.id);
+          peopleMap.set(task.director.id, {
+            id: task.director.id,
+            name: task.director.name,
+            count: (existing?.count || 0) + 1
+          });
+        }
+        task.people?.forEach(p => {
+          const existing = peopleMap.get(p.id);
+          peopleMap.set(p.id, {
+            id: p.id,
+            name: p.name,
+            count: (existing?.count || 0) + 1
+          });
         });
       }
-      // Director
-      if (task.director) {
-        const existing = peopleMap.get(task.director.id);
-        peopleMap.set(task.director.id, {
-          id: task.director.id,
-          name: task.director.name,
-          count: (existing?.count || 0) + 1
-        });
-      }
-      // People array
-      task.people?.forEach(p => {
-        const existing = peopleMap.get(p.id);
-        peopleMap.set(p.id, {
-          id: p.id,
-          name: p.name,
-          count: (existing?.count || 0) + 1
-        });
-      });
     });
+    // On HQ, filter to only approved PMs
+    if (isHQ) {
+      return Array.from(peopleMap.values())
+        .filter(p => APPROVED_PROJECT_MANAGER_NAMES.includes(p.name.toLowerCase()))
+        .sort((a, b) => b.count - a.count);
+    }
     return Array.from(peopleMap.values()).sort((a, b) => b.count - a.count);
-  }, [allTasks]);
+  }, [allTasks, isHQ]);
 
   // Get unique clients
   const uniqueClients = useMemo(() => {
@@ -203,7 +220,7 @@ export function BoardFilterBar({
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className={cn("gap-2", personFilters.length > 0 && "border-primary text-primary")}>
             <User className="w-4 h-4" />
-            Person
+            {isHQ ? 'Project Manager' : 'Person'}
             {personFilters.length > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5">
                 {personFilters.length}
               </Badge>}
@@ -271,41 +288,7 @@ export function BoardFilterBar({
         </PopoverContent>
       </Popover>
 
-      {/* Phase Filter (HQ only) */}
-      {isHQ && onPhaseFiltersChange && (
-        <Popover open={phaseOpen} onOpenChange={setPhaseOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className={cn("gap-2", phaseFilters.length > 0 && "border-primary text-primary")}>
-              <Layers className="w-4 h-4" />
-              Phase
-              {phaseFilters.length > 0 && <Badge variant="secondary" className="ml-1 h-5 px-1.5">
-                  {phaseFilters.length}
-                </Badge>}
-              <ChevronDown className="w-3 h-3 ml-1" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-56 p-0 bg-popover border border-border shadow-lg z-[100]">
-            <ScrollArea className="max-h-64">
-              <div className="p-1">
-                {uniquePhases.length === 0 ? <div className="text-center py-4 text-sm text-muted-foreground">
-                    No phases found
-                  </div> : uniquePhases.map(phase => <button key={phase.name} onClick={() => togglePhase(phase.name)} className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-muted transition-colors text-left", phaseFilters.includes(phase.name) && "bg-primary/10")}>
-                      <Checkbox checked={phaseFilters.includes(phase.name)} className="pointer-events-none h-3.5 w-3.5" />
-                      <span className="flex-1 truncate">{phase.name}</span>
-                      <Badge variant="secondary" className="h-5 text-xs">
-                        {phase.count}
-                      </Badge>
-                    </button>)}
-              </div>
-            </ScrollArea>
-            {phaseFilters.length > 0 && <div className="p-2 border-t border-border">
-                <Button variant="ghost" size="sm" className="w-full h-7 text-xs" onClick={() => onPhaseFiltersChange([])}>
-                  Clear phase filters
-                </Button>
-              </div>}
-          </PopoverContent>
-        </Popover>
-      )}
+      {/* Phase Filter removed from HQ - tabs handle phase filtering */}
 
       {/* Clear All */}
       {activeFilterCount > 0 && <Button variant="ghost" size="sm" onClick={clearAllFilters} className="gap-2 text-muted-foreground">

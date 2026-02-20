@@ -118,18 +118,20 @@ serve(async (req) => {
       if (triggeredBy?.name) triggeredByName = triggeredBy.name;
     }
 
-    // Get task name and board name
+    // Get task name, board name, and workspace name
     let taskName = "a task";
     let boardName = "";
+    let workspaceName = "";
     if (payload.task_id) {
       const { data: task } = await supabase
         .from("tasks")
-        .select("name, group:task_groups!inner(board:boards!inner(name))")
+        .select("name, group:task_groups!inner(board:boards!inner(name, workspace:workspaces!inner(name)))")
         .eq("id", payload.task_id)
         .single();
 
       if (task?.name) taskName = task.name;
       if ((task as any)?.group?.board?.name) boardName = (task as any).group.board.name;
+      if ((task as any)?.group?.board?.workspace?.name) workspaceName = (task as any).group.board.workspace.name;
     }
 
     // Build CTA URL
@@ -159,25 +161,86 @@ serve(async (req) => {
     // Clean message: strip invoice_id metadata tags
     const cleanMessage = (payload.message ?? "").replace(/\s*invoice_id::[a-f0-9-]+/g, "").trim();
 
-    // Build meta box rows
-    const metaRows: string[] = [];
-    if (payload.type !== "invoice_submitted") {
-      metaRows.push(`<span style="font-weight:700;color:#111827;">Task:</span> ${taskName}`);
-    }
-    if (boardName) {
-      metaRows.push(`<span style="font-weight:700;color:#111827;">Board/Phase:</span> ${boardName}`);
-    }
-    metaRows.push(`<span style="font-weight:700;color:#111827;">Triggered by:</span> ${triggeredByName}`);
+    let htmlContent: string;
 
-    const metaBox = metaRows.length > 0
-      ? `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #eef0f3;border-radius:10px;">
-          <tr><td style="padding:12px 12px;font-family:Arial,Helvetica,sans-serif;">
-            <div style="font-size:12px;color:#6b7280;line-height:1.6;">${metaRows.join("<br/>")}</div>
-          </td></tr>
-        </table>`
-      : "";
+    if (payload.type === "mention") {
+      // Use the dedicated mention template
+      const contextLine = [workspaceName, boardName].filter(Boolean).join(" · ");
+      htmlContent = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>Centaurus Notification</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f4f6;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 16px;">
+<tr>
+<td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0"
+style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;border:1px solid #e5e7eb;overflow:hidden;">
+<tr>
+<td align="center" style="padding:28px 24px 20px 24px;background:#ffffff;">
+<img src="https://centaurus.centauro.com/logo.png" alt="Centauro" width="140" style="display:block;margin:0 auto;">
+</td>
+</tr>
+<tr><td style="height:3px;background:#2563eb;"></td></tr>
+<tr>
+<td style="padding:32px 32px 24px 32px;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+<div style="font-size:20px;font-weight:600;color:#111827;line-height:1.4;">
+  ${triggeredByName}
+  <span style="color:#2563eb;font-weight:600;">mentioned you</span>
+  in
+  <span style="color:#111827;">${taskName}</span>
+</div>
+${contextLine ? `<div style="margin-top:8px;font-size:13px;color:#6b7280;">${contextLine}</div>` : ""}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+style="margin-top:24px;background:#f8fafc;border-radius:12px;border:1px solid #e5e7eb;">
+<tr>
+<td style="padding:18px;font-size:14px;color:#111827;line-height:1.6;">
+${cleanMessage}
+</td>
+</tr>
+</table>
+<div style="margin-top:28px;text-align:left;">
+<a href="${ctaUrl}"
+   style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:600;font-size:14px;">
+   Open in Centaurus
+</a>
+</div>
+<div style="margin-top:24px;font-size:12px;color:#9ca3af;">
+  This is an automated notification from Centaurus.
+</div>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</body>
+</html>`;
+    } else {
+      // Default template for assignment, invoice, etc.
+      // Build meta box rows
+      const metaRows: string[] = [];
+      if (payload.type !== "invoice_submitted") {
+        metaRows.push(`<span style="font-weight:700;color:#111827;">Task:</span> ${taskName}`);
+      }
+      if (boardName) {
+        metaRows.push(`<span style="font-weight:700;color:#111827;">Board/Phase:</span> ${boardName}`);
+      }
+      metaRows.push(`<span style="font-weight:700;color:#111827;">Triggered by:</span> ${triggeredByName}`);
 
-    const htmlContent = `<!doctype html>
+      const metaBox = metaRows.length > 0
+        ? `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid #eef0f3;border-radius:10px;">
+            <tr><td style="padding:12px 12px;font-family:Arial,Helvetica,sans-serif;">
+              <div style="font-size:12px;color:#6b7280;line-height:1.6;">${metaRows.join("<br/>")}</div>
+            </td></tr>
+          </table>`
+        : "";
+
+      htmlContent = `<!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="x-apple-disable-message-reformatting"/><title>${subject}</title></head>
 <body style="margin:0;padding:0;background:#f6f7f9;">
@@ -206,6 +269,7 @@ You're receiving this email because notifications are enabled for your account. 
 <div style="max-width:600px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;color:#9ca3af;padding:12px 6px 0 6px;">© ${year} Centaurus</div>
 </td></tr></table>
 </body></html>`;
+    }
 
     console.log("Sending SES email to:", recipient.email);
 

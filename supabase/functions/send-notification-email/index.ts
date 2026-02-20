@@ -165,6 +165,23 @@ serve(async (req) => {
       cleanMessage = cleanMessage.slice(1, -1);
     }
 
+    // For mention emails, fetch the FULL comment content from the database
+    // (the notification message is truncated to 100 chars for bell display)
+    if (payload.type === "mention" && payload.task_id) {
+      const { data: latestComment } = await supabase
+        .from("comments")
+        .select("content")
+        .eq("task_id", payload.task_id)
+        .eq("user_id", payload.triggered_by_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (latestComment?.content) {
+        cleanMessage = latestComment.content;
+      }
+    }
+
     let htmlContent: string;
 
     if (payload.type === "mention") {

@@ -188,7 +188,8 @@ serve(async (req) => {
 <!-- Header: Logo + Name -->
 <tr>
 <td align="center" style="padding:28px 24px 20px 24px;background:#ffffff;">
-  <div style="font-family:'Poppins','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:22px;font-weight:700;color:#111827;letter-spacing:0.5px;">Centaurus</div>
+  <img src="https://myxsnhxorstzbrobecgw.supabase.co/storage/v1/object/public/email-assets/centauro-logo.png" alt="Centauro" width="120" style="display:block;margin:0 auto 8px auto;">
+  <div style="font-family:'Poppins','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:18px;font-weight:700;color:#111827;letter-spacing:0.5px;">Centaurus</div>
 </td>
 </tr>
 <!-- Red Divider -->
@@ -273,11 +274,11 @@ serve(async (req) => {
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f6f7f9;">
 <tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="width:600px;max-width:600px;background:#ffffff;border:1px solid #e6e8eb;border-radius:12px;overflow:hidden;">
-<tr><td style="padding:18px 20px;border-bottom:1px solid #eef0f3;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-<td align="left" style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111827;font-weight:700;">Centaurus</td>
-<td align="right" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7280;">${timestamp}</td>
-</tr></table></td></tr>
+<tr><td align="center" style="padding:20px 20px 16px 20px;border-bottom:1px solid #eef0f3;">
+<img src="https://myxsnhxorstzbrobecgw.supabase.co/storage/v1/object/public/email-assets/centauro-logo.png" alt="Centauro" width="100" style="display:block;margin:0 auto 6px auto;">
+<div style="font-family:'Poppins',Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;color:#111827;">Centaurus</div>
+</td></tr>
+<tr><td style="height:3px;background:#dc2626;"></td></tr>
 <tr><td style="padding:22px 20px 8px 20px;font-family:Arial,Helvetica,sans-serif;">
 <div style="font-size:16px;line-height:1.4;color:#111827;font-weight:700;margin:0 0 6px 0;">${payload.title}</div>
 ${cleanMessage ? `<div style="font-size:13px;line-height:1.6;color:#374151;margin:0 0 14px 0;">${cleanMessage}</div>` : ""}

@@ -33,7 +33,7 @@ function getActionVerb(type: string): string {
   switch (type) {
     case "mention": return "mentioned you";
     case "mention_everyone": return "mentioned everyone";
-    case "assignment": return "assigned you";
+    case "assignment": return "assigned you to the project";
     case "due_date_today": return "due today";
     case "overdue_alert": return "is overdue";
     case "retake_list_uploaded": return "uploaded a retake list";
@@ -94,8 +94,9 @@ function buildEmail(opts: {
   ctaLabel: string;
   postedDate: string;
   year: number;
+  assignedRole?: string | null;
 }): string {
-  const { triggeredByName, actionVerb, boardName, taskName, contextLine, contentHtml, ctaUrl, ctaLabel, postedDate, year } = opts;
+  const { triggeredByName, actionVerb, boardName, taskName, contextLine, contentHtml, ctaUrl, ctaLabel, postedDate, year, assignedRole } = opts;
 
   return `<!doctype html>
 <html>
@@ -128,10 +129,16 @@ function buildEmail(opts: {
 
   <!-- Title -->
   <div style="font-size:18px;font-weight:600;color:#111827;line-height:1.5;">
-    <span style="color:#111827;">${triggeredByName}</span>
-    <span style="color:#dc2626;font-weight:600;"> ${actionVerb}</span>
-    ${boardName ? `on <span style="font-weight:600;">${boardName}</span>` : ""}
-    ${taskName && taskName !== "a task" ? `in an update on <span style="font-weight:600;">${taskName}</span>` : ""}
+    ${assignedRole
+      ? `<span style="color:#111827;">${triggeredByName}</span>
+         <span style="color:#dc2626;font-weight:600;"> assigned you</span>
+         to the project <span style="font-weight:600;">${taskName}</span>
+         as <span style="color:#dc2626;font-weight:600;">${assignedRole}</span>`
+      : `<span style="color:#111827;">${triggeredByName}</span>
+         <span style="color:#dc2626;font-weight:600;"> ${actionVerb}</span>
+         ${taskName && taskName !== "a task" ? ` <span style="font-weight:600;">${taskName}</span>` : ""}
+         ${boardName ? ` on <span style="font-weight:600;">${boardName}</span>` : ""}`
+    }
   </div>
 
   <!-- Context Line -->
@@ -317,9 +324,11 @@ serve(async (req) => {
       // Fetch additional task details
       const { data: taskDetails } = await supabase
         .from("tasks")
-        .select("name, branch, fase, work_order_number, locked_runtime, studio, client_name")
+        .select("name, branch, fase, work_order_number, locked_runtime, studio, client_name, phase_due_date, guest_due_date")
         .eq("id", payload.task_id)
         .single();
+
+      const dueDate = taskDetails?.guest_due_date || taskDetails?.phase_due_date;
 
       const rows: Array<[string, string]> = [];
       if (assignedRole) rows.push(["Role", assignedRole]);
@@ -330,6 +339,7 @@ serve(async (req) => {
       if (taskDetails?.client_name) rows.push(["Client", taskDetails.client_name]);
       if (taskDetails?.locked_runtime) rows.push(["Runtime", taskDetails.locked_runtime]);
       if (taskDetails?.studio) rows.push(["Studio", taskDetails.studio]);
+      if (dueDate) rows.push(["Due Date", new Date(dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })]);
 
       if (rows.length > 0) {
         cleanMessage = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">` +
@@ -426,13 +436,21 @@ serve(async (req) => {
       hour: "numeric", minute: "2-digit",
     });
 
-    const actionVerb = getActionVerb(payload.type);
+    let actionVerb = getActionVerb(payload.type);
+    let assignedRoleForEmail: string | null = null;
+    
+    // For assignment emails, extract the role
+    if (payload.type === "assignment") {
+      const roleMatch = payload.title?.match(/assigned as (.+)$/i);
+      assignedRoleForEmail = roleMatch ? roleMatch[1] : null;
+    }
+    
     const subject = getSubject(payload.type, triggeredByName, taskName);
     const ctaLabel = getCtaLabel(payload.type);
 
     // Build context line
     const contextParts = [boardName, taskName !== "a task" ? taskName : ""].filter(Boolean);
-    const contextLine = contextParts.join(" &gt; ");
+    const contextLine = payload.type === "assignment" ? "" : contextParts.join(" &gt; ");
 
     const htmlContent = buildEmail({
       triggeredByName,
@@ -445,6 +463,7 @@ serve(async (req) => {
       ctaLabel,
       postedDate,
       year,
+      assignedRole: assignedRoleForEmail,
     });
 
     const plainText = `${payload.title}\n\n${cleanMessage.replace(/<[^>]*>/g, "")}\n\nTask: ${taskName}\nBoard: ${boardName}\nTriggered by: ${triggeredByName}\n\nOpen: ${ctaUrl}`;

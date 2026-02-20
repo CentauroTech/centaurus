@@ -274,9 +274,9 @@ export default function CommentItem({
   const hasRepliesOrComposer = replies.length > 0 || isReplyOpen;
 
   return (
-    <div className="rounded-lg border border-border bg-card shadow-sm">
+    <div className="rounded-xl border border-[hsl(var(--border))] bg-background shadow-sm hover:shadow-md transition-shadow duration-150">
       {/* ── Header ── */}
-      <div className="flex items-start gap-3 px-4 pt-4 pb-2">
+      <div className="flex items-start gap-3 px-5 pt-5 pb-2">
         <Avatar className="h-9 w-9 flex-shrink-0">
           <AvatarFallback
             style={{ backgroundColor: comment.user?.color || "#888" }}
@@ -287,12 +287,12 @@ export default function CommentItem({
         </Avatar>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm">{comment.user?.name || "Unknown"}</span>
-            <span className="text-xs text-muted-foreground">
+            <span className="font-semibold text-sm text-foreground">{comment.user?.name || "Unknown"}</span>
+            <span className="text-[12px] text-muted-foreground/70">
               {format(new Date(comment.created_at), "MMM d, h:mm a")}
             </span>
             {comment.is_guest_visible && (
-              <span className="text-[10px] bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded-full font-medium">
+              <span className="text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded-full font-medium">
                 Guest visible
               </span>
             )}
@@ -301,7 +301,7 @@ export default function CommentItem({
       </div>
 
       {/* ── Body ── */}
-      <div className="px-4 pb-1">
+      <div className="px-5 pb-2">
         {editing ? (
           <div>
             <RichTextEditor
@@ -326,7 +326,7 @@ export default function CommentItem({
       </div>
 
       {/* ── Footer actions ── */}
-      <div className={cn("px-4 pb-2", hasRepliesOrComposer && "border-b border-border")}>
+      <div className={cn("px-5 pb-3", hasRepliesOrComposer && "border-b border-[hsl(var(--border))]")}>
         <div className="flex items-center gap-1 mt-1 -ml-1">
           <button
             onClick={() => onToggleLike(comment.id, isLiked)}

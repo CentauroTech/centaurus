@@ -269,7 +269,7 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
     }
 
     return (
-      <div className="flex flex-col gap-3 p-4">
+      <div className="flex flex-col gap-4 p-6">
         {showKickoffBrief && renderKickoffBrief()}
         {commentList.map((comment) => (
           <CommentItem
@@ -296,7 +296,7 @@ export default function CommentSection({ taskId, boardId = "", workspaceName, ki
   };
 
   const composerFooter = (
-    <div className="border-t border-border p-3 bg-background">
+    <div className="border-t border-[hsl(var(--border))] p-4 bg-background">
       <RichTextEditor
         content={newComment}
         onChange={setNewComment}

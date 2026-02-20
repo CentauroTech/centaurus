@@ -158,8 +158,12 @@ serve(async (req) => {
     const timestamp = now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
     const year = now.getFullYear();
 
-    // Clean message: strip invoice_id metadata tags
-    const cleanMessage = (payload.message ?? "").replace(/\s*invoice_id::[a-f0-9-]+/g, "").trim();
+    // Clean message: strip invoice_id metadata tags and unwrap surrounding quotes
+    let cleanMessage = (payload.message ?? "").replace(/\s*invoice_id::[a-f0-9-]+/g, "").trim();
+    // Remove wrapping double-quotes if present (payload sometimes arrives as '"<p>...</p>"')
+    if (cleanMessage.startsWith('"') && cleanMessage.endsWith('"')) {
+      cleanMessage = cleanMessage.slice(1, -1);
+    }
 
     let htmlContent: string;
 
@@ -184,8 +188,7 @@ serve(async (req) => {
 <!-- Header: Logo + Name -->
 <tr>
 <td align="center" style="padding:28px 24px 20px 24px;background:#ffffff;">
-  <img src="https://centaurus.centauro.com/logo.png" alt="Centaurus" width="120" style="display:block;margin:0 auto 8px auto;">
-  <div style="font-family:'Poppins','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:18px;font-weight:700;color:#111827;letter-spacing:0.5px;">Centaurus</div>
+  <div style="font-family:'Poppins','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:22px;font-weight:700;color:#111827;letter-spacing:0.5px;">Centaurus</div>
 </td>
 </tr>
 <!-- Red Divider -->
@@ -198,7 +201,7 @@ serve(async (req) => {
   <!-- Title -->
   <div style="font-size:18px;font-weight:600;color:#111827;line-height:1.5;">
     <span style="color:#111827;">${triggeredByName}</span>
-    <span style="color:#2563eb;font-weight:600;"> mentioned you</span>
+    <span style="color:#dc2626;font-weight:600;"> mentioned you</span>
     on <span style="font-weight:600;">${boardName || "a board"}</span>
     in an update on <span style="font-weight:600;">${taskName}</span>
   </div>
@@ -215,7 +218,7 @@ serve(async (req) => {
   <td style="padding:18px;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
     <!-- Posted date -->
     <div style="font-size:12px;color:#9ca3af;margin-bottom:10px;">${postedDate}</div>
-    <!-- Comment content -->
+    <!-- Comment content with clickable links -->
     <div style="font-size:14px;color:#111827;line-height:1.6;">
       ${cleanMessage}
     </div>
@@ -226,7 +229,7 @@ serve(async (req) => {
   <!-- CTA -->
   <div style="margin-top:28px;text-align:left;">
     <a href="${ctaUrl}"
-       style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;font-size:14px;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+       style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;font-size:14px;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
        Reply on Centaurus
     </a>
   </div>

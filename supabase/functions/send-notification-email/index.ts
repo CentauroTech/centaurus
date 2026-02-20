@@ -164,8 +164,8 @@ serve(async (req) => {
     let htmlContent: string;
 
     if (payload.type === "mention") {
-      // Use the dedicated mention template
-      const contextLine = [workspaceName, boardName].filter(Boolean).join(" · ");
+      // Mention template
+      const postedDate = now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
       htmlContent = `<!doctype html>
 <html>
 <head>
@@ -179,39 +179,62 @@ serve(async (req) => {
 <tr>
 <td align="center">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0"
-style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;border:1px solid #e5e7eb;overflow:hidden;">
+  style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;border:1px solid #e5e7eb;overflow:hidden;">
+
+<!-- Header: Logo + Name -->
 <tr>
 <td align="center" style="padding:28px 24px 20px 24px;background:#ffffff;">
-<img src="https://centaurus.centauro.com/logo.png" alt="Centauro" width="140" style="display:block;margin:0 auto;">
+  <img src="https://centaurus.centauro.com/logo.png" alt="Centaurus" width="120" style="display:block;margin:0 auto 8px auto;">
+  <div style="font-family:'Poppins','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:18px;font-weight:700;color:#111827;letter-spacing:0.5px;">Centaurus</div>
 </td>
 </tr>
-<tr><td style="height:3px;background:#2563eb;"></td></tr>
+<!-- Red Divider -->
+<tr><td style="height:3px;background:#dc2626;"></td></tr>
+
+<!-- Body -->
 <tr>
 <td style="padding:32px 32px 24px 32px;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
-<div style="font-size:20px;font-weight:600;color:#111827;line-height:1.4;">
-  ${triggeredByName}
-  <span style="color:#2563eb;font-weight:600;">mentioned you</span>
-  in
-  <span style="color:#111827;">${taskName}</span>
-</div>
-${contextLine ? `<div style="margin-top:8px;font-size:13px;color:#6b7280;">${contextLine}</div>` : ""}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-style="margin-top:24px;background:#f8fafc;border-radius:12px;border:1px solid #e5e7eb;">
-<tr>
-<td style="padding:18px;font-size:14px;color:#111827;line-height:1.6;">
-${cleanMessage}
-</td>
-</tr>
-</table>
-<div style="margin-top:28px;text-align:left;">
-<a href="${ctaUrl}"
-   style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:600;font-size:14px;">
-   Open in Centaurus
-</a>
-</div>
-<div style="margin-top:24px;font-size:12px;color:#9ca3af;">
-  This is an automated notification from Centaurus.
-</div>
+
+  <!-- Title -->
+  <div style="font-size:18px;font-weight:600;color:#111827;line-height:1.5;">
+    <span style="color:#111827;">${triggeredByName}</span>
+    <span style="color:#2563eb;font-weight:600;"> mentioned you</span>
+    on <span style="font-weight:600;">${boardName || "a board"}</span>
+    in an update on <span style="font-weight:600;">${taskName}</span>
+  </div>
+
+  <!-- Context Line -->
+  <div style="margin-top:8px;font-size:13px;color:#6b7280;">
+    ${boardName || ""}${boardName && taskName ? " &gt; " : ""}${taskName}
+  </div>
+
+  <!-- Comment Card -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+    style="margin-top:24px;background:#f8fafc;border-radius:12px;border:1px solid #e5e7eb;">
+  <tr>
+  <td style="padding:18px;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+    <!-- Posted date -->
+    <div style="font-size:12px;color:#9ca3af;margin-bottom:10px;">${postedDate}</div>
+    <!-- Comment content -->
+    <div style="font-size:14px;color:#111827;line-height:1.6;">
+      ${cleanMessage}
+    </div>
+  </td>
+  </tr>
+  </table>
+
+  <!-- CTA -->
+  <div style="margin-top:28px;text-align:left;">
+    <a href="${ctaUrl}"
+       style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;font-size:14px;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+       Reply on Centaurus
+    </a>
+  </div>
+
+  <!-- Footer -->
+  <div style="margin-top:24px;font-size:12px;color:#9ca3af;">
+    This is an automated notification from Centaurus.
+  </div>
 </td>
 </tr>
 </table>

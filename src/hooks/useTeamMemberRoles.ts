@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
-export const ROLE_TYPES = ['translator', 'adapter', 'premix', 'mixer', 'qc_premix', 'qc_retakes', 'qc_mix', 'director', 'tecnico', 'billing', 'payment'] as const;
+export const ROLE_TYPES = ['translator', 'adapter', 'premix', 'mixer', 'qc_premix', 'qc_retakes', 'qc_mix', 'director', 'tecnico', 'billing', 'payment', 'project_manager'] as const;
 export type RoleType = typeof ROLE_TYPES[number];
 
 export const ROLE_LABELS: Record<RoleType, string> = {
@@ -17,6 +17,7 @@ export const ROLE_LABELS: Record<RoleType, string> = {
   tecnico: 'Técnico',
   billing: 'Billing',
   payment: 'Payment',
+  project_manager: 'Project Manager',
 };
 
 interface TeamMemberRole {

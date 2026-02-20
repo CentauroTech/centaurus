@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Search, Filter, X, ChevronDown, User, Calendar, Check } from 'lucide-react';
-import { APPROVED_PROJECT_MANAGER_NAMES } from '@/hooks/useProjectManagers';
+import { useProjectManagers } from '@/hooks/useProjectManagers';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +42,7 @@ export function BoardFilterBar({
   const [personOpen, setPersonOpen] = useState(false);
   const [clientOpen, setClientOpen] = useState(false);
   const [phaseOpen, setPhaseOpen] = useState(false);
+  const { data: projectManagers = [] } = useProjectManagers();
 
   // Get unique people from tasks - on HQ, only show Project Managers
   const uniquePeople = useMemo(() => {
@@ -50,9 +51,10 @@ export function BoardFilterBar({
       name: string;
       count: number;
     }>();
+
     allTasks.forEach(task => {
       if (isHQ) {
-        // HQ: only show Project Managers
+        // For HQ, only count project managers
         if (task.projectManager) {
           const existing = peopleMap.get(task.projectManager.id);
           peopleMap.set(task.projectManager.id, {
@@ -62,37 +64,24 @@ export function BoardFilterBar({
           });
         }
       } else {
-        // Non-HQ: show all people
-        if (task.projectManager) {
-          const existing = peopleMap.get(task.projectManager.id);
-          peopleMap.set(task.projectManager.id, {
-            id: task.projectManager.id,
-            name: task.projectManager.name,
-            count: (existing?.count || 0) + 1
+        // For regular boards, count people
+        if (task.people && task.people.length > 0) {
+          task.people.forEach(p => {
+            const existing = peopleMap.get(p.id);
+            peopleMap.set(p.id, {
+              id: p.id,
+              name: p.name,
+              count: (existing?.count || 0) + 1
+            });
           });
         }
-        if (task.director) {
-          const existing = peopleMap.get(task.director.id);
-          peopleMap.set(task.director.id, {
-            id: task.director.id,
-            name: task.director.name,
-            count: (existing?.count || 0) + 1
-          });
-        }
-        task.people?.forEach(p => {
-          const existing = peopleMap.get(p.id);
-          peopleMap.set(p.id, {
-            id: p.id,
-            name: p.name,
-            count: (existing?.count || 0) + 1
-          });
-        });
       }
     });
-    // On HQ, filter to only approved PMs
+    // On HQ, filter to only people with PM role
     if (isHQ) {
+      const pmIds = new Set(projectManagers.map(pm => pm.id));
       return Array.from(peopleMap.values())
-        .filter(p => APPROVED_PROJECT_MANAGER_NAMES.includes(p.name.toLowerCase()))
+        .filter(p => pmIds.has(p.id))
         .sort((a, b) => b.count - a.count);
     }
     return Array.from(peopleMap.values()).sort((a, b) => b.count - a.count);

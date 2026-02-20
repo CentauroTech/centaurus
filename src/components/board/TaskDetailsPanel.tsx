@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
-import { ArrowRight, CheckCircle2, Play, UserPlus, UserMinus, Calendar, Users, Edit, Plus, Clock, Tag, FileText, AlertCircle, User as UserIcon, Film, Clapperboard, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRight, CheckCircle2, Play, UserPlus, UserMinus, Calendar, Users, Edit, Plus, Clock, Tag, FileText, AlertCircle, User as UserIcon, Film, Clapperboard } from "lucide-react";
 import { useTaskFiles, useUploadTaskFile, useToggleFileAccessibility, useDeleteTaskFile, FileCategory, FILE_CATEGORIES } from "@/hooks/useTaskFiles";
 import { useActivityLog } from "@/hooks/useActivityLog";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -66,20 +66,17 @@ export default function TaskDetailsPanel({
   workspaceName,
   viewerIds = [],
 }: TaskDetailsPanelProps) {
-  const [infoExpanded, setInfoExpanded] = useState(false);
   const { data: files = [] } = useTaskFiles(task.id);
   const { data: activityLogs = [] } = useActivityLog(task.id);
   const { role } = usePermissions();
   const isGuest = role === "guest";
 
-  // Real-time subscription for comments
   useCommentsRealtime(task.id, isOpen);
 
   const uploadFileMutation = useUploadTaskFile(task.id);
   const toggleAccessMutation = useToggleFileAccessibility(task.id);
   const deleteFileMutation = useDeleteTaskFile(task.id);
 
-  // Group files by category
   const filesByCategory = files.reduce((acc, file) => {
     const category = file.file_category || "General";
     if (!acc[category]) acc[category] = [];
@@ -101,187 +98,93 @@ export default function TaskDetailsPanel({
 
   const getCategoryInfo = (category: string): { title: string; description?: string } => {
     const cat = FILE_CATEGORIES.find(c => c.value === category);
-    if (cat) {
-      return { title: cat.label, description: cat.description };
-    }
+    if (cat) return { title: cat.label, description: cat.description };
     return { title: category };
   };
 
-  // Map icon names to components
   const getActivityIcon = (iconName: FormattedActivity['icon']) => {
     const iconMap = {
-      ArrowRight: ArrowRight,
-      CheckCircle2: CheckCircle2,
-      Play: Play,
-      UserPlus: UserPlus,
-      UserMinus: UserMinus,
-      Calendar: Calendar,
-      Users: Users,
-      Edit: Edit,
-      Plus: Plus,
-      Clock: Clock,
-      Tag: Tag,
-      FileText: FileText,
-      AlertCircle: AlertCircle,
+      ArrowRight, CheckCircle2, Play, UserPlus, UserMinus,
+      Calendar, Users, Edit, Plus, Clock, Tag, FileText, AlertCircle,
     };
     return iconMap[iconName] || Edit;
   };
 
-  // Helper to get task value from either camelCase or snake_case
   const getVal = (field: string): any => (task as any)[field];
 
   const phase = getVal('currentPhase') || getVal('fase');
   const pm = getVal('projectManager') as User | undefined;
-  const miamiDueDate = getVal('entregaMiamiEnd');
-  const clientDueDate = getVal('entregaCliente');
   const clientName = getVal('clientName') || getVal('client_name');
-  const runtime = getVal('lockedRuntime') || getVal('locked_runtime') || getVal('finalRuntime') || getVal('final_runtime');
-  const episodes = getVal('cantidadEpisodios') || getVal('cantidad_episodios');
-  const services = getVal('servicios') as string[] | undefined;
-  const scriptItems = getVal('entregaFinalScriptItems') || getVal('entrega_final_script_items');
-  const dubAudioItems = getVal('entregaFinalDubAudioItems') || getVal('entrega_final_dub_audio_items');
+  const woNumber = getVal('workOrderNumber') || getVal('work_order_number');
 
   const formatDate = (d: any) => {
     if (!d) return null;
-    try {
-      return format(parseLocalDate(String(d)), 'MMM d, yyyy');
-    } catch { return String(d); }
+    try { return format(parseLocalDate(String(d)), 'MMM d, yyyy'); }
+    catch { return String(d); }
   };
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-[480px] sm:max-w-[480px] p-0 flex flex-col overflow-hidden">
-        <SheetHeader className="p-4 border-b border-border shrink-0">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              {phase && (
-                <Badge className={cn(
-                  "mb-2 text-xs rounded-md px-3 py-1",
-                  PHASE_COLORS[phase] || 'bg-muted text-muted-foreground'
-                )}>
-                  {phase}
-                </Badge>
-              )}
-              <SheetTitle className="text-lg font-semibold truncate pr-8">
-                {task.name || "Untitled Task"}
-              </SheetTitle>
-            </div>
+      <SheetContent className="w-[500px] sm:max-w-[500px] p-0 flex flex-col overflow-hidden border-l border-[hsl(var(--border))]">
+        {/* ── Premium Header ── */}
+        <div className="px-6 pt-6 pb-5 border-b border-[hsl(var(--border))] bg-background">
+          <h2 className="text-[22px] font-semibold text-foreground leading-tight tracking-tight">
+            {task.name || "Untitled Task"}
+          </h2>
+          <div className="flex items-center flex-wrap gap-x-4 gap-y-1.5 mt-3 text-[13px] text-muted-foreground">
+            {clientName && (
+              <span className="flex items-center gap-1.5">
+                <UserIcon className="w-3.5 h-3.5" />
+                {clientName}
+              </span>
+            )}
+            {phase && (
+              <Badge className={cn(
+                "text-[11px] rounded-full px-2.5 py-0.5 font-medium",
+                PHASE_COLORS[phase] || 'bg-muted text-muted-foreground'
+              )}>
+                {phase}
+              </Badge>
+            )}
+            {pm && (
+              <span className="flex items-center gap-1.5">
+                <Avatar className="h-4 w-4">
+                  <AvatarFallback className="text-[8px]" style={{ backgroundColor: pm.color }}>
+                    {pm.initials}
+                  </AvatarFallback>
+                </Avatar>
+                {pm.name}
+              </span>
+            )}
+            {woNumber && (
+              <span className="font-mono text-[12px] text-muted-foreground/70">
+                WO# {woNumber}
+              </span>
+            )}
           </div>
-        </SheetHeader>
-
-        {/* Collapsible Project Info Section */}
-        <div className="border-b border-border bg-primary/10 shrink-0">
-          <button
-            onClick={() => setInfoExpanded(!infoExpanded)}
-            className="flex items-center justify-between w-full px-4 py-2.5 text-xs font-semibold text-primary hover:bg-primary/15 transition-colors"
-          >
-            <span className="flex items-center gap-1.5">
-              Project Info
-            </span>
-            <span className="flex items-center gap-1 text-[10px] font-medium text-primary/70">
-              {infoExpanded ? 'Collapse' : 'Show'}
-              {infoExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            </span>
-          </button>
-          {infoExpanded && (
-            <div className="px-4 pb-3 pt-2 space-y-3 bg-card">
-              <div className="grid grid-cols-2 gap-2.5 text-sm">
-                {pm && (
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-5 w-5">
-                      <AvatarFallback className="text-[10px]" style={{ backgroundColor: pm.color }}>
-                        {pm.initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-muted-foreground">PM:</span>
-                    <span className="font-medium truncate">{pm.name}</span>
-                  </div>
-                )}
-                {clientName && (
-                  <div className="flex items-center gap-2">
-                    <UserIcon className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <span className="text-muted-foreground">Client:</span>
-                    <span className="font-medium truncate">{clientName}</span>
-                  </div>
-                )}
-                {miamiDueDate && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <span className="text-muted-foreground">Miami Due:</span>
-                    <span className="font-medium">{formatDate(miamiDueDate)}</span>
-                  </div>
-                )}
-                {clientDueDate && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <span className="text-muted-foreground">Client Due:</span>
-                    <span className="font-medium">{formatDate(clientDueDate)}</span>
-                  </div>
-                )}
-                {runtime && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <span className="text-muted-foreground">Runtime:</span>
-                    <span className="font-medium">{runtime}</span>
-                  </div>
-                )}
-                {episodes && (
-                  <div className="flex items-center gap-2">
-                    <Film className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <span className="text-muted-foreground">Episodes:</span>
-                    <span className="font-medium">{episodes}</span>
-                  </div>
-                )}
-                {services && services.length > 0 && (
-                  <div className="flex items-start gap-2 col-span-2">
-                    <Clapperboard className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground shrink-0">Services:</span>
-                    <div className="flex flex-wrap gap-1">
-                      {services.map((s: string) => (
-                        <Badge key={s} variant="secondary" className="text-xs px-1.5 py-0">{s}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {scriptItems && scriptItems.length > 0 && (
-                  <div className="flex items-start gap-2 col-span-2">
-                    <FileText className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground shrink-0">Script:</span>
-                    <div className="flex flex-wrap gap-1">
-                      {scriptItems.map((s: string) => (
-                        <Badge key={s} variant="outline" className="text-xs px-1.5 py-0">{s}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {dubAudioItems && dubAudioItems.length > 0 && (
-                  <div className="flex items-start gap-2 col-span-2">
-                    <FileText className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground shrink-0">Dub Audio:</span>
-                    <div className="flex flex-wrap gap-1">
-                      {dubAudioItems.map((s: string) => (
-                        <Badge key={s} variant="outline" className="text-xs px-1.5 py-0">{s}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
+        {/* ── Tabs ── */}
         <Tabs defaultValue="updates" className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <TabsList className="h-12 px-4 border-b border-border shrink-0 w-full justify-start gap-1 rounded-none bg-transparent">
-            <TabsTrigger value="updates" className="data-[state=active]:bg-muted">
-              Updates
-            </TabsTrigger>
-            <TabsTrigger value="files" className="data-[state=active]:bg-muted">
-              Files
-            </TabsTrigger>
-            <TabsTrigger value="activity" className="data-[state=active]:bg-muted">
-              Activity
-            </TabsTrigger>
-          </TabsList>
+          <div className="px-6 pt-5 pb-0 bg-background">
+            <TabsList className="h-auto p-0 bg-transparent gap-6 rounded-none w-full justify-start border-b border-[hsl(var(--border))]">
+              {["updates", "files", "activity"].map((tab) => (
+                <TabsTrigger
+                  key={tab}
+                  value={tab}
+                  className="relative px-0 pb-3 pt-0 text-[14px] font-medium rounded-none bg-transparent shadow-none
+                    data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground
+                    data-[state=active]:text-foreground data-[state=active]:shadow-none
+                    after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:rounded-full
+                    after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100
+                    after:transition-transform after:duration-200 after:origin-left
+                    transition-colors duration-150"
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
           <div className="flex-1 min-h-0 overflow-hidden">
             <TabsContent value="updates" className="h-full m-0">
@@ -296,9 +199,9 @@ export default function TaskDetailsPanel({
             </TabsContent>
 
             <TabsContent value="files" className="h-full m-0 overflow-y-auto">
-              <div className="p-4 space-y-4">
+              <div className="p-6 space-y-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-medium">Task Files</h3>
+                  <h3 className="text-[15px] font-semibold text-foreground">Task Files</h3>
                   {!isGuest && (
                     <FileUploadButton 
                       onUpload={handleFileUpload}
@@ -307,7 +210,7 @@ export default function TaskDetailsPanel({
                   )}
                 </div>
                 {Object.keys(filesByCategory).length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
+                  <p className="text-sm text-muted-foreground text-center py-10">
                     No files uploaded yet
                   </p>
                 ) : (
@@ -330,14 +233,14 @@ export default function TaskDetailsPanel({
             </TabsContent>
 
             <TabsContent value="activity" className="h-full m-0 overflow-y-auto">
-              <div className="p-4">
-                <h3 className="font-medium mb-3">Activity Log</h3>
+              <div className="p-6">
+                <h3 className="text-[15px] font-semibold text-foreground mb-4">Activity Log</h3>
                 {activityLogs.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
+                  <p className="text-sm text-muted-foreground text-center py-10">
                     No activity recorded yet
                   </p>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {activityLogs.map((log) => {
                       const { action, description, icon } = formatActivityMessage(log);
                       const IconComponent = getActivityIcon(icon);
@@ -345,23 +248,21 @@ export default function TaskDetailsPanel({
                       return (
                         <div
                           key={log.id}
-                          className="flex items-start gap-3 text-sm border-b border-border pb-3 last:border-0"
+                          className="flex items-start gap-3 text-sm pb-4 border-b border-[hsl(var(--border))] last:border-0 last:pb-0"
                         >
-                          <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                          <div className="h-8 w-8 rounded-full bg-muted/60 flex items-center justify-center flex-shrink-0">
                             <IconComponent className="h-3.5 w-3.5 text-muted-foreground" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-muted-foreground">
-                              <span className="font-medium text-foreground">
+                            <div className="text-muted-foreground leading-relaxed">
+                              <span className="font-semibold text-foreground">
                                 {log.user?.name || "System"}
                               </span>
                               {" "}
                               <span className="font-medium text-foreground">{action}</span>
-                              {description && (
-                                <span> {description}</span>
-                              )}
+                              {description && <span> {description}</span>}
                             </div>
-                            <div className="text-xs text-muted-foreground mt-1">
+                            <div className="text-xs text-muted-foreground/70 mt-1.5">
                               {format(new Date(log.created_at), "MMM d 'at' h:mm a")}
                             </div>
                           </div>

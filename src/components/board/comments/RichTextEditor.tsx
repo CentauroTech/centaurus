@@ -261,7 +261,7 @@ export function RichTextEditor({
   }
 
   return (
-    <div ref={containerRef} className={cn("border border-border rounded-lg bg-background overflow-hidden relative", className)} onKeyDown={handleKeyDown}>
+    <div ref={containerRef} className={cn("border border-[hsl(var(--border))] rounded-xl bg-background overflow-hidden relative", className)} onKeyDown={handleKeyDown}>
       {/* Toolbar */}
       {editable && !hideToolbar && (
         <div className="border-b border-border bg-muted/30">
@@ -385,7 +385,7 @@ export function RichTextDisplay({ content, className }: { content: string; class
         "prose prose-sm max-w-none text-foreground/90",
         "[&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_h2]:my-2 [&_h3]:my-1.5",
         "[&_li]:my-0.5",
-        "[&_.mention]:bg-primary/20 [&_.mention]:text-primary [&_.mention]:rounded [&_.mention]:px-1 [&_.mention]:py-0.5 [&_.mention]:font-medium",
+        "[&_.mention]:bg-blue-50 dark:[&_.mention]:bg-blue-900/30 [&_.mention]:text-blue-700 dark:[&_.mention]:text-blue-300 [&_.mention]:rounded [&_.mention]:px-1 [&_.mention]:py-0.5 [&_.mention]:font-semibold",
         "break-words",
         className
       )}

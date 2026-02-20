@@ -7,8 +7,10 @@ import { useHasBillingRole } from '@/hooks/useMyRoles';
 
 export default function Billing() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isAdmin, isGod } = usePermissions();
   const { hasBillingRole } = useHasBillingRole();
+  const invoiceId = searchParams.get('invoice');
   
   const hasBillingAccess = isAdmin || isGod || hasBillingRole;
 
@@ -41,7 +43,7 @@ export default function Billing() {
       </div>
       
       <div className="container mx-auto px-4 py-6">
-        <BillingTab />
+        <BillingTab initialInvoiceId={invoiceId} />
       </div>
     </div>
   );

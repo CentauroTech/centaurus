@@ -273,10 +273,16 @@ serve(async (req) => {
       if ((task as any)?.group?.board?.workspace?.name) workspaceName = (task as any).group.board.workspace.name;
     }
 
+    // --- Extract invoice_id from message ---
+    const invoiceIdMatch = (payload.message ?? "").match(/invoice_id::([a-f0-9-]+)/);
+    const invoiceId = invoiceIdMatch ? invoiceIdMatch[1] : null;
+
     // --- Build CTA URL ---
     let ctaUrl = APP_URL;
     if (payload.type.startsWith("invoice_")) {
-      ctaUrl = `${APP_URL}/billing`;
+      ctaUrl = invoiceId 
+        ? `${APP_URL}/billing?invoice=${invoiceId}` 
+        : `${APP_URL}/billing`;
     } else if (payload.task_id) {
       ctaUrl = `${APP_URL}/?task=${payload.task_id}`;
     }
@@ -299,6 +305,82 @@ serve(async (req) => {
         .maybeSingle();
       if (latestComment?.content) {
         cleanMessage = latestComment.content;
+      }
+    }
+
+    // For invoice emails, fetch invoice details and build a summary card
+    if (payload.type.startsWith("invoice_") && invoiceId) {
+      const { data: invoice } = await supabase
+        .from("invoices")
+        .select("invoice_number, billing_name, total_amount, currency, status, invoice_date, subtotal, tax_amount, tax_rate")
+        .eq("id", invoiceId)
+        .single();
+
+      if (invoice) {
+        const { data: items } = await supabase
+          .from("invoice_items")
+          .select("description, quantity, unit_price, total_price, work_order_number, phase, role_performed, runtime, branch")
+          .eq("invoice_id", invoiceId);
+
+        const curr = invoice.currency || "USD";
+        const fmt = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: curr }).format(n);
+
+        let invoiceHtml = `
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+            <tr>
+              <td style="font-size:13px;color:#6b7280;padding:4px 0;">Invoice #</td>
+              <td style="font-size:13px;font-weight:600;color:#111827;padding:4px 0;text-align:right;">${invoice.invoice_number}</td>
+            </tr>
+            <tr>
+              <td style="font-size:13px;color:#6b7280;padding:4px 0;">Vendor</td>
+              <td style="font-size:13px;font-weight:600;color:#111827;padding:4px 0;text-align:right;">${invoice.billing_name}</td>
+            </tr>
+            <tr>
+              <td style="font-size:13px;color:#6b7280;padding:4px 0;">Date</td>
+              <td style="font-size:13px;color:#111827;padding:4px 0;text-align:right;">${invoice.invoice_date}</td>
+            </tr>
+            <tr>
+              <td style="font-size:13px;color:#6b7280;padding:4px 0;">Status</td>
+              <td style="font-size:13px;font-weight:600;color:#111827;padding:4px 0;text-align:right;">${invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}</td>
+            </tr>
+          </table>`;
+
+        // Line items table
+        if (items && items.length > 0) {
+          invoiceHtml += `
+          <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Line Items</div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e5e7eb;">`;
+          
+          for (const item of items) {
+            const desc = [item.description, item.work_order_number, item.branch, item.phase, item.role_performed].filter(Boolean).join(" · ");
+            invoiceHtml += `
+            <tr style="border-bottom:1px solid #f3f4f6;">
+              <td style="font-size:13px;color:#111827;padding:8px 0;">${desc}</td>
+              <td style="font-size:13px;color:#111827;padding:8px 0;text-align:right;white-space:nowrap;">${fmt(item.total_price)}</td>
+            </tr>`;
+          }
+
+          invoiceHtml += `</table>`;
+        }
+
+        // Totals
+        invoiceHtml += `
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;border-top:2px solid #e5e7eb;">
+            <tr>
+              <td style="font-size:13px;color:#6b7280;padding:8px 0;">Subtotal</td>
+              <td style="font-size:13px;color:#111827;padding:8px 0;text-align:right;">${fmt(invoice.subtotal)}</td>
+            </tr>
+            ${invoice.tax_amount ? `<tr>
+              <td style="font-size:13px;color:#6b7280;padding:4px 0;">Tax (${invoice.tax_rate || 0}%)</td>
+              <td style="font-size:13px;color:#111827;padding:4px 0;text-align:right;">${fmt(invoice.tax_amount)}</td>
+            </tr>` : ""}
+            <tr>
+              <td style="font-size:16px;font-weight:700;color:#111827;padding:8px 0;">Total</td>
+              <td style="font-size:16px;font-weight:700;color:#dc2626;padding:8px 0;text-align:right;">${fmt(invoice.total_amount)}</td>
+            </tr>
+          </table>`;
+
+        cleanMessage = invoiceHtml;
       }
     }
 

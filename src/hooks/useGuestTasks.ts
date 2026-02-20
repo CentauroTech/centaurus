@@ -58,7 +58,7 @@ export function useGuestTasks() {
 
       if (viewerTaskIds.length === 0) return [];
 
-      // Fetch the actual tasks with all needed columns
+      // Fetch the actual tasks with all needed columns including role assignments for phase filtering
       const { data: tasks, error: tasksError } = await supabase
         .from('tasks')
         .select(`
@@ -82,7 +82,12 @@ export function useGuestTasks() {
           is_private,
           group_id,
           traductor_id,
-          adaptador_id
+          adaptador_id,
+          qc_1_id,
+          qc_retakes_id,
+          qc_mix_id,
+          mixer_miami_id,
+          mixer_bogota_id
         `)
         .in('id', viewerTaskIds);
 
@@ -149,8 +154,39 @@ export function useGuestTasks() {
       const boardMap = new Map(boards?.map(b => [b.id, b]) || []);
       const workspaceMap = new Map(workspaces?.map(w => [w.id, w.name]) || []);
 
-      // Map tasks with board/workspace info
-      return (tasks || []).map(task => {
+      // Map tasks with board/workspace info, filtering by phase-role match
+      return (tasks || []).filter(task => {
+        const boardId = groupToBoard.get(task.group_id);
+        const board = boardId ? boardMap.get(boardId) : null;
+        const boardName = board?.name || '';
+        const phasePart = boardName.includes('-') ? boardName.substring(boardName.indexOf('-') + 1) : boardName;
+        const normalizedPhase = phasePart.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        // Determine which role columns match the current phase
+        const phaseToRoleColumn: Record<string, string[]> = {
+          'translation': ['traductor_id'],
+          'adapting': ['adaptador_id'],
+          'adaptacion': ['adaptador_id'],
+          'premix': ['mixer_miami_id', 'mixer_bogota_id', 'qc_1_id'],
+          'qc1': ['qc_1_id'],
+          'qcpremix': ['qc_1_id'],
+          'retakes': ['qc_retakes_id'],
+          'qcretakes': ['qc_retakes_id'],
+          'mix': ['mixer_miami_id', 'mixer_bogota_id'],
+          'mixbogota': ['mixer_bogota_id'],
+          'qcmix': ['qc_mix_id'],
+          'mixretakes': ['qc_mix_id'],
+        };
+
+        const allowedRoleColumns = phaseToRoleColumn[normalizedPhase];
+        
+        // If no phase-role mapping exists (e.g. kickoff, assets), allow the task
+        if (!allowedRoleColumns) return true;
+
+        // Check if this guest is assigned to one of the allowed role columns for this phase
+        const taskAny = task as any;
+        return allowedRoleColumns.some(col => taskAny[col] === currentMember!.id);
+      }).map(task => {
         const boardId = groupToBoard.get(task.group_id);
         const board = boardId ? boardMap.get(boardId) : null;
         const workspaceName = board ? workspaceMap.get(board.workspace_id) : '';

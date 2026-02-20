@@ -154,7 +154,7 @@ export default function TaskDetailsPanel({
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-[500px] sm:max-w-[500px] p-0 flex flex-col overflow-hidden border-l border-[hsl(var(--border))]">
+      <SheetContent className="w-[750px] sm:max-w-[750px] p-0 flex flex-col overflow-hidden border-l border-[hsl(var(--border))]">
         {/* ── Premium Header ── */}
         <div className="px-6 pt-6 pb-5 border-b border-[hsl(var(--border))] bg-background">
           <h2 className="text-[22px] font-semibold text-foreground leading-tight tracking-tight">

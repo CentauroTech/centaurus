@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { ArrowRight, CheckCircle2, Play, UserPlus, UserMinus, Calendar, Users, Edit, Plus, Clock, Tag, FileText, AlertCircle, User as UserIcon, Film, Clapperboard } from "lucide-react";
@@ -133,9 +135,9 @@ export default function TaskDetailsPanel({
   const deliveryDubAudio = getVal('entregaFinalDubAudioItems') as string[] | undefined;
 
   const metadataItems: { label: string; shortLabel: string; value: string | null }[] = [
+    { label: 'Phase Due Date', shortLabel: 'PDD', value: formatDate(phaseDueDate) },
     { label: 'Miami Due Date', shortLabel: 'MDD', value: formatDate(miamiDueDate) },
     { label: 'Client Due Date', shortLabel: 'CDD', value: formatDate(clientDueDate) },
-    { label: 'Phase Due Date', shortLabel: 'PDD', value: formatDate(phaseDueDate) },
     { label: 'Locked Runtime', shortLabel: 'LRT', value: lockedRuntime || null },
     { label: 'Final Runtime', shortLabel: 'FRT', value: finalRuntime || null },
     { label: 'Episodes', shortLabel: 'EPS', value: episodes ? String(episodes) : null },
@@ -187,40 +189,48 @@ export default function TaskDetailsPanel({
           </div>
         </div>
 
-        {/* ── Metadata Grid ── */}
+        {/* ── Metadata Grid (Collapsible) ── */}
         {(metadataItems.some(m => m.value) || listItems.some(l => l.items.length > 0)) && (
-          <div className="px-6 py-4 border-b border-[hsl(var(--border))] bg-muted/20">
-            <div className="grid grid-cols-3 gap-3">
-              {metadataItems.map((item) => (
-                <div key={item.shortLabel} className="flex flex-col gap-0.5">
-                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                    {item.shortLabel}
-                  </span>
-                  <span className="text-[13px] font-medium text-foreground">
-                    {item.value || '—'}
-                  </span>
-                </div>
-              ))}
-            </div>
-            {listItems.some(l => l.items.length > 0) && (
-              <div className="mt-3 pt-3 border-t border-[hsl(var(--border))] space-y-2.5">
-                {listItems.map((list) => list.items.length > 0 && (
-                  <div key={list.label} className="flex flex-col gap-1">
-                    <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                      {list.label}
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {list.items.map((item) => (
-                        <Badge key={item} variant="secondary" className="text-[11px] font-normal px-2 py-0.5 rounded-md">
-                          {item}
-                        </Badge>
-                      ))}
+          <Collapsible defaultOpen={false} className="border-b border-[hsl(var(--border))]">
+            <CollapsibleTrigger className="flex items-center justify-between w-full px-6 py-3 text-[12px] font-medium text-muted-foreground uppercase tracking-wider hover:bg-muted/30 transition-colors duration-150">
+              <span>Project Details</span>
+              <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-6 pb-4 bg-muted/20">
+                <div className="grid grid-cols-3 gap-3">
+                  {metadataItems.map((item) => (
+                    <div key={item.shortLabel} className="flex flex-col gap-0.5">
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                        {item.shortLabel}
+                      </span>
+                      <span className="text-[13px] font-medium text-foreground">
+                        {item.value || '—'}
+                      </span>
                     </div>
+                  ))}
+                </div>
+                {listItems.some(l => l.items.length > 0) && (
+                  <div className="mt-3 pt-3 border-t border-[hsl(var(--border))] space-y-2.5">
+                    {listItems.map((list) => list.items.length > 0 && (
+                      <div key={list.label} className="flex flex-col gap-1">
+                        <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                          {list.label}
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {list.items.map((item) => (
+                            <Badge key={item} variant="secondary" className="text-[11px] font-normal px-2 py-0.5 rounded-md">
+                              {item}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            )}
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
         )}
 
         {/* ── Tabs ── */}

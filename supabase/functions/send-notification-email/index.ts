@@ -308,6 +308,40 @@ serve(async (req) => {
       }
     }
 
+    // For assignment emails, build a rich task context card
+    if (payload.type === "assignment" && payload.task_id) {
+      // Extract role from notification title (e.g. "You were assigned as Translator")
+      const roleMatch = payload.title?.match(/assigned as (.+)$/i);
+      const assignedRole = roleMatch ? roleMatch[1] : null;
+
+      // Fetch additional task details
+      const { data: taskDetails } = await supabase
+        .from("tasks")
+        .select("name, branch, fase, work_order_number, locked_runtime, studio, client_name")
+        .eq("id", payload.task_id)
+        .single();
+
+      const rows: Array<[string, string]> = [];
+      if (assignedRole) rows.push(["Role", assignedRole]);
+      if (boardName) rows.push(["Board", boardName]);
+      if (taskDetails?.fase) rows.push(["Phase", taskDetails.fase]);
+      if (taskDetails?.branch) rows.push(["Branch", taskDetails.branch]);
+      if (taskDetails?.work_order_number) rows.push(["Work Order", taskDetails.work_order_number]);
+      if (taskDetails?.client_name) rows.push(["Client", taskDetails.client_name]);
+      if (taskDetails?.locked_runtime) rows.push(["Runtime", taskDetails.locked_runtime]);
+      if (taskDetails?.studio) rows.push(["Studio", taskDetails.studio]);
+
+      if (rows.length > 0) {
+        cleanMessage = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">` +
+          rows.map(([label, value]) => `
+            <tr>
+              <td style="font-size:13px;color:#6b7280;padding:4px 0;">${label}</td>
+              <td style="font-size:13px;font-weight:600;color:#111827;padding:4px 0;text-align:right;">${value}</td>
+            </tr>`).join("") +
+          `</table>`;
+      }
+    }
+
     // For invoice emails, fetch invoice details and build a summary card
     if (payload.type.startsWith("invoice_") && invoiceId) {
       const { data: invoice } = await supabase

@@ -123,6 +123,29 @@ export default function TaskDetailsPanel({
     catch { return String(d); }
   };
 
+  const miamiDueDate = getVal('entregaMiamiEnd');
+  const clientDueDate = getVal('entregaCliente');
+  const phaseDueDate = getVal('phaseDueDate');
+  const lockedRuntime = getVal('lockedRuntime');
+  const finalRuntime = getVal('finalRuntime');
+  const episodes = getVal('cantidadEpisodios');
+  const deliveryDubCard = getVal('entregaFinalScriptItems') as string[] | undefined;
+  const deliveryDubAudio = getVal('entregaFinalDubAudioItems') as string[] | undefined;
+
+  const metadataItems: { label: string; shortLabel: string; value: string | null }[] = [
+    { label: 'Miami Due Date', shortLabel: 'MDD', value: formatDate(miamiDueDate) },
+    { label: 'Client Due Date', shortLabel: 'CDD', value: formatDate(clientDueDate) },
+    { label: 'Phase Due Date', shortLabel: 'PDD', value: formatDate(phaseDueDate) },
+    { label: 'Locked Runtime', shortLabel: 'LRT', value: lockedRuntime || null },
+    { label: 'Final Runtime', shortLabel: 'FRT', value: finalRuntime || null },
+    { label: 'Episodes', shortLabel: 'EPS', value: episodes ? String(episodes) : null },
+  ];
+
+  const listItems: { label: string; items: string[] }[] = [
+    { label: 'Delivery Dub Card', items: deliveryDubCard?.length ? deliveryDubCard : [] },
+    { label: 'Delivery Dub Audio', items: deliveryDubAudio?.length ? deliveryDubAudio : [] },
+  ];
+
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="w-[500px] sm:max-w-[500px] p-0 flex flex-col overflow-hidden border-l border-[hsl(var(--border))]">
@@ -163,6 +186,42 @@ export default function TaskDetailsPanel({
             )}
           </div>
         </div>
+
+        {/* ── Metadata Grid ── */}
+        {(metadataItems.some(m => m.value) || listItems.some(l => l.items.length > 0)) && (
+          <div className="px-6 py-4 border-b border-[hsl(var(--border))] bg-muted/20">
+            <div className="grid grid-cols-3 gap-3">
+              {metadataItems.map((item) => (
+                <div key={item.shortLabel} className="flex flex-col gap-0.5">
+                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                    {item.shortLabel}
+                  </span>
+                  <span className="text-[13px] font-medium text-foreground">
+                    {item.value || '—'}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {listItems.some(l => l.items.length > 0) && (
+              <div className="mt-3 pt-3 border-t border-[hsl(var(--border))] space-y-2.5">
+                {listItems.map((list) => list.items.length > 0 && (
+                  <div key={list.label} className="flex flex-col gap-1">
+                    <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                      {list.label}
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {list.items.map((item) => (
+                        <Badge key={item} variant="secondary" className="text-[11px] font-normal px-2 py-0.5 rounded-md">
+                          {item}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Tabs ── */}
         <Tabs defaultValue="updates" className="flex-1 flex flex-col min-h-0 overflow-hidden">

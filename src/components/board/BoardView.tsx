@@ -400,6 +400,46 @@ function BoardViewContent({
           }
         }
       }
+    } else if (currentPhaseRole) {
+      // Auto-privatize: when assigning a guest to the phase-relevant role on a non-private task
+      const newPerson = updates[currentPhaseRole.field as keyof typeof updates] as User | null | undefined;
+      if (newPerson && newPerson.id) {
+        const { data: assignedMember } = await supabase
+          .from('team_members')
+          .select('email')
+          .eq('id', newPerson.id)
+          .single();
+        
+        const isGuestAssignment = assignedMember?.email && !assignedMember.email.endsWith('@centauro.com');
+        if (isGuestAssignment) {
+          dbUpdates.is_private = true;
+          const today = getLocalDateString();
+          const dueDate = getLocalDateString(addBusinessDays(new Date(), 1));
+          dbUpdates.date_assigned = today;
+          dbUpdates.guest_due_date = dueDate;
+          
+          // Make files guest-accessible
+          await supabase
+            .from('task_files')
+            .update({ is_guest_accessible: true })
+            .eq('task_id', taskId);
+          
+          // Add guest as viewer
+          const { data: existingViewer } = await supabase
+            .from('task_viewers')
+            .select('id')
+            .eq('task_id', taskId)
+            .eq('team_member_id', newPerson.id)
+            .maybeSingle();
+          
+          if (!existingViewer) {
+            await supabase.from('task_viewers').insert({
+              task_id: taskId,
+              team_member_id: newPerson.id,
+            });
+          }
+        }
+      }
     }
 
     // Auto-privacy: In Translation/Adapting boards, when asignacion changes to "Asignado" or "Audio Description"

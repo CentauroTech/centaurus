@@ -16,6 +16,7 @@ import { FileCategorySection } from "./files/FileCategorySection";
 import { FileUploadButton } from "./files/FileUploadButton";
 import { Task, User } from "@/types/board";
 import { cn } from "@/lib/utils";
+import { EditableMetadataCell } from "./cells/EditableMetadataCell";
 import { formatActivityMessage, FormattedActivity } from "@/lib/activityFormatter";
 
 // Parse date string as local date to avoid timezone shift
@@ -134,13 +135,16 @@ export default function TaskDetailsPanel({
   const deliveryDubCard = getVal('entregaFinalScriptItems') as string[] | undefined;
   const deliveryDubAudio = getVal('entregaFinalDubAudioItems') as string[] | undefined;
 
-  const metadataItems: { label: string; shortLabel: string; value: string | null }[] = [
-    { label: 'Phase Due Date', shortLabel: 'PDD', value: formatDate(phaseDueDate) },
-    { label: 'Miami Due Date', shortLabel: 'MDD', value: formatDate(miamiDueDate) },
-    { label: 'Client Due Date', shortLabel: 'CDD', value: formatDate(clientDueDate) },
-    { label: 'Locked Runtime', shortLabel: 'LRT', value: lockedRuntime || null },
-    { label: 'Final Runtime', shortLabel: 'FRT', value: finalRuntime || null },
-    { label: 'Episodes', shortLabel: 'EPS', value: episodes ? String(episodes) : null },
+  const editableMetadata = [
+    { label: 'Phase Due Date', shortLabel: 'PDD', value: formatDate(phaseDueDate), rawValue: phaseDueDate, dbColumn: 'phase_due_date', type: 'date' as const },
+    { label: 'Miami Due Date', shortLabel: 'MDD', value: formatDate(miamiDueDate), rawValue: miamiDueDate, dbColumn: 'entrega_miami_end', type: 'date' as const },
+    { label: 'Client Due Date', shortLabel: 'CDD', value: formatDate(clientDueDate), rawValue: clientDueDate, dbColumn: 'entrega_cliente', type: 'date' as const },
+    { label: 'Locked Runtime', shortLabel: 'LRT', value: lockedRuntime || null, rawValue: lockedRuntime, dbColumn: 'locked_runtime', type: 'text' as const },
+    { label: 'Final Runtime', shortLabel: 'FRT', value: finalRuntime || null, rawValue: finalRuntime, dbColumn: 'final_runtime', type: 'text' as const },
+  ];
+
+  const readOnlyMetadata = [
+    { shortLabel: 'EPS', value: episodes ? String(episodes) : null },
   ];
 
   const listItems: { label: string; items: string[] }[] = [
@@ -190,7 +194,7 @@ export default function TaskDetailsPanel({
         </div>
 
         {/* ── Metadata Grid (Collapsible) ── */}
-        {(metadataItems.some(m => m.value) || listItems.some(l => l.items.length > 0)) && (
+        {(editableMetadata.some(m => m.value) || readOnlyMetadata.some(m => m.value) || listItems.some(l => l.items.length > 0)) && (
           <Collapsible defaultOpen={false} className="border-b border-[hsl(var(--border))]">
             <CollapsibleTrigger className="flex items-center justify-between w-full px-6 py-3 text-[12px] font-medium text-muted-foreground uppercase tracking-wider hover:bg-muted/30 transition-colors duration-150">
               <span>Project Details</span>
@@ -199,7 +203,20 @@ export default function TaskDetailsPanel({
             <CollapsibleContent>
               <div className="px-6 pb-4 bg-muted/20">
                 <div className="grid grid-cols-3 gap-3">
-                  {metadataItems.map((item) => (
+                  {editableMetadata.map((item) => (
+                    <EditableMetadataCell
+                      key={item.shortLabel}
+                      taskId={task.id}
+                      label={item.label}
+                      shortLabel={item.shortLabel}
+                      value={item.value}
+                      rawValue={item.rawValue}
+                      dbColumn={item.dbColumn}
+                      type={item.type}
+                      editable={!isGuest}
+                    />
+                  ))}
+                  {readOnlyMetadata.map((item) => (
                     <div key={item.shortLabel} className="flex flex-col gap-0.5">
                       <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
                         {item.shortLabel}

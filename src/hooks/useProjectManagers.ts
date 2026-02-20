@@ -1,23 +1,18 @@
 import { useTeamMembers } from './useWorkspaces';
-
-// Only these people can be assigned as Project Manager
-const APPROVED_PROJECT_MANAGER_NAMES = [
-  'ana otto',
-  'william rozo',
-  'jill martinez',
-  'julio neri',
-  'cristiano ronaldo', // Test user exception
-];
+import { useTeamMemberRoles } from './useTeamMemberRoles';
 
 export function useProjectManagers() {
   const { data: teamMembers = [], ...rest } = useTeamMembers();
-  
-  const projectManagers = teamMembers.filter(member =>
-    APPROVED_PROJECT_MANAGER_NAMES.includes(member.name.toLowerCase())
+  const { data: roles = [] } = useTeamMemberRoles();
+
+  // Get IDs of team members who have the 'project_manager' role
+  const pmIds = new Set(
+    roles
+      .filter(r => r.role_type === 'project_manager')
+      .map(r => r.team_member_id)
   );
-  
+
+  const projectManagers = teamMembers.filter(member => pmIds.has(member.id));
+
   return { data: projectManagers, ...rest };
 }
-
-// Export the list for use in other components
-export { APPROVED_PROJECT_MANAGER_NAMES };

@@ -1,18 +1,39 @@
-import { useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useCallback } from 'react';
+import { useQueryClient, useIsMutating } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Subscribe to real-time updates for a specific board
  * This will automatically refresh the board data when tasks change
+ * Uses debouncing and mutation-awareness to prevent race conditions
  */
 export function useBoardRealtime(boardId: string | null) {
   const queryClient = useQueryClient();
+  const isMutating = useIsMutating({ mutationKey: ['updateTask', boardId] });
+  const isMutatingRef = useRef(isMutating);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Keep ref in sync
+  useEffect(() => {
+    isMutatingRef.current = isMutating;
+  }, [isMutating]);
+
+  const debouncedInvalidate = useCallback((keys: string[][]) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      // Skip invalidation if a mutation is in-flight to prevent overwriting optimistic updates
+      if (isMutatingRef.current > 0) {
+        return;
+      }
+      keys.forEach(key => queryClient.invalidateQueries({ queryKey: key }));
+    }, 300);
+  }, [queryClient]);
 
   useEffect(() => {
     if (!boardId) return;
 
-    // Subscribe to task changes for this board's tasks
     const channel = supabase
       .channel(`board-${boardId}`)
       .on(
@@ -24,9 +45,7 @@ export function useBoardRealtime(boardId: string | null) {
         },
         (payload) => {
           console.log('Task change detected:', payload.eventType);
-          // Invalidate the board query to refresh data
-          queryClient.invalidateQueries({ queryKey: ['board', boardId] });
-          queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+          debouncedInvalidate([['board', boardId], ['workspaces']]);
         }
       )
       .on(
@@ -38,15 +57,18 @@ export function useBoardRealtime(boardId: string | null) {
         },
         (payload) => {
           console.log('Task group change detected:', payload.eventType);
-          queryClient.invalidateQueries({ queryKey: ['board', boardId] });
+          debouncedInvalidate([['board', boardId]]);
         }
       )
       .subscribe();
 
     return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
       supabase.removeChannel(channel);
     };
-  }, [boardId, queryClient]);
+  }, [boardId, debouncedInvalidate]);
 }
 
 /**

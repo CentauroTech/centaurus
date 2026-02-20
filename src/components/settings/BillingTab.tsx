@@ -51,7 +51,8 @@ import { useHasPaymentRole } from '@/hooks/useMyRoles';
 import { usePermissions } from '@/hooks/usePermissions';
 import { InvoiceView } from '@/components/guest/InvoiceView';
 
-const STATUS_CONFIG: Record<InvoiceStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className: string }> = {
+const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className: string }> = {
+  draft: { label: 'Draft', variant: 'secondary', className: 'bg-muted text-muted-foreground border-border' },
   submitted: { label: 'Pending Approval', variant: 'default', className: 'bg-amber-500/20 text-amber-700 border-amber-500/30' },
   approved: { label: 'Approved', variant: 'default', className: 'bg-green-500/20 text-green-700 border-green-500/30' },
   rejected: { label: 'Rejected', variant: 'destructive', className: 'bg-red-500/20 text-red-700 border-red-500/30' },
@@ -254,10 +255,10 @@ export function BillingTab({ initialInvoiceId }: BillingTabProps = {}) {
                   </TableCell>
                   <TableCell>
                     <Badge 
-                      variant={STATUS_CONFIG[invoice.status].variant}
-                      className={STATUS_CONFIG[invoice.status].className}
+                      variant={(STATUS_CONFIG[invoice.status] ?? STATUS_CONFIG.submitted).variant}
+                      className={(STATUS_CONFIG[invoice.status] ?? STATUS_CONFIG.submitted).className}
                     >
-                      {STATUS_CONFIG[invoice.status].label}
+                      {(STATUS_CONFIG[invoice.status] ?? { label: invoice.status }).label}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">

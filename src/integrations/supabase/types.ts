@@ -1295,7 +1295,7 @@ export type Database = {
           name: string
           phase_due_date: string | null
           premix_due_date: string | null
-          project_manager_id: string
+          project_manager_id: string | null
           prueba_de_voz: string | null
           qc_1_id: string | null
           qc_mix_due_date: string | null
@@ -1373,7 +1373,7 @@ export type Database = {
           name?: string
           phase_due_date?: string | null
           premix_due_date?: string | null
-          project_manager_id: string
+          project_manager_id?: string | null
           prueba_de_voz?: string | null
           qc_1_id?: string | null
           qc_mix_due_date?: string | null
@@ -1451,7 +1451,7 @@ export type Database = {
           name?: string
           phase_due_date?: string | null
           premix_due_date?: string | null
-          project_manager_id?: string
+          project_manager_id?: string | null
           prueba_de_voz?: string | null
           qc_1_id?: string | null
           qc_mix_due_date?: string | null

@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useGuestCompletedHistory, GuestCompletedTask } from '@/hooks/useGuestCompletedHistory';
 import { supabase } from '@/integrations/supabase/client';
+import { notifyWithEmail } from '@/lib/notifyWithEmail';
 import { useCreateInvoice, CreateInvoiceData, createItemsFromCompletedTasks, useBillingUsers } from '@/hooks/useInvoices';
 import { useInvoicedTaskIds } from '@/hooks/useInvoicedTaskIds';
 import { useCurrentTeamMember } from '@/hooks/useCurrentTeamMember';
@@ -220,13 +221,13 @@ export function InvoiceForm({ onBack, onSuccess }: InvoiceFormProps) {
 
       // Send notification to each PM/admin
       for (const pm of managers) {
-        await supabase.rpc('create_notification', {
-          p_user_id: pm.id,
-          p_type: 'invoice_unblock_request',
-          p_title: 'Invoice Task Unblock Request',
-          p_message: `${memberName} is requesting to unblock "${task.taskName}" (WO# ${task.workOrderNumber || 'N/A'}) for re-invoicing.`,
-          p_task_id: null,
-          p_triggered_by_id: currentMember?.id || '',
+        await notifyWithEmail({
+          userId: pm.id,
+          type: 'invoice_unblock_request',
+          taskId: null,
+          triggeredById: currentMember?.id || '',
+          title: 'Invoice Task Unblock Request',
+          message: `${memberName} is requesting to unblock "${task.taskName}" (WO# ${task.workOrderNumber || 'N/A'}) for re-invoicing.`,
         });
       }
 

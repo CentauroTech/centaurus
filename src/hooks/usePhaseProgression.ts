@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { fetchPhaseAutomations } from '@/hooks/usePhaseAutomations';
 import { getLocalDateString } from '@/lib/businessDays';
+import { notifyWithEmail } from '@/lib/notifyWithEmail';
 
 // Phase progression order (normalized phase names)
 const PHASE_ORDER = [
@@ -84,13 +85,13 @@ export async function applyPhaseAutomation(
     if (assigneeId === currentUserId) continue;
 
     try {
-      await supabase.rpc('create_notification', {
-        p_user_id: assigneeId,
-        p_type: 'assignment',
-        p_task_id: taskId,
-        p_triggered_by_id: currentUserId || assigneeId,
-        p_title: 'You were assigned to a task',
-        p_message: `You were assigned to "${taskName}" via phase automation (${normalizedPhase})`,
+      await notifyWithEmail({
+        userId: assigneeId,
+        type: 'assignment',
+        taskId,
+        triggeredById: currentUserId || assigneeId,
+        title: 'You were assigned to a task',
+        message: `You were assigned to "${taskName}" via phase automation (${normalizedPhase})`,
       });
     } catch (err) {
       console.error('Failed to create assignment notification:', err);

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { usePermissions } from './usePermissions';
+import { notifyWithEmail } from '@/lib/notifyWithEmail';
 
 export interface CommentWithUser {
   id: string;
@@ -122,13 +123,13 @@ export function useAddComment(taskId: string, boardId: string) {
                 .eq('id', userId)
                 .single();
 
-              await supabase.rpc('create_notification', {
-                p_user_id: parentComment.user_id,
-                p_type: 'mention',
-                p_task_id: taskId,
-                p_triggered_by_id: userId,
-                p_title: `${replierName?.name || 'Someone'} replied to your comment`,
-                p_message: `in ${task?.name || 'a task'}`,
+              await notifyWithEmail({
+                userId: parentComment.user_id,
+                type: 'mention',
+                taskId,
+                triggeredById: userId,
+                title: `${replierName?.name || 'Someone'} replied to your comment`,
+                message: `in ${task?.name || 'a task'}`,
               });
             }
           }

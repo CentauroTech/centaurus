@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentTeamMember } from './useCurrentTeamMember';
 import { GuestCompletedTask } from './useGuestCompletedHistory';
+import { notifyWithEmail } from '@/lib/notifyWithEmail';
 
 export type InvoiceStatus = 'submitted' | 'approved' | 'rejected' | 'paid';
 
@@ -267,13 +268,13 @@ export function useCreateInvoice() {
       notifyIds.delete(currentMember.id);
 
       for (const userId of notifyIds) {
-        await supabase.rpc('create_notification', {
-          p_user_id: userId,
-          p_type: 'invoice_submitted',
-          p_title: `Invoice ${invoiceData.invoice_number} Submitted`,
-          p_message: `${currentMember.name || 'A vendor'} submitted an invoice ($${totalAmount.toFixed(2)}) for approval. invoice_id::${invoice.id}`,
-          p_task_id: null,
-          p_triggered_by_id: currentMember.id,
+        await notifyWithEmail({
+          userId,
+          type: 'invoice_submitted',
+          taskId: null,
+          triggeredById: currentMember.id,
+          title: `Invoice ${invoiceData.invoice_number} Submitted`,
+          message: `${currentMember.name || 'A vendor'} submitted an invoice ($${totalAmount.toFixed(2)}) for approval. invoice_id::${invoice.id}`,
         });
       }
 
@@ -363,13 +364,13 @@ export function useApproveInvoice() {
 
       // Notify vendor
       if (invoiceData.team_member_id) {
-        await supabase.rpc('create_notification', {
-          p_user_id: invoiceData.team_member_id,
-          p_type: 'invoice_approved',
-          p_title: `Invoice ${invoiceData.invoice_number} Approved`,
-          p_message: `Your invoice has been approved and is pending payment. invoice_id::${invoiceId}`,
-          p_task_id: null,
-          p_triggered_by_id: currentMember.id,
+        await notifyWithEmail({
+          userId: invoiceData.team_member_id,
+          type: 'invoice_approved',
+          taskId: null,
+          triggeredById: currentMember.id,
+          title: `Invoice ${invoiceData.invoice_number} Approved`,
+          message: `Your invoice has been approved and is pending payment. invoice_id::${invoiceId}`,
         });
       }
 
@@ -381,13 +382,13 @@ export function useApproveInvoice() {
 
       for (const pm of paymentMembers || []) {
         if (pm.team_member_id === currentMember.id) continue;
-        await supabase.rpc('create_notification', {
-          p_user_id: pm.team_member_id,
-          p_type: 'invoice_approved',
-          p_title: `Invoice ${invoiceData.invoice_number} Ready for Payment`,
-          p_message: `Invoice from ${invoiceData.billing_name} ($${parseFloat(invoiceData.total_amount).toFixed(2)}) has been approved and needs payment. invoice_id::${invoiceId}`,
-          p_task_id: null,
-          p_triggered_by_id: currentMember.id,
+        await notifyWithEmail({
+          userId: pm.team_member_id,
+          type: 'invoice_approved',
+          taskId: null,
+          triggeredById: currentMember.id,
+          title: `Invoice ${invoiceData.invoice_number} Ready for Payment`,
+          message: `Invoice from ${invoiceData.billing_name} ($${parseFloat(invoiceData.total_amount).toFixed(2)}) has been approved and needs payment. invoice_id::${invoiceId}`,
         });
       }
 
@@ -425,13 +426,13 @@ export function useRejectInvoice() {
 
       // Notify vendor that invoice was denied
       if (invoiceData.team_member_id) {
-        await supabase.rpc('create_notification', {
-          p_user_id: invoiceData.team_member_id,
-          p_type: 'invoice_rejected',
-          p_title: `Invoice ${invoiceData.invoice_number} Denied`,
-          p_message: `Your invoice was denied. Reason: ${reason}. Please review and resubmit. invoice_id::${invoiceId}`,
-          p_task_id: null,
-          p_triggered_by_id: currentMember.id,
+        await notifyWithEmail({
+          userId: invoiceData.team_member_id,
+          type: 'invoice_rejected',
+          taskId: null,
+          triggeredById: currentMember.id,
+          title: `Invoice ${invoiceData.invoice_number} Denied`,
+          message: `Your invoice was denied. Reason: ${reason}. Please review and resubmit. invoice_id::${invoiceId}`,
         });
       }
 
@@ -467,13 +468,13 @@ export function useMarkInvoicePaid() {
 
       // Notify vendor
       if (invoiceData.team_member_id) {
-        await supabase.rpc('create_notification', {
-          p_user_id: invoiceData.team_member_id,
-          p_type: 'invoice_paid',
-          p_title: `Invoice ${invoiceData.invoice_number} Paid`,
-          p_message: `Your invoice ($${parseFloat(invoiceData.total_amount).toFixed(2)}) has been marked as paid. invoice_id::${invoiceId}`,
-          p_task_id: null,
-          p_triggered_by_id: currentMember.id,
+        await notifyWithEmail({
+          userId: invoiceData.team_member_id,
+          type: 'invoice_paid',
+          taskId: null,
+          triggeredById: currentMember.id,
+          title: `Invoice ${invoiceData.invoice_number} Paid`,
+          message: `Your invoice ($${parseFloat(invoiceData.total_amount).toFixed(2)}) has been marked as paid. invoice_id::${invoiceId}`,
         });
       }
 
@@ -485,47 +486,14 @@ export function useMarkInvoicePaid() {
 
       for (const andrea of andreaMembers || []) {
         if (andrea.id === currentMember.id) continue;
-        await supabase.rpc('create_notification', {
-          p_user_id: andrea.id,
-          p_type: 'invoice_paid',
-          p_title: `Invoice ${invoiceData.invoice_number} Paid`,
-          p_message: `Invoice from ${invoiceData.billing_name} ($${parseFloat(invoiceData.total_amount).toFixed(2)}) has been marked as paid. invoice_id::${invoiceId}`,
-          p_task_id: null,
-          p_triggered_by_id: currentMember.id,
+        await notifyWithEmail({
+          userId: andrea.id,
+          type: 'invoice_paid',
+          taskId: null,
+          triggeredById: currentMember.id,
+          title: `Invoice ${invoiceData.invoice_number} Paid`,
+          message: `Invoice from ${invoiceData.billing_name} ($${parseFloat(invoiceData.total_amount).toFixed(2)}) has been marked as paid. invoice_id::${invoiceId}`,
         });
-      }
-
-      // Send email notification for paid invoice (fire and forget)
-      try {
-        // Notify vendor via email
-        await supabase.functions.invoke('send-notification-email', {
-          body: {
-            notification_id: crypto.randomUUID(),
-            user_id: invoiceData.team_member_id,
-            type: 'invoice_paid',
-            task_id: null,
-            triggered_by_id: currentMember.id,
-            title: `Invoice ${invoiceData.invoice_number} Paid`,
-            message: `Your invoice ($${parseFloat(invoiceData.total_amount).toFixed(2)}) has been marked as paid.`,
-          },
-        });
-
-        // Notify Andrea via email
-        for (const andrea of andreaMembers || []) {
-          await supabase.functions.invoke('send-notification-email', {
-            body: {
-              notification_id: crypto.randomUUID(),
-              user_id: andrea.id,
-              type: 'invoice_paid',
-              task_id: null,
-              triggered_by_id: currentMember.id,
-              title: `Invoice ${invoiceData.invoice_number} Paid`,
-              message: `Invoice from ${invoiceData.billing_name} ($${parseFloat(invoiceData.total_amount).toFixed(2)}) has been marked as paid.`,
-            },
-          });
-        }
-      } catch (emailErr) {
-        console.error('Error sending paid notification email:', emailErr);
       }
 
       return data;
